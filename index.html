@@ -725,18 +725,37 @@
 
     async function fetchDrivers() {
       try {
+        document.getElementById("sync-status").textContent = "🔄 Syncing drivers with Google Sheets...";
+        document.getElementById("sync-status").style.color = "#0284c7";
+
         const res = await fetch(GOOGLE_SHEET_DRIVERS_URL);
         if (!res.ok) throw new Error("Network error");
         driversDatabase = await res.json();
-      } catch (e) { console.error("Error fetching drivers", e); }
+
+        document.getElementById("sync-status").textContent = `✅ Synced ${driversDatabase.length} driver record(s).`;
+        document.getElementById("sync-status").style.color = "#2e7d32";
+      } catch (e) {
+        console.error("Error fetching drivers", e);
+        document.getElementById("sync-status").textContent = "❌ Failed to load drivers.";
+        document.getElementById("sync-status").style.color = "#c62828";
+      }
     }
 
     async function fetchFleet() {
       try {
+        document.getElementById("fleet-sync-status").textContent = "🔄 Syncing fleet...";
+        document.getElementById("fleet-sync-status").style.color = "#0284c7";
+
         const res = await fetch(GOOGLE_SHEET_FLEET_URL);
         if (!res.ok) throw new Error("Network error");
         fleetDatabase = await res.json();
-      } catch (e) { console.error("Error fetching fleet", e); }
+
+        document.getElementById("fleet-sync-status").textContent = `✅ Synced ${fleetDatabase.length} vehicle(s).`;
+        document.getElementById("fleet-sync-status").style.color = "#2e7d32";
+      } catch (e) {
+        document.getElementById("fleet-sync-status").textContent = "❌ Failed to load fleet.";
+        document.getElementById("fleet-sync-status").style.color = "#c62828";
+      }
     }
 
     async function fetchAccidents() {
@@ -836,7 +855,6 @@
       const endTime = document.getElementById("filter-end-time").value || "23:59";
 
       const filtered = accidentsDatabase.filter(acc => {
-        // Filtro de texto
         const matchQuery = query === "" || 
           String(acc["Accident ID"] || "").toLowerCase().includes(query) ||
           String(acc["Car Plate"] || "").toLowerCase().includes(query) ||
@@ -845,7 +863,6 @@
 
         if (!matchQuery) return false;
 
-        // Filtro por fecha y hora del accidente
         const accDate = formatDateForInput(acc["Date"]);
         if (!accDate) return true;
 
