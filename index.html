@@ -1,12 +1,3 @@
-¡Perfecto! He aplicado los **3 detalles** que has pedido:
-
-1. **Formato correcto de horas:** He añadido la función `formatTimeForDisplay` para asegurar que las columnas de hora (`Time` y `Reporting Time`) muestren limpiamente las horas (`HH:MM`) en lugar de formatos largos de fecha/texto.
-2. **Botón de eliminar accidente:** Al abrir el modal en modo edición, ahora aparece un botón rojo de **"🗑️ Delete Accident"** que te permite eliminar el registro directamente en Google Sheets.
-3. **Bloqueo de Fecha y Hora al editar:** Cuando abres un accidente existente para modificarlo, los campos de fecha (`Accident Date`) y hora (`Accident Time`) se bloquean automáticamente para que no se puedan alterar sus valores originales.
-
-Aquí tienes el archivo **`index.html` completo y actualizado**:
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -695,7 +686,49 @@ Aquí tienes el archivo **`index.html` completo y actualizado**:
           </div>
           <div class="form-group">
             <label>Accident Location</label>
-            <input type="text" id="add-acc-location" placeholder="District / Location" required>
+            <select id="add-acc-location" required>
+              <option value="">-- Select Location --</option>
+              <option value="Ajyad - Jarham">Ajyad - Jarham</option>
+              <option value="Al Abdeyah - Al Safra">Al Abdeyah - Al Safra</option>
+              <option value="Al Awali">Al Awali</option>
+              <option value="Al Aziziyah - Al Jamiah">Al Aziziyah - Al Jamiah</option>
+              <option value="Al Barakah - Allegiance">Al Barakah - Allegiance</option>
+              <option value="Al Bibyan - Ad Dyafah">Al Bibyan - Ad Dyafah</option>
+              <option value="Al Buhayrat">Al Buhayrat</option>
+              <option value="Al Hamra">Al Hamra</option>
+              <option value="Al Hijrah - Batha Quraysh">Al Hijrah - Batha Quraysh</option>
+              <option value="Al Hindawiyyah">Al Hindawiyyah</option>
+              <option value="Al Jadeed">Al Jadeed</option>
+              <option value="Al Jummayzah">Al Jummayzah</option>
+              <option value="Al Khadra - Ar Rashidiyyah">Al Khadra - Ar Rashidiyyah</option>
+              <option value="Al Khalidiyyah">Al Khalidiyyah</option>
+              <option value="Al Maabdah - Ar Rawdah">Al Maabdah - Ar Rawdah</option>
+              <option value="Al Rusayfah">Al Rusayfah</option>
+              <option value="Al Shumaisy - Al Hamra Umm Al Jud">Al Shumaisy - Al Hamra Umm Al Jud</option>
+              <option value="Al Ukayshiyyah - Al Muzahmiya">Al Ukayshiyyah - Al Muzahmiya</option>
+              <option value="Al Umrah - Al Jadidah">Al Umrah - Al Jadidah</option>
+              <option value="Al Utaybiyyah - Al Andalus">Al Utaybiyyah - Al Andalus</option>
+              <option value="Alsouq Alsagheer Al Jadeed - Dar Al Salam">Alsouq Alsagheer Al Jadeed - Dar Al Salam</option>
+              <option value="An Nasim - As Snabel">An Nasim - As Snabel</option>
+              <option value="An Nuzhah">An Nuzhah</option>
+              <option value="Ar Rawabi">Ar Rawabi</option>
+              <option value="As SharaI - Al Juranah">As SharaI - Al Juranah</option>
+              <option value="As Sulaymaniyyah">As Sulaymaniyyah</option>
+              <option value="Ash Shawqiyah - King Fahad">Ash Shawqiyah - King Fahad</option>
+              <option value="Ash Shuhada">Ash Shuhada</option>
+              <option value="Az Zahir">Az Zahir</option>
+              <option value="Az Zahra - Al Taysir">Az Zahra - Al Taysir</option>
+              <option value="Jabal An Nur - A Adel">Jabal An Nur - A Adel</option>
+              <option value="Jarham - Al Misfalah">Jarham - Al Misfalah</option>
+              <option value="Jarwal - Al Hujun">Jarwal - Al Hujun</option>
+              <option value="Kuday -At Taqwa">Kuday -At Taqwa</option>
+              <option value="Mina - Arafat">Mina - Arafat</option>
+              <option value="Naqqa Al Jadeed - New Gaza">Naqqa Al Jadeed - New Gaza</option>
+              <option value="Qurtubah">Qurtubah</option>
+              <option value="Reia Thakhir - Al Khansa">Reia Thakhir - Al Khansa</option>
+              <option value="Ruaa Alharam">Ruaa Alharam</option>
+              <option value="Walyal Ahd District">Walyal Ahd District</option>
+            </select>
           </div>
           <div class="form-group">
             <label>Severity</label>
@@ -753,7 +786,21 @@ Aquí tienes el archivo **`index.html` completo y actualizado**:
           </div>
           <div class="form-group">
             <label>Root Causes</label>
-            <input type="text" id="add-acc-root-causes" placeholder="Root cause" required>
+            <select id="add-acc-root-causes" required>
+              <option value="">-- Select Root Cause --</option>
+              <option value="Animal crossed the road">Animal crossed the road</option>
+              <option value="Bad weather conditions">Bad weather conditions</option>
+              <option value="Breakdown">Breakdown</option>
+              <option value="External">External</option>
+              <option value="General careless driving">General careless driving</option>
+              <option value="Lane change">Lane change</option>
+              <option value="Parking">Parking</option>
+              <option value="Reversing">Reversing</option>
+              <option value="Safe distance">Safe distance</option>
+              <option value="Sleepiness">Sleepiness</option>
+              <option value="Using phone">Using phone</option>
+              <option value="U-turn">U-turn</option>
+            </select>
           </div>
         </div>
 
@@ -1200,7 +1247,7 @@ Aquí tienes el archivo **`index.html` completo y actualizado**:
         "Car Model": document.getElementById("add-acc-model").value,
         "Driver Iqama": document.getElementById("add-acc-iqama").value,
         "Driver Name": document.getElementById("add-acc-driver-name").value,
-        "Accident Location": document.getElementById("add-acc-location").value.trim(),
+        "Accident Location": document.getElementById("add-acc-location").value,
         "Severity": document.getElementById("add-acc-severity").value,
         "Injured": document.getElementById("add-acc-injured").value,
         "Najm": document.getElementById("add-acc-najm").value,
@@ -1210,7 +1257,7 @@ Aquí tienes el archivo **`index.html` completo y actualizado**:
         "Investigation Status": document.getElementById("add-acc-inv-status").value,
         "Accident Type": document.getElementById("add-acc-type").value.trim(),
         "Accident Description": document.getElementById("add-acc-description").value.trim(),
-        "Root Causes": document.getElementById("add-acc-root-causes").value.trim(),
+        "Root Causes": document.getElementById("add-acc-root-causes").value,
         "Damage Description": document.getElementById("add-acc-damage").value.trim()
       };
 
@@ -1857,5 +1904,3 @@ Aquí tienes el archivo **`index.html` completo y actualizado**:
   </script>
 </body>
 </html>
-
-```
