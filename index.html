@@ -315,7 +315,7 @@
     .status-badge { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
     .action-row { display: flex; gap: 12px; }
 
-    /* Modal de Añadir Accidentes */
+    /* Modal de Accidentes */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -558,7 +558,7 @@
             <div class="card-header-flex">
               <div>
                 <h2>Accident Tracker Lookup</h2>
-                <p style="margin-top: 5px; color: var(--text-muted);">Filter by date range or search records.</p>
+                <p style="margin-top: 5px; color: var(--text-muted);">Filter by date range or search records. Click any record in the table to edit.</p>
               </div>
               <div class="button-group-row">
                 <button id="open-add-accident-modal" class="btn-primary" style="background: var(--success); width: auto; padding: 10px 16px;">➕ Add New Accident</button>
@@ -648,11 +648,13 @@
     </div>
   </div>
 
-  <!-- MODAL PARA AÑADIR ACCIDENTE -->
+  <!-- MODAL PARA AÑADIR / EDITAR ACCIDENTE -->
   <div id="add-accident-modal" class="modal-overlay">
     <div class="modal-content">
-      <h2>Report New Accident</h2>
+      <h2 id="modal-accident-title">Report New Accident</h2>
       <form id="add-accident-form" style="margin-top: 20px;">
+        <input type="hidden" id="add-acc-id">
+
         <div class="modal-grid">
           <div class="form-group">
             <label>Accident Date</label>
@@ -779,6 +781,7 @@
     let fleetDatabase = [];
     let accidentsDatabase = [];
     let loggedInUserName = "System User";
+    let isEditingAccidentMode = false;
 
     const loginScreen = document.getElementById("login-screen");
     const erpApp = document.getElementById("erp-app");
@@ -938,26 +941,122 @@
     const openAddAccidentModalBtn = document.getElementById("open-add-accident-modal");
     const closeAddAccidentModalBtn = document.getElementById("close-add-accident-modal");
     const addAccidentForm = document.getElementById("add-accident-form");
+    const modalAccidentTitle = document.getElementById("modal-accident-title");
+    const saveAccidentBtn = document.getElementById("save-accident-btn");
 
-    openAddAccidentModalBtn.addEventListener("click", () => {
-      // Rellenar selects de placas y drivers
+    async function prepareModalSelects() {
+      if (fleetDatabase.length === 0 || driversDatabase.length === 0) {
+        await Promise.all([fetchFleet(), fetchDrivers()]);
+      }
+
       const plateSelect = document.getElementById("add-acc-plate");
       plateSelect.innerHTML = `<option value="">-- Select Plate --</option>`;
       fleetDatabase.forEach(v => {
-        plateSelect.innerHTML += `<option value="${v["Plate"]}">${v["Plate"]} (${v["Model"]})</option>`;
+        const plate = v["Plate"] || v["plate"];
+        const model = v["Model"] || v["model"] || "";
+        if (plate) {
+          plateSelect.innerHTML += `<option value="${plate}">${plate} (${model})</option>`;
+        }
       });
 
       const iqamaSelect = document.getElementById("add-acc-iqama");
       iqamaSelect.innerHTML = `<option value="">-- Select Iqama --</option>`;
       driversDatabase.forEach(d => {
-        iqamaSelect.innerHTML += `<option value="${d["Iqama Number"]}">${d["Iqama Number"]} - ${d["Full Name"]}</option>`;
+        const iqama = d["Iqama Number"] || d["iqama"] || "";
+        const name = d["Full Name"] || d["name"] || "";
+        if (iqama) {
+          iqamaSelect.innerHTML += `<option value="${iqama}">${iqama} - ${name}</option>`;
+        }
       });
+    }
 
+    // Abrir Modal en MODO CREAR
+    openAddAccidentModalBtn.addEventListener("click", async () => {
+      isEditingAccidentMode = false;
+      modalAccidentTitle.textContent = "Report New Accident";
+      saveAccidentBtn.textContent = "Save Accident Record";
+      saveAccidentBtn.style.background = "var(--success)";
+
+      await prepareModalSelects();
+
+      addAccidentForm.reset();
+      document.getElementById("add-acc-id").value = "";
       document.getElementById("add-acc-model").value = "";
       document.getElementById("add-acc-driver-name").value = "";
-      addAccidentForm.reset();
+      
+      // Reset selects dependientes
+      const najmStatusSelect = document.getElementById("add-acc-najm-status");
+      najmStatusSelect.disabled = true;
+      najmStatusSelect.style.background = "#e9ecef";
+      najmStatusSelect.innerHTML = `<option value="N/A">N/A</option>`;
+
+      const invStatusSelect = document.getElementById("add-acc-inv-status");
+      invStatusSelect.disabled = true;
+      invStatusSelect.style.background = "#e9ecef";
+      invStatusSelect.innerHTML = `<option value="N/A">N/A</option>`;
+
       addAccidentModal.style.display = "flex";
     });
+
+    // Abrir Modal en MODO EDITAR
+    async function openEditAccidentModal(acc) {
+      isEditingAccidentMode = true;
+      modalAccidentTitle.textContent = `Edit Accident: ${acc["Accident ID"] || ""}`;
+      saveAccidentBtn.textContent = "💾 Update Accident Record";
+      saveAccidentBtn.style.background = "#0284c7";
+
+      await prepareModalSelects();
+
+      document.getElementById("add-acc-id").value = acc["Accident ID"] || "";
+      document.getElementById("add-acc-date").value = formatDateForInput(acc["Date"]);
+      document.getElementById("add-acc-time").value = acc["Time"] || "";
+      document.getElementById("add-acc-plate").value = acc["Car Plate"] || "";
+      document.getElementById("add-acc-model").value = acc["Car Model"] || "";
+      document.getElementById("add-acc-iqama").value = acc["Driver Iqama"] || "";
+      document.getElementById("add-acc-driver-name").value = acc["Driver Name"] || "";
+      document.getElementById("add-acc-location").value = acc["Accident Location"] || "";
+      document.getElementById("add-acc-severity").value = acc["Severity"] || "Minor";
+      document.getElementById("add-acc-injured").value = acc["Injured"] || "No";
+      
+      // Configurar Najm
+      const najmVal = acc["Najm"] || "No";
+      document.getElementById("add-acc-najm").value = najmVal;
+      const najmStatusSelect = document.getElementById("add-acc-najm-status");
+      if (najmVal === "Yes") {
+        najmStatusSelect.disabled = false;
+        najmStatusSelect.style.background = "#ffffff";
+        najmStatusSelect.innerHTML = `<option value="Received">Received</option><option value="No Received">No Received</option>`;
+        najmStatusSelect.value = acc["Najm Report Status"] || "Received";
+      } else {
+        najmStatusSelect.disabled = true;
+        najmStatusSelect.style.background = "#e9ecef";
+        najmStatusSelect.innerHTML = `<option value="N/A">N/A</option>`;
+      }
+
+      document.getElementById("add-acc-mistake").value = acc["Mistake Percentage"] !== undefined ? acc["Mistake Percentage"] : 0;
+
+      // Configurar Investigation
+      const invVal = acc["Investigation Conducted"] || "No";
+      document.getElementById("add-acc-investigation").value = invVal;
+      const invStatusSelect = document.getElementById("add-acc-inv-status");
+      if (invVal === "Yes") {
+        invStatusSelect.disabled = false;
+        invStatusSelect.style.background = "#ffffff";
+        invStatusSelect.innerHTML = `<option value="Closed">Closed</option><option value="Under Process">Under Process</option>`;
+        invStatusSelect.value = acc["Investigation Status"] || "Under Process";
+      } else {
+        invStatusSelect.disabled = true;
+        invStatusSelect.style.background = "#e9ecef";
+        invStatusSelect.innerHTML = `<option value="N/A">N/A</option>`;
+      }
+
+      document.getElementById("add-acc-type").value = acc["Accident Type"] || "";
+      document.getElementById("add-acc-root-causes").value = acc["Root Causes"] || "";
+      document.getElementById("add-acc-description").value = acc["Accident Description"] || "";
+      document.getElementById("add-acc-damage").value = acc["Damage Description"] || "";
+
+      addAccidentModal.style.display = "flex";
+    }
 
     closeAddAccidentModalBtn.addEventListener("click", () => {
       addAccidentModal.style.display = "none";
@@ -966,15 +1065,15 @@
     // Auto-completar modelo al seleccionar placa
     document.getElementById("add-acc-plate").addEventListener("change", (e) => {
       const selectedPlate = e.target.value;
-      const vehicle = fleetDatabase.find(v => String(v["Plate"]).trim() === String(selectedPlate).trim());
-      document.getElementById("add-acc-model").value = vehicle ? `${vehicle["Brand"]} ${vehicle["Model"]}` : "";
+      const vehicle = fleetDatabase.find(v => String(v["Plate"] || v["plate"]).trim() === String(selectedPlate).trim());
+      document.getElementById("add-acc-model").value = vehicle ? `${vehicle["Brand"] || vehicle["brand"] || ""} ${vehicle["Model"] || vehicle["model"] || ""}` : "";
     });
 
     // Auto-completar nombre al seleccionar Iqama
     document.getElementById("add-acc-iqama").addEventListener("change", (e) => {
       const selectedIqama = e.target.value;
-      const driver = driversDatabase.find(d => String(d["Iqama Number"]).trim() === String(selectedIqama).trim());
-      document.getElementById("add-acc-driver-name").value = driver ? driver["Full Name"] : "";
+      const driver = driversDatabase.find(d => String(d["Iqama Number"] || d["iqama"]).trim() === String(selectedIqama).trim());
+      document.getElementById("add-acc-driver-name").value = driver ? (driver["Full Name"] || driver["name"]) : "";
     });
 
     // Lógica Najm
@@ -1007,25 +1106,19 @@
       }
     });
 
-    // Enviar formulario de nuevo accidente
+    // Enviar formulario (Guardar nuevo o Actualizar existente)
     addAccidentForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const saveBtn = document.getElementById("save-accident-btn");
-      saveBtn.disabled = true;
-      saveBtn.textContent = "Saving...";
+      saveAccidentBtn.disabled = true;
+      saveAccidentBtn.textContent = isEditingAccidentMode ? "Updating..." : "Saving...";
 
-      const now = new Date();
-      const reportingDate = now.toISOString().split("T")[0];
-      const reportingTime = now.toTimeString().split(" ")[0].substring(0, 5);
       const selectedPlate = document.getElementById("add-acc-plate").value;
+      const accId = document.getElementById("add-acc-id").value;
 
-      const newAccident = {
-        action: "create",
+      const accidentData = {
+        action: isEditingAccidentMode ? "update" : "create",
         "Date": document.getElementById("add-acc-date").value,
         "Time": document.getElementById("add-acc-time").value,
-        "Reporting Date": reportingDate,
-        "Reporting Time": reportingTime,
-        "Reported By": loggedInUserName,
         "Car Plate": selectedPlate,
         "Car Model": document.getElementById("add-acc-model").value,
         "Driver Iqama": document.getElementById("add-acc-iqama").value,
@@ -1044,28 +1137,39 @@
         "Damage Description": document.getElementById("add-acc-damage").value.trim()
       };
 
+      if (isEditingAccidentMode) {
+        accidentData["Accident ID"] = accId;
+      } else {
+        const now = new Date();
+        accidentData["Reporting Date"] = now.toISOString().split("T")[0];
+        accidentData["Reporting Time"] = now.toTimeString().split(" ")[0].substring(0, 5);
+        accidentData["Reported By"] = loggedInUserName;
+      }
+
       try {
         const res = await fetch(GOOGLE_SHEET_ACCIDENTS_URL, {
           method: "POST",
           headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify(newAccident)
+          body: JSON.stringify(accidentData)
         });
         const resData = await res.json();
 
         if (resData.status === "success") {
-          // Incrementar accidentes en Fleet Management automáticamente
-          const vehicle = fleetDatabase.find(v => String(v["Plate"]).trim() === String(selectedPlate).trim());
-          if (vehicle) {
-            vehicle["Accidents"] = (parseInt(vehicle["Accidents"] || "0", 10)) + 1;
-            await fetch(GOOGLE_SHEET_FLEET_URL, {
-              method: "POST",
-              headers: { "Content-Type": "text/plain" },
-              body: JSON.stringify(vehicle)
-            });
+          if (!isEditingAccidentMode) {
+            // Incrementar contador de accidentes solo si es un registro NUEVO
+            const vehicle = fleetDatabase.find(v => String(v["Plate"] || v["plate"]).trim() === String(selectedPlate).trim());
+            if (vehicle) {
+              vehicle["Accidents"] = (parseInt(vehicle["Accidents"] || "0", 10)) + 1;
+              await fetch(GOOGLE_SHEET_FLEET_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify(vehicle)
+              });
+            }
           }
 
           addAccidentModal.style.display = "none";
-          alert("Accident reported successfully and fleet database updated!");
+          alert(isEditingAccidentMode ? "Accident record updated successfully!" : "Accident reported successfully!");
           await fetchAccidents();
           await fetchFleet();
         } else {
@@ -1074,8 +1178,8 @@
       } catch (err) {
         alert("Failed to communicate with Google Sheets.");
       } finally {
-        saveBtn.disabled = false;
-        saveBtn.textContent = "Save Accident Record";
+        saveAccidentBtn.disabled = false;
+        saveAccidentBtn.textContent = isEditingAccidentMode ? "💾 Update Accident Record" : "Save Accident Record";
       }
     });
 
@@ -1090,6 +1194,7 @@
 
       items.forEach(acc => {
         const tr = document.createElement("tr");
+        tr.title = "Click to edit accident details";
         tr.innerHTML = `
           <td>${acc["Accident ID"] || "-"}</td>
           <td>${formatDateForDisplay(acc["Date"])}</td>
@@ -1114,6 +1219,8 @@
           <td>${acc["Root Causes"] || "-"}</td>
           <td>${acc["Damage Description"] || "-"}</td>
         `;
+        // Abrir modal de edición al hacer clic en la fila
+        tr.addEventListener("click", () => openEditAccidentModal(acc));
         accidentsTableBody.appendChild(tr);
       });
     }
