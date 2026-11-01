@@ -841,6 +841,7 @@
     let accidentsDatabase = [];
     let loggedInUserName = "System User";
     let isEditingAccidentMode = false;
+    let originalAccidentPlate = "";
 
     const loginScreen = document.getElementById("login-screen");
     const erpApp = document.getElementById("erp-app");
@@ -918,7 +919,6 @@
       });
     });
 
-    // Función robusta para asegurar la fecha exacta en KSA sin desfases UTC
     function getKSACurrentDateTime() {
       const now = new Date();
       const formatter = new Intl.DateTimeFormat('en-CA', {
@@ -941,20 +941,13 @@
       };
     }
 
-    // Limpieza estricta de fecha para mostrar exactamente el día de KSA (evitando que reste un día por UTC)
     function formatDateForDisplay(d) {
       if (!d || String(d).trim() === "" || d === "Not Yet") return "-";
       let s = String(d);
-      if (s.includes("T")) {
-        return s.split("T")[0];
-      }
-      // Si Google Sheets lo devuelve como objeto fecha o string con hora, extraemos la fecha limpia por componentes o corte de texto
-      if (s.length >= 10 && s.includes("-")) {
-        return s.substring(0, 10);
-      }
+      if (s.includes("T")) return s.split("T")[0];
+      if (s.length >= 10 && s.includes("-")) return s.substring(0, 10);
       const parsed = new Date(s);
       if (!isNaN(parsed.getTime())) {
-        // Forzar formato YYYY-MM-DD usando zona KSA para evitar desfases de visualización local
         return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Riyadh', year: 'numeric', month: '2-digit', day: '2-digit' }).format(parsed);
       }
       return s;
@@ -1012,6 +1005,9 @@
         if (!res.ok) throw new Error("Network error");
         fleetDatabase = await res.json();
 
+        // Actualizar contadores de accidentes locales basados en accidentes existentes
+        updateAllFleetAccidentCounts();
+
         document.getElementById("fleet-sync-status").textContent = `✅ Synced ${fleetDatabase.length} vehicle(s).`;
         document.getElementById("fleet-sync-status").style.color = "#2e7d32";
       } catch (e) {
@@ -1029,12 +1025,42 @@
         if (!res.ok) throw new Error("Network error");
         accidentsDatabase = await res.json();
 
+        updateAllFleetAccidentCounts();
+
         document.getElementById("accident-sync-status").textContent = `✅ Synced ${accidentsDatabase.length} accident record(s).`;
         document.getElementById("accident-sync-status").style.color = "#2e7d32";
         renderAccidentsTable(accidentsDatabase);
       } catch (e) {
         document.getElementById("accident-sync-status").textContent = "❌ Failed to load accidents.";
         document.getElementById("accident-sync-status").style.color = "#c62828";
+      }
+    }
+
+    function updateAllFleetAccidentCounts() {
+      if (fleetDatabase.length === 0 || accidentsDatabase.length === 0) return;
+      fleetDatabase.forEach(v => {
+        const plate = String(v["Plate"] || "").trim().toLowerCase();
+        const count = accidentsDatabase.filter(acc => String(acc["Car Plate"] || "").trim().toLowerCase() === plate).length;
+        v["Accidents"] = count;
+      });
+    }
+
+    async function recountAndSyncVehicle(plate) {
+      if (!plate) return;
+      const vehicle = fleetDatabase.find(v => String(v["Plate"] || "").trim().toLowerCase() === String(plate).trim().toLowerCase());
+      if (!vehicle) return;
+
+      const count = accidentsDatabase.filter(acc => String(acc["Car Plate"] || "").trim().toLowerCase() === String(plate).trim().toLowerCase()).length;
+      vehicle["Accidents"] = count;
+
+      try {
+        await fetch(GOOGLE_SHEET_FLEET_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify(vehicle)
+        });
+      } catch (err) {
+        console.error("Failed to sync vehicle accident count", err);
       }
     }
 
@@ -1049,7 +1075,6 @@
     const accidentsTableBody = document.getElementById("accidents-table-body");
     const accidentCountBadge = document.getElementById("accident-count-badge");
 
-    // Modal elements
     const addAccidentModal = document.getElementById("add-accident-modal");
     const openAddAccidentModalBtn = document.getElementById("open-add-accident-modal");
     const closeAddAccidentModalBtn = document.getElementById("close-add-accident-modal");
@@ -1084,9 +1109,9 @@
       });
     }
 
-    // Abrir Modal en MODO CREAR
     openAddAccidentModalBtn.addEventListener("click", async () => {
       isEditingAccidentMode = false;
+      originalAccidentPlate = "";
       modalAccidentTitle.textContent = "Report New Accident";
       saveAccidentBtn.textContent = "Save Accident Record";
       saveAccidentBtn.style.background = "var(--success)";
@@ -1124,9 +1149,9 @@
       addAccidentModal.style.display = "flex";
     });
 
-    // Abrir Modal en MODO EDITAR
     async function openEditAccidentModal(acc) {
       isEditingAccidentMode = true;
+      originalAccidentPlate = acc["Car Plate"] || "";
       modalAccidentTitle.textContent = `Edit Accident: ${acc["Accident ID"] || ""}`;
       saveAccidentBtn.textContent = "💾 Update Accident Record";
       saveAccidentBtn.style.background = "#0284c7";
@@ -1199,6 +1224,7 @@
 
     deleteAccidentBtn.addEventListener("click", async () => {
       const accId = document.getElementById("add-acc-id").value;
+      const targetPlate = originalAccidentPlate;
       if (!confirm(`Are you sure you want to delete accident record "${accId}"?`)) return;
 
       deleteAccidentBtn.disabled = true;
@@ -1216,7 +1242,9 @@
           addAccidentModal.style.display = "none";
           alert("Accident record deleted successfully!");
           await fetchAccidents();
-          await fetchFleet();
+          if (targetPlate) {
+            await recountAndSyncVehicle(targetPlate);
+          }
         } else {
           alert("Error: " + resData.message);
         }
@@ -1316,21 +1344,19 @@
         const resData = await res.json();
 
         if (resData.status === "success") {
-          if (!isEditingAccidentMode) {
-            const vehicle = fleetDatabase.find(v => String(v["Plate"] || v["plate"]).trim() === String(selectedPlate).trim());
-            if (vehicle) {
-              vehicle["Accidents"] = (parseInt(vehicle["Accidents"] || "0", 10)) + 1;
-              await fetch(GOOGLE_SHEET_FLEET_URL, {
-                method: "POST",
-                headers: { "Content-Type": "text/plain" },
-                body: JSON.stringify(vehicle)
-              });
+          // Recargar la lista de accidentes para tener los datos frescos
+          await fetchAccidents();
+
+          // Actualizar recuento de vehículos afectados (si se cambió de placa en edición, actualizar ambos)
+          if (isEditingAccidentMode) {
+            if (originalAccidentPlate && originalAccidentPlate !== selectedPlate) {
+              await recountAndSyncVehicle(originalAccidentPlate);
             }
           }
+          await recountAndSyncVehicle(selectedPlate);
 
           addAccidentModal.style.display = "none";
           alert(isEditingAccidentMode ? "Accident record updated successfully!" : "Accident reported successfully!");
-          await fetchAccidents();
           await fetchFleet();
         } else {
           alert("Error: " + resData.message);
@@ -1568,6 +1594,10 @@
 
       const vehiclePlate = String(vehicle["Plate"] || "").trim().toLowerCase();
       const assignedDrivers = driversDatabase.filter(d => String(d["Car Plate"] || "").trim().toLowerCase() === vehiclePlate);
+      
+      // Contar en tiempo real desde la base de datos de accidentes cargada
+      const liveAccidentCount = accidentsDatabase.filter(acc => String(acc["Car Plate"] || "").trim().toLowerCase() === vehiclePlate).length;
+      vehicle["Accidents"] = liveAccidentCount;
 
       let driversHtml = "";
       if (assignedDrivers.length === 0) {
@@ -1598,7 +1628,7 @@
       document.getElementById("f-val-assigned-drivers").innerHTML = driversHtml;
       document.getElementById("f-val-km").innerHTML = vehicle["Total KM"] || "-";
       document.getElementById("f-val-availability").innerHTML = currentAvailability;
-      document.getElementById("f-val-accidents").innerHTML = vehicle["Accidents"] || "0";
+      document.getElementById("f-val-accidents").innerHTML = liveAccidentCount;
       document.getElementById("f-val-mantenimiento").innerHTML = formatDateForDisplay(vehicle["Last Maintenance"]);
       document.getElementById("f-val-oil").innerHTML = formatDateForDisplay(vehicle["Last Oil Change"]);
       document.getElementById("f-val-ins-start").innerHTML = formatDateForDisplay(vehicle["Insurance Start Date"]);
