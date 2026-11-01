@@ -1,3 +1,12 @@
+¡Perfecto! He aplicado los **3 detalles** que has pedido:
+
+1. **Formato correcto de horas:** He añadido la función `formatTimeForDisplay` para asegurar que las columnas de hora (`Time` y `Reporting Time`) muestren limpiamente las horas (`HH:MM`) en lugar de formatos largos de fecha/texto.
+2. **Botón de eliminar accidente:** Al abrir el modal en modo edición, ahora aparece un botón rojo de **"🗑️ Delete Accident"** que te permite eliminar el registro directamente en Google Sheets.
+3. **Bloqueo de Fecha y Hora al editar:** Cuando abres un accidente existente para modificarlo, los campos de fecha (`Accident Date`) y hora (`Accident Time`) se bloquean automáticamente para que no se puedan alterar sus valores originales.
+
+Aquí tienes el archivo **`index.html` completo y actualizado**:
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -313,7 +322,7 @@
 
     .field-item input, .field-item select { margin-bottom: 0; padding: 8px 10px; font-size: 14px; background: #ffffff; }
     .status-badge { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
-    .action-row { display: flex; gap: 12px; }
+    .action-row { display: flex; gap: 12px; align-items: center; justify-content: space-between; }
 
     /* Modal de Accidentes */
     .modal-overlay {
@@ -758,8 +767,11 @@
         </div>
 
         <div class="action-row" style="margin-top: 20px;">
-          <button type="submit" id="save-accident-btn" class="btn-primary" style="background: var(--success);">Save Accident Record</button>
-          <button type="button" id="close-add-accident-modal" class="btn-secondary">Cancel</button>
+          <div style="display: flex; gap: 12px;">
+            <button type="submit" id="save-accident-btn" class="btn-primary" style="background: var(--success); width: auto; padding: 12px 20px;">Save Accident Record</button>
+            <button type="button" id="delete-accident-btn" class="btn-secondary" style="background: var(--danger); color: white; display: none;">🗑️ Delete Accident</button>
+          </div>
+          <button type="button" id="close-add-accident-modal" class="btn-secondary" style="width: auto;">Cancel</button>
         </div>
       </form>
     </div>
@@ -864,6 +876,18 @@
       let s = String(d);
       return s.includes("T") ? s.split("T")[0] : s;
     }
+
+    function formatTimeForDisplay(t) {
+      if (!t || String(t).trim() === "" || t === "Not Yet") return "-";
+      let s = String(t);
+      if (s.includes("T")) {
+        const timePart = s.split("T")[1];
+        if (timePart) return timePart.substring(0, 5);
+      }
+      if (s.length >= 5 && s.includes(":")) return s.substring(0, 5);
+      return s;
+    }
+
     function formatDateForInput(d) {
       if (!d || String(d).trim() === "" || d === "Not Yet") return "";
       let s = String(d);
@@ -943,6 +967,7 @@
     const addAccidentForm = document.getElementById("add-accident-form");
     const modalAccidentTitle = document.getElementById("modal-accident-title");
     const saveAccidentBtn = document.getElementById("save-accident-btn");
+    const deleteAccidentBtn = document.getElementById("delete-accident-btn");
 
     async function prepareModalSelects() {
       if (fleetDatabase.length === 0 || driversDatabase.length === 0) {
@@ -976,6 +1001,7 @@
       modalAccidentTitle.textContent = "Report New Accident";
       saveAccidentBtn.textContent = "Save Accident Record";
       saveAccidentBtn.style.background = "var(--success)";
+      deleteAccidentBtn.style.display = "none";
 
       await prepareModalSelects();
 
@@ -984,6 +1010,14 @@
       document.getElementById("add-acc-model").value = "";
       document.getElementById("add-acc-driver-name").value = "";
       
+      // Habilitar fecha y hora para nuevos registros
+      const dateInput = document.getElementById("add-acc-date");
+      const timeInput = document.getElementById("add-acc-time");
+      dateInput.disabled = false;
+      dateInput.style.background = "#ffffff";
+      timeInput.disabled = false;
+      timeInput.style.background = "#ffffff";
+
       // Reset selects dependientes
       const najmStatusSelect = document.getElementById("add-acc-najm-status");
       najmStatusSelect.disabled = true;
@@ -1004,12 +1038,23 @@
       modalAccidentTitle.textContent = `Edit Accident: ${acc["Accident ID"] || ""}`;
       saveAccidentBtn.textContent = "💾 Update Accident Record";
       saveAccidentBtn.style.background = "#0284c7";
+      deleteAccidentBtn.style.display = "inline-block";
 
       await prepareModalSelects();
 
       document.getElementById("add-acc-id").value = acc["Accident ID"] || "";
-      document.getElementById("add-acc-date").value = formatDateForInput(acc["Date"]);
-      document.getElementById("add-acc-time").value = acc["Time"] || "";
+      
+      const dateInput = document.getElementById("add-acc-date");
+      const timeInput = document.getElementById("add-acc-time");
+      
+      dateInput.value = formatDateForInput(acc["Date"]);
+      dateInput.disabled = true;
+      dateInput.style.background = "#e9ecef";
+
+      timeInput.value = acc["Time"] || "";
+      timeInput.disabled = true;
+      timeInput.style.background = "#e9ecef";
+
       document.getElementById("add-acc-plate").value = acc["Car Plate"] || "";
       document.getElementById("add-acc-model").value = acc["Car Model"] || "";
       document.getElementById("add-acc-iqama").value = acc["Driver Iqama"] || "";
@@ -1060,6 +1105,38 @@
 
     closeAddAccidentModalBtn.addEventListener("click", () => {
       addAccidentModal.style.display = "none";
+    });
+
+    // Botón Eliminar Accidente
+    deleteAccidentBtn.addEventListener("click", async () => {
+      const accId = document.getElementById("add-acc-id").value;
+      if (!confirm(`Are you sure you want to delete accident record "${accId}"?`)) return;
+
+      deleteAccidentBtn.disabled = true;
+      deleteAccidentBtn.textContent = "Deleting...";
+
+      try {
+        const res = await fetch(GOOGLE_SHEET_ACCIDENTS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify({ action: "delete", "Accident ID": accId })
+        });
+        const resData = await res.json();
+
+        if (resData.status === "success") {
+          addAccidentModal.style.display = "none";
+          alert("Accident record deleted successfully!");
+          await fetchAccidents();
+          await fetchFleet();
+        } else {
+          alert("Error: " + resData.message);
+        }
+      } catch (err) {
+        alert("Failed to communicate with Google Sheets.");
+      } finally {
+        deleteAccidentBtn.disabled = false;
+        deleteAccidentBtn.textContent = "🗑️ Delete Accident";
+      }
     });
 
     // Auto-completar modelo al seleccionar placa
@@ -1198,9 +1275,9 @@
         tr.innerHTML = `
           <td>${acc["Accident ID"] || "-"}</td>
           <td>${formatDateForDisplay(acc["Date"])}</td>
-          <td>${acc["Time"] || "-"}</td>
+          <td>${formatTimeForDisplay(acc["Time"])}</td>
           <td>${formatDateForDisplay(acc["Reporting Date"])}</td>
-          <td>${acc["Reporting Time"] || "-"}</td>
+          <td>${formatTimeForDisplay(acc["Reporting Time"])}</td>
           <td>${acc["Reported By"] || "-"}</td>
           <td>${acc["Car Plate"] || "-"}</td>
           <td>${acc["Car Model"] || "-"}</td>
@@ -1780,3 +1857,5 @@
   </script>
 </body>
 </html>
+
+```
