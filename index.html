@@ -315,6 +315,36 @@
     .status-badge { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
     .action-row { display: flex; gap: 12px; }
 
+    /* Modal de Añadir Accidentes */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 20px;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 800px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 30px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+    .modal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 12px; font-weight: bold; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; }
+
     /* Tabla de Accident Tracker */
     .tracker-table-container {
       width: 100%;
@@ -523,7 +553,7 @@
 
         <!-- Accident Tracker View -->
         <section id="view-accidents" class="view-section">
-          <!-- Cuadro Superior: Buscador, Filtros de Fecha/Hora y Refresh -->
+          <!-- Cuadro Superior: Buscador, Filtros, Refresh y Añadir Accidente -->
           <div class="card">
             <div class="card-header-flex">
               <div>
@@ -531,6 +561,7 @@
                 <p style="margin-top: 5px; color: var(--text-muted);">Filter by date range or search records.</p>
               </div>
               <div class="button-group-row">
+                <button id="open-add-accident-modal" class="btn-primary" style="background: var(--success); width: auto; padding: 10px 16px;">➕ Add New Accident</button>
                 <button id="refresh-accidents-btn" class="btn-secondary">🔄 Refresh</button>
                 <button id="export-accidents-date-btn" class="btn-secondary" style="background: #217346; color: white;">📥 Export Period Excel</button>
               </div>
@@ -614,6 +645,121 @@
         <section id="view-breakdowns" class="view-section"><div class="card"><h2>Breakdowns Tracker</h2><p>Pending...</p></div></section>
         <section id="view-maintenance" class="view-section"><div class="card"><h2>Maintenance Tracker</h2><p>Pending...</p></div></section>
       </main>
+    </div>
+  </div>
+
+  <!-- MODAL PARA AÑADIR ACCIDENTE -->
+  <div id="add-accident-modal" class="modal-overlay">
+    <div class="modal-content">
+      <h2>Report New Accident</h2>
+      <form id="add-accident-form" style="margin-top: 20px;">
+        <div class="modal-grid">
+          <div class="form-group">
+            <label>Accident Date</label>
+            <input type="date" id="add-acc-date" required>
+          </div>
+          <div class="form-group">
+            <label>Accident Time</label>
+            <input type="time" id="add-acc-time" required>
+          </div>
+          <div class="form-group">
+            <label>Car Plate</label>
+            <select id="add-acc-plate" required>
+              <option value="">-- Select Plate --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Car Model</label>
+            <input type="text" id="add-acc-model" readonly style="background: #e9ecef;">
+          </div>
+          <div class="form-group">
+            <label>Driver Iqama</label>
+            <select id="add-acc-iqama" required>
+              <option value="">-- Select Iqama --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Driver Name</label>
+            <input type="text" id="add-acc-driver-name" readonly style="background: #e9ecef;">
+          </div>
+          <div class="form-group">
+            <label>Accident Location</label>
+            <input type="text" id="add-acc-location" placeholder="District / Location" required>
+          </div>
+          <div class="form-group">
+            <label>Severity</label>
+            <select id="add-acc-severity" required>
+              <option value="Very Minor">Very Minor</option>
+              <option value="Minor">Minor</option>
+              <option value="Major">Major</option>
+              <option value="Critical">Critical</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Injured</label>
+            <select id="add-acc-injured" required>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Najm</label>
+            <select id="add-acc-najm" required>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Najm Report Status</label>
+            <select id="add-acc-najm-status" disabled style="background: #e9ecef;">
+              <option value="N/A">N/A</option>
+              <option value="Received">Received</option>
+              <option value="No Received">No Received</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Mistake Percentage (0 - 100)</label>
+            <input type="number" id="add-acc-mistake" min="0" max="100" value="0" required>
+          </div>
+          <div class="form-group">
+            <label>Investigation Conducted</label>
+            <select id="add-acc-investigation" required>
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Investigation Status</label>
+            <select id="add-acc-inv-status" disabled style="background: #e9ecef;">
+              <option value="N/A">N/A</option>
+              <option value="Closed">Closed</option>
+              <option value="Under Process">Under Process</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Accident Type</label>
+            <input type="text" id="add-acc-type" placeholder="Type of accident" required>
+          </div>
+          <div class="form-group">
+            <label>Root Causes</label>
+            <input type="text" id="add-acc-root-causes" placeholder="Root cause" required>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 10px;">
+          <label>Accident Description</label>
+          <textarea id="add-acc-description" rows="2" placeholder="Describe what happened..." required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Damage Description</label>
+          <textarea id="add-acc-damage" rows="2" placeholder="Describe vehicle damages..." required></textarea>
+        </div>
+
+        <div class="action-row" style="margin-top: 20px;">
+          <button type="submit" id="save-accident-btn" class="btn-primary" style="background: var(--success);">Save Accident Record</button>
+          <button type="button" id="close-add-accident-modal" class="btn-secondary">Cancel</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -786,6 +932,152 @@
     const accidentDropdown = document.getElementById("accident-dropdown");
     const accidentsTableBody = document.getElementById("accidents-table-body");
     const accidentCountBadge = document.getElementById("accident-count-badge");
+
+    // Modal elements
+    const addAccidentModal = document.getElementById("add-accident-modal");
+    const openAddAccidentModalBtn = document.getElementById("open-add-accident-modal");
+    const closeAddAccidentModalBtn = document.getElementById("close-add-accident-modal");
+    const addAccidentForm = document.getElementById("add-accident-form");
+
+    openAddAccidentModalBtn.addEventListener("click", () => {
+      // Rellenar selects de placas y drivers
+      const plateSelect = document.getElementById("add-acc-plate");
+      plateSelect.innerHTML = `<option value="">-- Select Plate --</option>`;
+      fleetDatabase.forEach(v => {
+        plateSelect.innerHTML += `<option value="${v["Plate"]}">${v["Plate"]} (${v["Model"]})</option>`;
+      });
+
+      const iqamaSelect = document.getElementById("add-acc-iqama");
+      iqamaSelect.innerHTML = `<option value="">-- Select Iqama --</option>`;
+      driversDatabase.forEach(d => {
+        iqamaSelect.innerHTML += `<option value="${d["Iqama Number"]}">${d["Iqama Number"]} - ${d["Full Name"]}</option>`;
+      });
+
+      document.getElementById("add-acc-model").value = "";
+      document.getElementById("add-acc-driver-name").value = "";
+      addAccidentForm.reset();
+      addAccidentModal.style.display = "flex";
+    });
+
+    closeAddAccidentModalBtn.addEventListener("click", () => {
+      addAccidentModal.style.display = "none";
+    });
+
+    // Auto-completar modelo al seleccionar placa
+    document.getElementById("add-acc-plate").addEventListener("change", (e) => {
+      const selectedPlate = e.target.value;
+      const vehicle = fleetDatabase.find(v => String(v["Plate"]).trim() === String(selectedPlate).trim());
+      document.getElementById("add-acc-model").value = vehicle ? `${vehicle["Brand"]} ${vehicle["Model"]}` : "";
+    });
+
+    // Auto-completar nombre al seleccionar Iqama
+    document.getElementById("add-acc-iqama").addEventListener("change", (e) => {
+      const selectedIqama = e.target.value;
+      const driver = driversDatabase.find(d => String(d["Iqama Number"]).trim() === String(selectedIqama).trim());
+      document.getElementById("add-acc-driver-name").value = driver ? driver["Full Name"] : "";
+    });
+
+    // Lógica Najm
+    document.getElementById("add-acc-najm").addEventListener("change", (e) => {
+      const val = e.target.value;
+      const statusSelect = document.getElementById("add-acc-najm-status");
+      if (val === "Yes") {
+        statusSelect.disabled = false;
+        statusSelect.style.background = "#ffffff";
+        statusSelect.innerHTML = `<option value="Received">Received</option><option value="No Received">No Received</option>`;
+      } else {
+        statusSelect.disabled = true;
+        statusSelect.style.background = "#e9ecef";
+        statusSelect.innerHTML = `<option value="N/A">N/A</option>`;
+      }
+    });
+
+    // Lógica Investigation
+    document.getElementById("add-acc-investigation").addEventListener("change", (e) => {
+      const val = e.target.value;
+      const statusSelect = document.getElementById("add-acc-inv-status");
+      if (val === "Yes") {
+        statusSelect.disabled = false;
+        statusSelect.style.background = "#ffffff";
+        statusSelect.innerHTML = `<option value="Closed">Closed</option><option value="Under Process">Under Process</option>`;
+      } else {
+        statusSelect.disabled = true;
+        statusSelect.style.background = "#e9ecef";
+        statusSelect.innerHTML = `<option value="N/A">N/A</option>`;
+      }
+    });
+
+    // Enviar formulario de nuevo accidente
+    addAccidentForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const saveBtn = document.getElementById("save-accident-btn");
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Saving...";
+
+      const now = new Date();
+      const reportingDate = now.toISOString().split("T")[0];
+      const reportingTime = now.toTimeString().split(" ")[0].substring(0, 5);
+      const selectedPlate = document.getElementById("add-acc-plate").value;
+
+      const newAccident = {
+        action: "create",
+        "Date": document.getElementById("add-acc-date").value,
+        "Time": document.getElementById("add-acc-time").value,
+        "Reporting Date": reportingDate,
+        "Reporting Time": reportingTime,
+        "Reported By": loggedInUserName,
+        "Car Plate": selectedPlate,
+        "Car Model": document.getElementById("add-acc-model").value,
+        "Driver Iqama": document.getElementById("add-acc-iqama").value,
+        "Driver Name": document.getElementById("add-acc-driver-name").value,
+        "Accident Location": document.getElementById("add-acc-location").value.trim(),
+        "Severity": document.getElementById("add-acc-severity").value,
+        "Injured": document.getElementById("add-acc-injured").value,
+        "Najm": document.getElementById("add-acc-najm").value,
+        "Najm Report Status": document.getElementById("add-acc-najm-status").value,
+        "Mistake Percentage": parseInt(document.getElementById("add-acc-mistake").value, 10) || 0,
+        "Investigation Conducted": document.getElementById("add-acc-investigation").value,
+        "Investigation Status": document.getElementById("add-acc-inv-status").value,
+        "Accident Type": document.getElementById("add-acc-type").value.trim(),
+        "Accident Description": document.getElementById("add-acc-description").value.trim(),
+        "Root Causes": document.getElementById("add-acc-root-causes").value.trim(),
+        "Damage Description": document.getElementById("add-acc-damage").value.trim()
+      };
+
+      try {
+        const res = await fetch(GOOGLE_SHEET_ACCIDENTS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify(newAccident)
+        });
+        const resData = await res.json();
+
+        if (resData.status === "success") {
+          // Incrementar accidentes en Fleet Management automáticamente
+          const vehicle = fleetDatabase.find(v => String(v["Plate"]).trim() === String(selectedPlate).trim());
+          if (vehicle) {
+            vehicle["Accidents"] = (parseInt(vehicle["Accidents"] || "0", 10)) + 1;
+            await fetch(GOOGLE_SHEET_FLEET_URL, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain" },
+              body: JSON.stringify(vehicle)
+            });
+          }
+
+          addAccidentModal.style.display = "none";
+          alert("Accident reported successfully and fleet database updated!");
+          await fetchAccidents();
+          await fetchFleet();
+        } else {
+          alert("Error: " + resData.message);
+        }
+      } catch (err) {
+        alert("Failed to communicate with Google Sheets.");
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Save Accident Record";
+      }
+    });
 
     function renderAccidentsTable(items) {
       accidentsTableBody.innerHTML = "";
