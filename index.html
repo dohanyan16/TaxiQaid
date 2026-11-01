@@ -929,7 +929,11 @@
       let s = String(t);
       if (s.includes("T")) {
         const timePart = s.split("T")[1];
-        if (timePart) return timePart.substring(0, 5);
+        if (timePart) {
+          const parts = timePart.split(":");
+          if (parts.length >= 2) return parts[0] + ":" + parts[1];
+          return timePart.substring(0, 5);
+        }
       }
       if (s.length >= 5 && s.includes(":")) return s.substring(0, 5);
       return s;
@@ -1098,7 +1102,7 @@
       dateInput.disabled = true;
       dateInput.style.background = "#e9ecef";
 
-      timeInput.value = acc["Time"] || "";
+      timeInput.value = formatTimeForDisplay(acc["Time"]);
       timeInput.disabled = true;
       timeInput.style.background = "#e9ecef";
 
