@@ -205,9 +205,9 @@
       gap: 15px;
     }
 
-    .button-group-row { display: flex; gap: 10px; align-items: center; }
+    .button-group-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
-    .search-row { display: grid; grid-template-columns: 1fr; gap: 20px; margin-bottom: 20px; }
+    .search-row { display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 15px; }
     .search-wrapper { position: relative; }
     .input-with-btn { position: relative; display: flex; align-items: center; }
     .input-with-btn input { margin-bottom: 0 !important; padding-right: 40px; }
@@ -314,6 +314,36 @@
     .field-item input, .field-item select { margin-bottom: 0; padding: 8px 10px; font-size: 14px; background: #ffffff; }
     .status-badge { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
     .action-row { display: flex; gap: 12px; }
+
+    /* Tabla de Accident Tracker */
+    .tracker-table-container {
+      width: 100%;
+      max-height: 450px;
+      overflow: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: white;
+    }
+    .tracker-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    .tracker-table th, .tracker-table td {
+      padding: 12px 15px;
+      border-bottom: 1px solid var(--border-color);
+      border-right: 1px solid #f0f0f0;
+    }
+    .tracker-table th {
+      background-color: #f8f9fa;
+      color: var(--text-main);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .tracker-table tbody tr:hover { background-color: #fdf2e9; cursor: pointer; }
   </style>
 </head>
 
@@ -382,7 +412,7 @@
               </div>
             </div>
             <div id="fleet-sync-status" class="status-badge">Connecting to Google Sheets...</div>
-            <div class="search-row" style="margin-top: 15px;">
+            <div class="search-row">
               <div class="search-wrapper">
                 <label style="font-size: 13px; font-weight: bold; color: var(--text-main);">Search by Plate</label>
                 <div class="input-with-btn">
@@ -441,7 +471,7 @@
               </div>
             </div>
             <div id="sync-status" class="status-badge">Connecting to Google Sheets...</div>
-            <div class="search-row" style="margin-top: 15px; grid-template-columns: 1fr 1fr;">
+            <div class="search-row" style="grid-template-columns: 1fr 1fr;">
               <div class="search-wrapper">
                 <label style="font-size: 13px; font-weight: bold; color: var(--text-main);">Search by Iqama Number</label>
                 <div class="input-with-btn">
@@ -491,12 +521,98 @@
           </div>
         </section>
 
+        <!-- Accident Tracker View -->
+        <section id="view-accidents" class="view-section">
+          <!-- Cuadro Superior: Buscador, Filtros de Fecha/Hora y Refresh -->
+          <div class="card">
+            <div class="card-header-flex">
+              <div>
+                <h2>Accident Tracker Lookup</h2>
+                <p style="margin-top: 5px; color: var(--text-muted);">Filter by date range or search records.</p>
+              </div>
+              <div class="button-group-row">
+                <button id="refresh-accidents-btn" class="btn-secondary">🔄 Refresh</button>
+                <button id="export-accidents-date-btn" class="btn-secondary" style="background: #217346; color: white;">📥 Export Period Excel</button>
+              </div>
+            </div>
+            <div id="accident-sync-status" class="status-badge">Connecting to Google Sheets...</div>
+            
+            <div class="search-row" style="grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+              <div>
+                <label style="font-size: 13px; font-weight: bold; color: var(--text-main);">Start Date & Time Filter</label>
+                <div style="display: flex; gap: 10px;">
+                  <input type="date" id="filter-start-date" style="margin-bottom: 0;">
+                  <input type="time" id="filter-start-time" value="00:00" style="margin-bottom: 0;">
+                </div>
+              </div>
+              <div>
+                <label style="font-size: 13px; font-weight: bold; color: var(--text-main);">End Date & Time Filter</label>
+                <div style="display: flex; gap: 10px;">
+                  <input type="date" id="filter-end-date" style="margin-bottom: 0;">
+                  <input type="time" id="filter-end-time" value="23:59" style="margin-bottom: 0;">
+                </div>
+              </div>
+            </div>
+
+            <div class="search-row" style="margin-top: 15px;">
+              <div class="search-wrapper">
+                <label style="font-size: 13px; font-weight: bold; color: var(--text-main);">Search Accident (Plate, Driver Iqama/Name, Accident ID)</label>
+                <div class="input-with-btn">
+                  <input type="text" id="accident-search-input" placeholder="Type plate, driver or accident ID..." autocomplete="off">
+                  <button type="button" id="toggle-accident-btn" class="dropdown-arrow-btn">▼</button>
+                </div>
+                <div id="accident-dropdown" class="custom-dropdown"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cuadro Inferior: Vista General y Desplazamiento -->
+          <div class="card">
+            <div class="card-header-flex">
+              <h2>Accidents Overview</h2>
+              <span id="accident-count-badge" style="font-size: 14px; font-weight: bold; color: var(--text-muted);">0 records found</span>
+            </div>
+            <div class="tracker-table-container" style="margin-top: 15px;">
+              <table class="tracker-table" id="accidents-table">
+                <thead>
+                  <tr>
+                    <th>Accident ID</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Reporting Date</th>
+                    <th>Reporting Time</th>
+                    <th>Reported By</th>
+                    <th>Car Plate</th>
+                    <th>Car Model</th>
+                    <th>Driver Iqama</th>
+                    <th>Driver Name</th>
+                    <th>Location</th>
+                    <th>Severity</th>
+                    <th>Injured</th>
+                    <th>Najm</th>
+                    <th>Najm Status</th>
+                    <th>Mistake %</th>
+                    <th>Investigation</th>
+                    <th>Inv. Status</th>
+                    <th>Accident Type</th>
+                    <th>Description</th>
+                    <th>Root Causes</th>
+                    <th>Damage Description</th>
+                  </tr>
+                </thead>
+                <tbody id="accidents-table-body">
+                  <!-- Se llena dinámicamente -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
         <!-- Placeholders -->
         <section id="view-pretrip" class="view-section"><div class="card"><h2>Pre-Trip Check</h2><p>Pending...</p></div></section>
         <section id="view-posttrip" class="view-section"><div class="card"><h2>Post-Trip Check</h2><p>Pending...</p></div></section>
         <section id="view-breakdowns" class="view-section"><div class="card"><h2>Breakdowns Tracker</h2><p>Pending...</p></div></section>
         <section id="view-maintenance" class="view-section"><div class="card"><h2>Maintenance Tracker</h2><p>Pending...</p></div></section>
-        <section id="view-accidents" class="view-section"><div class="card"><h2>Accident Tracker</h2><p>Hola Alex!</p></div></section>
       </main>
     </div>
   </div>
@@ -511,9 +627,12 @@
 
     const GOOGLE_SHEET_DRIVERS_URL = "https://script.google.com/macros/s/AKfycby7-NkH3HuZF2dXsLf0WGCV76bdxSZ1YXZsbs785qrgIAoBA9eal7DIRYPWypwWRPpQkA/exec";
     const GOOGLE_SHEET_FLEET_URL = "https://script.google.com/macros/s/AKfycbyaQI9cnIy7qEYt8F0BNSG2y1HOPD-8kjKU12Y9LbDNq4aLaJ3wrVEbYp2e6Mzmnfsr/exec";
+    const GOOGLE_SHEET_ACCIDENTS_URL = "https://script.google.com/macros/s/AKfycbw7pMHgStWn01h_us5DdwndS20sWq9_Ox6uI-dQM1FsC_o8aHj0et96qwZxqD-lsPIs-Q/exec";
 
     let driversDatabase = [];
     let fleetDatabase = [];
+    let accidentsDatabase = [];
+    let loggedInUserName = "System User";
 
     const loginScreen = document.getElementById("login-screen");
     const erpApp = document.getElementById("erp-app");
@@ -538,7 +657,9 @@
       loginButton.textContent = "Signing in...";
 
       try {
-        const email = usernameInput.value.trim().toLowerCase() + "@taxiqaiddemand.com";
+        const usernameVal = usernameInput.value.trim().toLowerCase();
+        loggedInUserName = usernameVal;
+        const email = usernameVal + "@taxiqaiddemand.com";
         const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({ email, password: passwordInput.value });
         if (authError) throw authError;
 
@@ -553,6 +674,7 @@
         erpApp.style.display = "flex";
         await fetchDrivers();
         await fetchFleet();
+        await fetchAccidents();
       } catch (error) {
         errorMessage.textContent = "Unable to sign in. Check your credentials.";
         errorMessage.hidden = false;
@@ -584,6 +706,7 @@
         pageTitle.textContent = item.querySelector(".nav-text").textContent.trim();
         if (targetView === "drivers" && driversDatabase.length === 0) fetchDrivers();
         if (targetView === "fleet" && fleetDatabase.length === 0) fetchFleet();
+        if (targetView === "accidents" && accidentsDatabase.length === 0) fetchAccidents();
       });
     });
 
@@ -602,41 +725,200 @@
 
     async function fetchDrivers() {
       try {
-        document.getElementById("sync-status").textContent = "🔄 Syncing drivers with Google Sheets...";
-        document.getElementById("sync-status").style.color = "#0284c7";
-
         const res = await fetch(GOOGLE_SHEET_DRIVERS_URL);
         if (!res.ok) throw new Error("Network error");
         driversDatabase = await res.json();
-
-        document.getElementById("sync-status").textContent = `✅ Synced ${driversDatabase.length} driver record(s).`;
-        document.getElementById("sync-status").style.color = "#2e7d32";
-      } catch (e) {
-        console.error("Error fetching drivers", e);
-        document.getElementById("sync-status").textContent = "❌ Failed to load drivers.";
-        document.getElementById("sync-status").style.color = "#c62828";
-      }
+      } catch (e) { console.error("Error fetching drivers", e); }
     }
 
     async function fetchFleet() {
       try {
-        document.getElementById("fleet-sync-status").textContent = "🔄 Syncing fleet...";
-        document.getElementById("fleet-sync-status").style.color = "#0284c7";
-
         const res = await fetch(GOOGLE_SHEET_FLEET_URL);
         if (!res.ok) throw new Error("Network error");
         fleetDatabase = await res.json();
+      } catch (e) { console.error("Error fetching fleet", e); }
+    }
 
-        document.getElementById("fleet-sync-status").textContent = `✅ Synced ${fleetDatabase.length} vehicle(s).`;
-        document.getElementById("fleet-sync-status").style.color = "#2e7d32";
+    async function fetchAccidents() {
+      try {
+        document.getElementById("accident-sync-status").textContent = "🔄 Syncing accidents...";
+        document.getElementById("accident-sync-status").style.color = "#0284c7";
+
+        const res = await fetch(GOOGLE_SHEET_ACCIDENTS_URL);
+        if (!res.ok) throw new Error("Network error");
+        accidentsDatabase = await res.json();
+
+        document.getElementById("accident-sync-status").textContent = `✅ Synced ${accidentsDatabase.length} accident record(s).`;
+        document.getElementById("accident-sync-status").style.color = "#2e7d32";
+        renderAccidentsTable(accidentsDatabase);
       } catch (e) {
-        document.getElementById("fleet-sync-status").textContent = "❌ Failed to load fleet.";
-        document.getElementById("fleet-sync-status").style.color = "#c62828";
+        document.getElementById("accident-sync-status").textContent = "❌ Failed to load accidents.";
+        document.getElementById("accident-sync-status").style.color = "#c62828";
       }
     }
 
     document.getElementById("refresh-fleet-btn").addEventListener("click", fetchFleet);
     document.getElementById("refresh-db-btn").addEventListener("click", fetchDrivers);
+    document.getElementById("refresh-accidents-btn").addEventListener("click", fetchAccidents);
+
+    // --- ACCIDENT TRACKER LOGIC ---
+    const accidentSearchInput = document.getElementById("accident-search-input");
+    const toggleAccidentBtn = document.getElementById("toggle-accident-btn");
+    const accidentDropdown = document.getElementById("accident-dropdown");
+    const accidentsTableBody = document.getElementById("accidents-table-body");
+    const accidentCountBadge = document.getElementById("accident-count-badge");
+
+    function renderAccidentsTable(items) {
+      accidentsTableBody.innerHTML = "";
+      accidentCountBadge.textContent = `${items.length} records found`;
+
+      if (items.length === 0) {
+        accidentsTableBody.innerHTML = `<tr><td colspan="22" style="text-align: center; color: var(--text-muted); padding: 20px;">No accident records found.</td></tr>`;
+        return;
+      }
+
+      items.forEach(acc => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${acc["Accident ID"] || "-"}</td>
+          <td>${formatDateForDisplay(acc["Date"])}</td>
+          <td>${acc["Time"] || "-"}</td>
+          <td>${formatDateForDisplay(acc["Reporting Date"])}</td>
+          <td>${acc["Reporting Time"] || "-"}</td>
+          <td>${acc["Reported By"] || "-"}</td>
+          <td>${acc["Car Plate"] || "-"}</td>
+          <td>${acc["Car Model"] || "-"}</td>
+          <td>${acc["Driver Iqama"] || "-"}</td>
+          <td>${acc["Driver Name"] || "-"}</td>
+          <td>${acc["Accident Location"] || "-"}</td>
+          <td>${acc["Severity"] || "-"}</td>
+          <td>${acc["Injured"] || "-"}</td>
+          <td>${acc["Najm"] || "-"}</td>
+          <td>${acc["Najm Report Status"] || "-"}</td>
+          <td>${acc["Mistake Percentage"] !== undefined ? acc["Mistake Percentage"] + "%" : "-"}</td>
+          <td>${acc["Investigation Conducted"] || "-"}</td>
+          <td>${acc["Investigation Status"] || "-"}</td>
+          <td>${acc["Accident Type"] || "-"}</td>
+          <td>${acc["Accident Description"] || "-"}</td>
+          <td>${acc["Root Causes"] || "-"}</td>
+          <td>${acc["Damage Description"] || "-"}</td>
+        `;
+        accidentsTableBody.appendChild(tr);
+      });
+    }
+
+    function populateAccidentDropdown(items) {
+      accidentDropdown.innerHTML = "";
+      if (items.length === 0) { accidentDropdown.style.display = "none"; return; }
+      items.forEach(acc => {
+        const id = String(acc["Accident ID"] || "");
+        const plate = String(acc["Car Plate"] || "");
+        const driverName = String(acc["Driver Name"] || "");
+        const iqama = String(acc["Driver Iqama"] || "");
+        const div = document.createElement("div");
+        div.className = "custom-dropdown-item";
+        div.textContent = `${id} | Plate: ${plate} | ${driverName} (${iqama})`;
+        div.addEventListener("click", () => {
+          accidentSearchInput.value = id;
+          filterAccidentsTable();
+          accidentDropdown.style.display = "none";
+        });
+        accidentDropdown.appendChild(div);
+      });
+      accidentDropdown.style.display = "block";
+    }
+
+    function filterAccidentsTable() {
+      const query = accidentSearchInput.value.trim().toLowerCase();
+      const startDate = document.getElementById("filter-start-date").value;
+      const startTime = document.getElementById("filter-start-time").value || "00:00";
+      const endDate = document.getElementById("filter-end-date").value;
+      const endTime = document.getElementById("filter-end-time").value || "23:59";
+
+      const filtered = accidentsDatabase.filter(acc => {
+        // Filtro de texto
+        const matchQuery = query === "" || 
+          String(acc["Accident ID"] || "").toLowerCase().includes(query) ||
+          String(acc["Car Plate"] || "").toLowerCase().includes(query) ||
+          String(acc["Driver Iqama"] || "").toLowerCase().includes(query) ||
+          String(acc["Driver Name"] || "").toLowerCase().includes(query);
+
+        if (!matchQuery) return false;
+
+        // Filtro por fecha y hora del accidente
+        const accDate = formatDateForInput(acc["Date"]);
+        if (!accDate) return true;
+
+        if (startDate && startDate !== "") {
+          const fullAccDateTime = `${accDate}T${acc["Time"] || "00:00"}`;
+          const fullStartDateTime = `${startDate}T${startTime}`;
+          if (fullAccDateTime < fullStartDateTime) return false;
+        }
+
+        if (endDate && endDate !== "") {
+          const fullAccDateTime = `${accDate}T${acc["Time"] || "23:59"}`;
+          const fullEndDateTime = `${endDate}T${endTime}`;
+          if (fullAccDateTime > fullEndDateTime) return false;
+        }
+
+        return true;
+      });
+
+      renderAccidentsTable(filtered);
+    }
+
+    accidentSearchInput.addEventListener("input", () => {
+      const val = accidentSearchInput.value.trim().toLowerCase();
+      if (val === "") { renderAccidentsTable(accidentsDatabase); accidentDropdown.style.display = "none"; return; }
+      const matches = accidentsDatabase.filter(acc => 
+        String(acc["Accident ID"] || "").toLowerCase().includes(val) ||
+        String(acc["Car Plate"] || "").toLowerCase().includes(val) ||
+        String(acc["Driver Iqama"] || "").toLowerCase().includes(val) ||
+        String(acc["Driver Name"] || "").toLowerCase().includes(val)
+      );
+      populateAccidentDropdown(matches);
+      filterAccidentsTable();
+    });
+
+    toggleAccidentBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (accidentDropdown.style.display === "block") accidentDropdown.style.display = "none";
+      else populateAccidentDropdown(accidentsDatabase);
+    });
+
+    document.addEventListener("click", (e) => { if (!e.target.closest(".search-wrapper")) accidentDropdown.style.display = "none"; });
+
+    document.getElementById("filter-start-date").addEventListener("change", filterAccidentsTable);
+    document.getElementById("filter-start-time").addEventListener("change", filterAccidentsTable);
+    document.getElementById("filter-end-date").addEventListener("change", filterAccidentsTable);
+    document.getElementById("filter-end-time").addEventListener("change", filterAccidentsTable);
+
+    // Exportar Excel por Periodo
+    document.getElementById("export-accidents-date-btn").addEventListener("click", () => {
+      const startDate = document.getElementById("filter-start-date").value;
+      const startTime = document.getElementById("filter-start-time").value || "00:00";
+      const endDate = document.getElementById("filter-end-date").value;
+      const endTime = document.getElementById("filter-end-time").value || "23:59";
+
+      const filtered = accidentsDatabase.filter(acc => {
+        const accDate = formatDateForInput(acc["Date"]);
+        if (!accDate) return true;
+        if (startDate && startDate !== "") {
+          if (`${accDate}T${acc["Time"] || "00:00"}` < `${startDate}T${startTime}`) return false;
+        }
+        if (endDate && endDate !== "") {
+          if (`${accDate}T${acc["Time"] || "23:59"}` > `${endDate}T${endTime}`) return false;
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) { alert("No accident records match the selected period."); return; }
+
+      const worksheet = XLSX.utils.json_to_sheet(filtered);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Accident Tracker Period");
+      XLSX.writeFile(workbook, "Accident_Tracker_Period.xlsx");
+    });
 
     // --- EXPORT EXCEL LOGIC ---
     document.getElementById("export-fleet-excel-btn").addEventListener("click", () => {
@@ -741,9 +1023,7 @@
       document.getElementById("f-val-model").innerHTML = vehicle["Model"] || "-";
       document.getElementById("f-val-vin").innerHTML = vehicle["VIN"] || "-";
       document.getElementById("f-val-fuel").innerHTML = vehicle["Fuel Type"] || "-";
-      
       document.getElementById("f-val-assigned-drivers").innerHTML = driversHtml;
-
       document.getElementById("f-val-km").innerHTML = vehicle["Total KM"] || "-";
       document.getElementById("f-val-availability").innerHTML = currentAvailability;
       document.getElementById("f-val-accidents").innerHTML = vehicle["Accidents"] || "0";
@@ -976,8 +1256,6 @@
       cancelEditBtn.style.display = "inline-block";
 
       const d = currentActiveDriver;
-
-      // Solo se habilitan en modo edición los 5 campos solicitados: Phone Number, Arrangement, Shift, Car Plate, Status
       document.getElementById("val-phone").innerHTML = `<input type="text" id="edit-phone" value="${d["Phone Number"] || ''}">`;
       
       const arrVal = d["Arrangement"] || "";
