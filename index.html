@@ -918,6 +918,26 @@
       });
     });
 
+    // Función para obtener la fecha y hora actual exacta en KSA (Asia/Riyadh, UTC+3)
+    function getKSACurrentDateTime() {
+      const now = new Date();
+      const dateStr = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Riyadh',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).format(now);
+      
+      const timeStr = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Asia/Riyadh',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }).format(now);
+      
+      return { date: dateStr, time: timeStr };
+    }
+
     function formatDateForDisplay(d) {
       if (!d || String(d).trim() === "" || d === "Not Yet") return "-";
       let s = String(d);
@@ -1061,11 +1081,16 @@
       document.getElementById("add-acc-model").value = "";
       document.getElementById("add-acc-driver-name").value = "";
       
-      // Habilitar fecha y hora para nuevos registros
+      // Asignar fecha y hora actual de KSA por defecto
+      const ksaNow = getKSACurrentDateTime();
       const dateInput = document.getElementById("add-acc-date");
       const timeInput = document.getElementById("add-acc-time");
+      
+      dateInput.value = ksaNow.date;
       dateInput.disabled = false;
       dateInput.style.background = "#ffffff";
+
+      timeInput.value = ksaNow.time;
       timeInput.disabled = false;
       timeInput.style.background = "#ffffff";
 
@@ -1268,9 +1293,9 @@
       if (isEditingAccidentMode) {
         accidentData["Accident ID"] = accId;
       } else {
-        const now = new Date();
-        accidentData["Reporting Date"] = now.toISOString().split("T")[0];
-        accidentData["Reporting Time"] = now.toTimeString().split(" ")[0].substring(0, 5);
+        const ksaNow = getKSACurrentDateTime();
+        accidentData["Reporting Date"] = ksaNow.date;
+        accidentData["Reporting Time"] = ksaNow.time;
         accidentData["Reported By"] = loggedInUserName;
       }
 
