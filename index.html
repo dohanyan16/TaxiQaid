@@ -947,10 +947,20 @@
       };
     }
 
-    // ✅ FUNCIONES DE FECHAS CORREGIDAS PARA EVITAR EL DESFASE DE 1 DÍA
+    // ✅ FORMATO ESTRICTO DD/MM/YYYY PARA LA WEB
     function formatDateForDisplay(d) {
-      if (!d || String(d).trim() === "" || d === "Not Yet") return "-";
+      if (!d) return "-";
+      
+      if (d instanceof Date) {
+        if (isNaN(d.getTime())) return "-";
+        const day = String(d.getUTCDate()).padStart(2, '0');
+        const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const year = d.getUTCFullYear();
+        return `${day}/${month}/${year}`;
+      }
+
       let s = String(d).trim();
+      if (s === "" || s === "Not Yet") return "-";
       
       if (s.includes("T")) {
         const cleanDate = s.split("T")[0];
@@ -992,9 +1002,20 @@
       return s;
     }
 
+    // ✅ FORMATO ESTRICTO YYYY-MM-DD PARA LOS INPUTS DE TIPO DATE
     function formatDateForInput(d) {
-      if (!d || String(d).trim() === "" || d === "Not Yet") return "";
+      if (!d) return "";
+      
+      if (d instanceof Date) {
+        if (isNaN(d.getTime())) return "";
+        const day = String(d.getUTCDate()).padStart(2, '0');
+        const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const year = d.getUTCFullYear();
+        return `${year}-${month}-${day}`;
+      }
+
       let s = String(d).trim();
+      if (s === "" || s === "Not Yet") return "";
       
       if (s.includes("T")) return s.split("T")[0];
       if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
