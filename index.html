@@ -1637,10 +1637,10 @@
       document.getElementById("f-val-accidents").innerHTML = liveAccidentCount;
       document.getElementById("f-val-mantenimiento").innerHTML = formatDateForDisplay(vehicle["Last Maintenance"]);
       document.getElementById("f-val-oil").innerHTML = formatDateForDisplay(vehicle["Last Oil Change"]);
-      document.getElementById("f-val-ins-start").innerHTML = formatDateForDisplay(vehicle["Insurance Start Date"]);
-      document.getElementById("f-val-ins-exp").innerHTML = formatDateForDisplay(vehicle["Insurance Expiry Date"]);
-      document.getElementById("f-val-op-start").innerHTML = formatDateForDisplay(vehicle["Operation Card Start Date"]);
-      document.getElementById("f-val-op-exp").innerHTML = formatDateForDisplay(vehicle["Operation Card Expiry Date"]);
+      document.getElementById("f-val-ins-start").innerHTML = `<input type="text" value="${formatDateForDisplay(v["Insurance Start Date"])}" disabled style="background: #e9ecef; cursor: not-allowed;">`;
+      document.getElementById("f-val-ins-exp").innerHTML = `<input type="text" value="${formatDateForDisplay(v["Insurance Expiry Date"])}" disabled style="background: #e9ecef; cursor: not-allowed;">`;
+      document.getElementById("f-val-op-start").innerHTML = `<input type="text" value="${formatDateForDisplay(v["Operation Card Start Date"])}" disabled style="background: #e9ecef; cursor: not-allowed;">`;
+      document.getElementById("f-val-op-exp").innerHTML = `<input type="text" value="${formatDateForDisplay(v["Operation Card Expiry Date"])}" disabled style="background: #e9ecef; cursor: not-allowed;">`;
 
       fleetProfileContainer.style.display = "block";
     }
@@ -1707,10 +1707,10 @@
         "Accidents": v["Accidents"],
         "Last Maintenance": v["Last Maintenance"],
         "Last Oil Change": v["Last Oil Change"],
-        "Insurance Start Date": document.getElementById("edit-ins-start").value,
-        "Insurance Expiry Date": document.getElementById("edit-ins-exp").value,
-        "Operation Card Start Date": document.getElementById("edit-op-start").value,
-        "Operation Card Expiry Date": document.getElementById("edit-op-exp").value
+        "Insurance Start Date": v["Insurance Start Date"],
+        "Insurance Expiry Date": v["Insurance Expiry Date"],
+        "Operation Card Start Date": v["Operation Card Start Date"],
+        "Operation Card Expiry Date": v["Operation Card Expiry Date"]
       };
 
       editFleetBtn.disabled = true;
