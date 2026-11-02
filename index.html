@@ -947,15 +947,33 @@
       };
     }
 
+    // ✅ FUNCIONES DE FECHAS CORREGIDAS PARA EVITAR EL DESFASE DE 1 DÍA
     function formatDateForDisplay(d) {
       if (!d || String(d).trim() === "" || d === "Not Yet") return "-";
-      let s = String(d);
-      if (s.includes("T")) return s.split("T")[0];
-      if (s.length >= 10 && s.includes("-")) return s.substring(0, 10);
+      let s = String(d).trim();
+      
+      if (s.includes("T")) {
+        const cleanDate = s.split("T")[0];
+        const parts = cleanDate.split("-");
+        if (parts.length === 3) {
+          return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+        return cleanDate;
+      }
+      
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+        const parts = s.split("-");
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+
       const parsed = new Date(s);
       if (!isNaN(parsed.getTime())) {
-        return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Riyadh', year: 'numeric', month: '2-digit', day: '2-digit' }).format(parsed);
+        const day = String(parsed.getUTCDate()).padStart(2, '0');
+        const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
+        const year = parsed.getUTCFullYear();
+        return `${day}/${month}/${year}`;
       }
+      
       return s;
     }
 
@@ -976,12 +994,18 @@
 
     function formatDateForInput(d) {
       if (!d || String(d).trim() === "" || d === "Not Yet") return "";
-      let s = String(d);
+      let s = String(d).trim();
+      
       if (s.includes("T")) return s.split("T")[0];
-      if (s.length >= 10 && s.includes("-")) return s.substring(0, 10);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+      
       const parsed = new Date(s);
       if (isNaN(parsed.getTime())) return "";
-      return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Riyadh', year: 'numeric', month: '2-digit', day: '2-digit' }).format(parsed);
+      
+      const day = String(parsed.getUTCDate()).padStart(2, '0');
+      const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
+      const year = parsed.getUTCFullYear();
+      return `${year}-${month}-${day}`;
     }
 
     async function fetchDrivers() {
