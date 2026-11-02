@@ -315,7 +315,7 @@
     .status-badge { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
     .action-row { display: flex; gap: 12px; align-items: center; justify-content: space-between; }
 
-    /* Modal de Accidentes */
+    /* Modales generales */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -345,7 +345,7 @@
     .form-group { margin-bottom: 12px; }
     .form-group label { display: block; font-size: 12px; font-weight: bold; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; }
 
-    /* Tabla de Accident Tracker */
+    /* Tablas de Tracker / General */
     .tracker-table-container {
       width: 100%;
       max-height: 450px;
@@ -400,8 +400,7 @@
         <li class="active" data-view="dashboard"><a href="#"><span class="nav-text">Dashboard</span></a></li>
         <li data-view="fleet"><a href="#"><span class="nav-text">Fleet Management</span></a></li>
         <li data-view="drivers"><a href="#"><span class="nav-text">Drivers Management</span></a></li>
-        <li data-view="pretrip"><a href="#"><span class="nav-text">Pre-Trip Check</span></a></li>
-        <li data-view="posttrip"><a href="#"><span class="nav-text">Post-Trip Check</span></a></li>
+        <li data-view="tripcheck"><a href="#"><span class="nav-text">Trip Check</span></a></li>
         <li data-view="breakdowns"><a href="#"><span class="nav-text">Breakdowns Tracker</span></a></li>
         <li data-view="maintenance"><a href="#"><span class="nav-text">Maintenance Tracker</span></a></li>
         <li data-view="accidents"><a href="#"><span class="nav-text">Accident Tracker</span></a></li>
@@ -551,6 +550,67 @@
           </div>
         </section>
 
+        <!-- Trip Check View (Unified Pre-Trip & Post-Trip) -->
+        <section id="view-tripcheck" class="view-section">
+          <div class="card">
+            <div class="card-header-flex">
+              <div>
+                <h2>Trip Check Manager</h2>
+                <p style="margin-top: 5px; color: var(--text-muted);">Manage and log pre-trip & post-trip inspections. Click any record to edit.</p>
+              </div>
+              <div class="button-group-row">
+                <button id="open-add-tripcheck-modal" class="btn-primary" style="background: var(--success); width: auto; padding: 10px 16px;">➕ New Trip Check</button>
+                <button id="refresh-tripchecks-btn" class="btn-secondary">🔄 Refresh</button>
+                <button id="export-tripchecks-btn" class="btn-secondary" style="background: #217346; color: white;">📥 Export Excel</button>
+              </div>
+            </div>
+            <div id="tripcheck-sync-status" class="status-badge">Connecting to Google Sheets...</div>
+            
+            <div class="search-row" style="margin-top: 15px;">
+              <div class="search-wrapper">
+                <label style="font-size: 13px; font-weight: bold; color: var(--text-main);">Search Trip Check (Plate, Driver, Check ID)</label>
+                <div class="input-with-btn">
+                  <input type="text" id="tripcheck-search-input" placeholder="Type plate, driver or check ID..." autocomplete="off">
+                  <button type="button" id="toggle-tripcheck-btn" class="dropdown-arrow-btn">▼</button>
+                </div>
+                <div id="tripcheck-dropdown" class="custom-dropdown"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header-flex">
+              <h2>Trip Checks Overview</h2>
+              <span id="tripcheck-count-badge" style="font-size: 14px; font-weight: bold; color: var(--text-muted);">0 records found</span>
+            </div>
+            <div class="tracker-table-container" style="margin-top: 15px;">
+              <table class="tracker-table" id="tripchecks-table">
+                <thead>
+                  <tr>
+                    <th>Check ID</th>
+                    <th>Check Type</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Car Plate</th>
+                    <th>Driver Iqama</th>
+                    <th>Driver Name</th>
+                    <th>Odometer (KM)</th>
+                    <th>Tyres / Brakes</th>
+                    <th>Lights / Fluids</th>
+                    <th>Cleanliness</th>
+                    <th>Overall Status</th>
+                    <th>Checked By</th>
+                    <th>Remarks</th>
+                  </tr>
+                </thead>
+                <tbody id="tripchecks-table-body">
+                  <!-- Se llena dinámicamente -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
         <!-- Accident Tracker View -->
         <section id="view-accidents" class="view-section">
           <!-- Cuadro Superior: Buscador, Filtros, Refresh y Añadir Accidente -->
@@ -640,11 +700,113 @@
         </section>
 
         <!-- Placeholders -->
-        <section id="view-pretrip" class="view-section"><div class="card"><h2>Pre-Trip Check</h2><p>Pending...</p></div></section>
-        <section id="view-posttrip" class="view-section"><div class="card"><h2>Post-Trip Check</h2><p>Pending...</p></div></section>
         <section id="view-breakdowns" class="view-section"><div class="card"><h2>Breakdowns Tracker</h2><p>Pending...</p></div></section>
         <section id="view-maintenance" class="view-section"><div class="card"><h2>Maintenance Tracker</h2><p>Pending...</p></div></section>
       </main>
+    </div>
+  </div>
+
+  <!-- MODAL PARA AÑADIR / EDITAR TRIP CHECK -->
+  <div id="add-tripcheck-modal" class="modal-overlay">
+    <div class="modal-content">
+      <h2 id="modal-tripcheck-title">New Trip Check Inspection</h2>
+      <form id="add-tripcheck-form" style="margin-top: 20px;">
+        <input type="hidden" id="tc-id">
+
+        <div class="modal-grid">
+          <div class="form-group">
+            <label>Check Type</label>
+            <select id="tc-type" required>
+              <option value="Pre-Trip">Pre-Trip Check</option>
+              <option value="Post-Trip">Post-Trip Check</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Check Date</label>
+            <input type="date" id="tc-date" required>
+          </div>
+          <div class="form-group">
+            <label>Check Time</label>
+            <input type="time" id="tc-time" required>
+          </div>
+          <div class="form-group">
+            <label>Car Plate</label>
+            <select id="tc-plate" required>
+              <option value="">-- Select Plate --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Driver Iqama</label>
+            <select id="tc-iqama" required>
+              <option value="">-- Select Iqama --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Driver Name</label>
+            <input type="text" id="tc-driver-name" readonly style="background: #e9ecef;">
+          </div>
+          <div class="form-group">
+            <label>Odometer (KM)</label>
+            <input type="number" id="tc-odometer" min="0" placeholder="e.g. 45000" required>
+          </div>
+          <div class="form-group">
+            <label>Tyres & Wheels</label>
+            <select id="tc-tyres" required>
+              <option value="Pass">Pass</option>
+              <option value="Fail">Fail</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Brakes & Steering</label>
+            <select id="tc-brakes" required>
+              <option value="Pass">Pass</option>
+              <option value="Fail">Fail</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Lights & Indicators</label>
+            <select id="tc-lights" required>
+              <option value="Pass">Pass</option>
+              <option value="Fail">Fail</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Fluid Levels / Oil</label>
+            <select id="tc-fluids" required>
+              <option value="Pass">Pass</option>
+              <option value="Fail">Fail</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Cleanliness / Interior</label>
+            <select id="tc-clean" required>
+              <option value="Pass">Pass</option>
+              <option value="Fail">Fail</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Overall Status</label>
+            <select id="tc-status" required>
+              <option value="Passed">Passed (Ready)</option>
+              <option value="Needs Attention">Needs Attention</option>
+              <option value="Failed (Grounded)">Failed (Grounded)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 10px;">
+          <label>Remarks / Notes</label>
+          <textarea id="tc-remarks" rows="2" placeholder="Optional notes or observations..."></textarea>
+        </div>
+
+        <div class="action-row" style="margin-top: 20px;">
+          <div style="display: flex; gap: 12px;">
+            <button type="submit" id="save-tripcheck-btn" class="btn-primary" style="background: var(--success); width: auto; padding: 12px 20px;">Save Inspection Record</button>
+            <button type="button" id="delete-tripcheck-btn" class="btn-secondary" style="background: var(--danger); color: white; display: none;">🗑️ Delete Record</button>
+          </div>
+          <button type="button" id="close-add-tripcheck-modal" class="btn-secondary" style="width: auto;">Cancel</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -841,13 +1003,19 @@
     const GOOGLE_SHEET_DRIVERS_URL = "https://script.google.com/macros/s/AKfycby7-NkH3HuZF2dXsLf0WGCV76bdxSZ1YXZsbs785qrgIAoBA9eal7DIRYPWypwWRPpQkA/exec";
     const GOOGLE_SHEET_FLEET_URL = "https://script.google.com/macros/s/AKfycbyaQI9cnIy7qEYt8F0BNSG2y1HOPD-8kjKU12Y9LbDNq4aLaJ3wrVEbYp2e6Mzmnfsr/exec";
     const GOOGLE_SHEET_ACCIDENTS_URL = "https://script.google.com/macros/s/AKfycbw7pMHgStWn01h_us5DdwndS20sWq9_Ox6uI-dQM1FsC_o8aHj0et96qwZxqD-lsPIs-Q/exec";
+    
+    // ⚠️ REEMPLAZA ESTA URL CON TU NUEVO DEPLIEGUE DE TRIP CHECK
+    const GOOGLE_SHEET_TRIPCHECK_URL = "https://script.google.com/macros/s/TU_URL_DE_TRIP_CHECK_aqui/exec";
 
     let driversDatabase = [];
     let fleetDatabase = [];
     let accidentsDatabase = [];
+    let tripChecksDatabase = [];
     let loggedInUserName = "System User";
     let isEditingAccidentMode = false;
     let originalAccidentPlate = "";
+    
+    let isEditingTripCheckMode = false;
 
     const loginScreen = document.getElementById("login-screen");
     const erpApp = document.getElementById("erp-app");
@@ -890,6 +1058,7 @@
         await fetchDrivers();
         await fetchFleet();
         await fetchAccidents();
+        await fetchTripChecks();
       } catch (error) {
         errorMessage.textContent = "Unable to sign in. Check your credentials.";
         errorMessage.hidden = false;
@@ -922,6 +1091,7 @@
         if (targetView === "drivers" && driversDatabase.length === 0) fetchDrivers();
         if (targetView === "fleet" && fleetDatabase.length === 0) fetchFleet();
         if (targetView === "accidents" && accidentsDatabase.length === 0) fetchAccidents();
+        if (targetView === "tripcheck" && tripChecksDatabase.length === 0) fetchTripChecks();
       });
     });
 
@@ -950,7 +1120,6 @@
     // ✅ FORMATO ESTRICTO DD/MM/YYYY PARA LA WEB
     function formatDateForDisplay(d) {
       if (!d) return "-";
-      
       if (d instanceof Date) {
         if (isNaN(d.getTime())) return "-";
         const day = String(d.getUTCDate()).padStart(2, '0');
@@ -965,9 +1134,7 @@
       if (s.includes("T")) {
         const cleanDate = s.split("T")[0];
         const parts = cleanDate.split("-");
-        if (parts.length === 3) {
-          return `${parts[2]}/${parts[1]}/${parts[0]}`;
-        }
+        if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
         return cleanDate;
       }
       
@@ -1002,10 +1169,8 @@
       return s;
     }
 
-    // ✅ FORMATO ESTRICTO YYYY-MM-DD PARA LOS INPUTS DE TIPO DATE
     function formatDateForInput(d) {
       if (!d) return "";
-      
       if (d instanceof Date) {
         if (isNaN(d.getTime())) return "";
         const day = String(d.getUTCDate()).padStart(2, '0');
@@ -1016,7 +1181,6 @@
 
       let s = String(d).trim();
       if (s === "" || s === "Not Yet") return "";
-      
       if (s.includes("T")) return s.split("T")[0];
       if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
       
@@ -1041,7 +1205,6 @@
         document.getElementById("sync-status").textContent = `✅ Synced ${driversDatabase.length} driver record(s).`;
         document.getElementById("sync-status").style.color = "#2e7d32";
       } catch (e) {
-        console.error("Error fetching drivers", e);
         document.getElementById("sync-status").textContent = "❌ Failed to load drivers.";
         document.getElementById("sync-status").style.color = "#c62828";
       }
@@ -1086,6 +1249,24 @@
       }
     }
 
+    async function fetchTripChecks() {
+      try {
+        document.getElementById("tripcheck-sync-status").textContent = "🔄 Syncing trip checks...";
+        document.getElementById("tripcheck-sync-status").style.color = "#0284c7";
+
+        const res = await fetch(GOOGLE_SHEET_TRIPCHECK_URL);
+        if (!res.ok) throw new Error("Network error");
+        tripChecksDatabase = await res.json();
+
+        document.getElementById("tripcheck-sync-status").textContent = `✅ Synced ${tripChecksDatabase.length} check record(s).`;
+        document.getElementById("tripcheck-sync-status").style.color = "#2e7d32";
+        renderTripChecksTable(tripChecksDatabase);
+      } catch (e) {
+        document.getElementById("tripcheck-sync-status").textContent = "❌ Failed to load trip checks.";
+        document.getElementById("tripcheck-sync-status").style.color = "#c62828";
+      }
+    }
+
     function updateAllFleetAccidentCounts() {
       if (fleetDatabase.length === 0 || accidentsDatabase.length === 0) return;
       fleetDatabase.forEach(v => {
@@ -1117,6 +1298,246 @@
     document.getElementById("refresh-fleet-btn").addEventListener("click", fetchFleet);
     document.getElementById("refresh-db-btn").addEventListener("click", fetchDrivers);
     document.getElementById("refresh-accidents-btn").addEventListener("click", fetchAccidents);
+    document.getElementById("refresh-tripchecks-btn").addEventListener("click", fetchTripChecks);
+
+    // --- TRIP CHECK MODAL & LOGIC ---
+    const tripCheckModal = document.getElementById("add-tripcheck-modal");
+    const openAddTripCheckBtn = document.getElementById("open-add-tripcheck-modal");
+    const closeAddTripCheckBtn = document.getElementById("close-add-tripcheck-modal");
+    const addTripCheckForm = document.getElementById("add-tripcheck-form");
+    const modalTripCheckTitle = document.getElementById("modal-tripcheck-title");
+    const saveTripCheckBtn = document.getElementById("save-tripcheck-btn");
+    const deleteTripCheckBtn = document.getElementById("delete-tripcheck-btn");
+
+    const tripCheckSearchInput = document.getElementById("tripcheck-search-input");
+    const toggleTripCheckBtn = document.getElementById("toggle-tripcheck-btn");
+    const tripCheckDropdown = document.getElementById("tripcheck-dropdown");
+    const tripChecksTableBody = document.getElementById("tripchecks-table-body");
+    const tripCheckCountBadge = document.getElementById("tripcheck-count-badge");
+
+    async function prepareTripCheckModalSelects() {
+      if (fleetDatabase.length === 0 || driversDatabase.length === 0) {
+        await Promise.all([fetchFleet(), fetchDrivers()]);
+      }
+
+      const plateSelect = document.getElementById("tc-plate");
+      plateSelect.innerHTML = `<option value="">-- Select Plate --</option>`;
+      fleetDatabase.forEach(v => {
+        const plate = v["Plate"] || v["plate"];
+        const model = v["Model"] || v["model"] || "";
+        if (plate) {
+          plateSelect.innerHTML += `<option value="${plate}">${plate} (${model})</option>`;
+        }
+      });
+
+      const iqamaSelect = document.getElementById("tc-iqama");
+      iqamaSelect.innerHTML = `<option value="">-- Select Iqama --</option>`;
+      driversDatabase.forEach(d => {
+        const iqama = d["Iqama Number"] || d["iqama"] || "";
+        const name = d["Full Name"] || d["name"] || "";
+        if (iqama) {
+          iqamaSelect.innerHTML += `<option value="${iqama}">${iqama} - ${name}</option>`;
+        }
+      });
+    }
+
+    openAddTripCheckBtn.addEventListener("click", async () => {
+      isEditingTripCheckMode = false;
+      modalTripCheckTitle.textContent = "New Trip Check Inspection";
+      saveTripCheckBtn.textContent = "Save Inspection Record";
+      saveTripCheckBtn.style.background = "var(--success)";
+      deleteTripCheckBtn.style.display = "none";
+
+      await prepareTripCheckModalSelects();
+      addTripCheckForm.reset();
+      document.getElementById("tc-id").value = "";
+
+      const ksaNow = getKSACurrentDateTime();
+      document.getElementById("tc-date").value = ksaNow.date;
+      document.getElementById("tc-time").value = ksaNow.time;
+
+      tripCheckModal.style.display = "flex";
+    });
+
+    async function openEditTripCheckModal(tc) {
+      isEditingTripCheckMode = true;
+      modalTripCheckTitle.textContent = `Edit Check: ${tc["Check ID"] || tc["check id"] || ""}`;
+      saveTripCheckBtn.textContent = "💾 Update Inspection Record";
+      saveTripCheckBtn.style.background = "#0284c7";
+      deleteTripCheckBtn.style.display = "inline-block";
+
+      await prepareTripCheckModalSelects();
+
+      document.getElementById("tc-id").value = tc["Check ID"] || tc["check id"] || "";
+      document.getElementById("tc-type").value = tc["Check Type"] || tc["check type"] || "Pre-Trip";
+      document.getElementById("tc-date").value = formatDateForInput(tc["Date"] || tc["date"]);
+      document.getElementById("tc-time").value = formatTimeForDisplay(tc["Time"] || tc["time"]);
+      document.getElementById("tc-plate").value = tc["Car Plate"] || tc["car plate"] || "";
+      document.getElementById("tc-iqama").value = tc["Driver Iqama"] || tc["driver iqama"] || "";
+      document.getElementById("tc-driver-name").value = tc["Driver Name"] || tc["driver name"] || "";
+      document.getElementById("tc-odometer").value = tc["Odometer (KM)"] || tc["odometer (km)"] || "";
+      document.getElementById("tc-tyres").value = tc["Tyres / Brakes"] || tc["tyres / brakes"] || "Pass";
+      document.getElementById("tc-brakes").value = tc["Brakes & Steering"] || tc["brakes & steering"] || "Pass";
+      document.getElementById("tc-lights").value = tc["Lights / Fluids"] || tc["lights / fluids"] || "Pass";
+      document.getElementById("tc-fluids").value = tc["Fluid Levels / Oil"] || tc["fluid levels / oil"] || "Pass";
+      document.getElementById("tc-clean").value = tc["Cleanliness"] || tc["cleanliness"] || "Pass";
+      document.getElementById("tc-status").value = tc["Overall Status"] || tc["overall status"] || "Passed";
+      document.getElementById("tc-remarks").value = tc["Remarks"] || tc["remarks"] || "";
+
+      tripCheckModal.style.display = "flex";
+    }
+
+    closeAddTripCheckBtn.addEventListener("click", () => {
+      tripCheckModal.style.display = "none";
+    });
+
+    document.getElementById("tc-plate").addEventListener("change", (e) => {
+      const selectedPlate = e.target.value;
+      const vehicle = fleetDatabase.find(v => String(v["Plate"] || v["plate"] || "").trim() === String(selectedPlate).trim());
+      if (vehicle && (vehicle["Total KM"] || vehicle["total km"])) {
+        document.getElementById("tc-odometer").value = vehicle["Total KM"] || vehicle["total km"];
+      }
+    });
+
+    document.getElementById("tc-iqama").addEventListener("change", (e) => {
+      const selectedIqama = e.target.value;
+      const driver = driversDatabase.find(d => String(d["Iqama Number"] || d["iqama"] || "").trim() === String(selectedIqama).trim());
+      document.getElementById("tc-driver-name").value = driver ? (driver["Full Name"] || driver["name"] || "") : "";
+    });
+
+    addTripCheckForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      saveTripCheckBtn.disabled = true;
+      saveTripCheckBtn.textContent = isEditingTripCheckMode ? "Updating..." : "Saving...";
+
+      const checkData = {
+        action: isEditingTripCheckMode ? "update" : "create",
+        "Check Type": document.getElementById("tc-type").value,
+        "Date": document.getElementById("tc-date").value,
+        "Time": document.getElementById("tc-time").value,
+        "Car Plate": document.getElementById("tc-plate").value,
+        "Driver Iqama": document.getElementById("tc-iqama").value,
+        "Driver Name": document.getElementById("tc-driver-name").value,
+        "Odometer (KM)": parseInt(document.getElementById("tc-odometer").value, 10) || 0,
+        "Tyres / Brakes": document.getElementById("tc-tyres").value,
+        "Brakes & Steering": document.getElementById("tc-brakes").value,
+        "Lights / Fluids": document.getElementById("tc-lights").value,
+        "Fluid Levels / Oil": document.getElementById("tc-fluids").value,
+        "Cleanliness": document.getElementById("tc-clean").value,
+        "Overall Status": document.getElementById("tc-status").value,
+        "Checked By": loggedInUserName,
+        "Remarks": document.getElementById("tc-remarks").value.trim()
+      };
+
+      if (isEditingTripCheckMode) {
+        checkData["Check ID"] = document.getElementById("tc-id").value;
+      }
+
+      try {
+        const res = await fetch(GOOGLE_SHEET_TRIPCHECK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify(checkData)
+        });
+        const resData = await res.json();
+
+        if (resData.status === "success") {
+          await fetchTripChecks();
+          tripCheckModal.style.display = "none";
+          alert(isEditingTripCheckMode ? "Trip check updated successfully!" : "Trip check logged successfully!");
+        } else {
+          alert("Error: " + resData.message);
+        }
+      } catch (err) {
+        alert("Failed to communicate with Google Sheets.");
+      } finally {
+        saveTripCheckBtn.disabled = false;
+        saveTripCheckBtn.textContent = isEditingTripCheckMode ? "💾 Update Inspection Record" : "Save Inspection Record";
+      }
+    });
+
+    deleteTripCheckBtn.addEventListener("click", async () => {
+      const checkId = document.getElementById("tc-id").value;
+      if (!confirm(`Are you sure you want to delete inspection record "${checkId}"?`)) return;
+
+      deleteTripCheckBtn.disabled = true;
+      deleteTripCheckBtn.textContent = "Deleting...";
+
+      try {
+        const res = await fetch(GOOGLE_SHEET_TRIPCHECK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify({ action: "delete", "Check ID": checkId })
+        });
+        const resData = await res.json();
+
+        if (resData.status === "success") {
+          tripCheckModal.style.display = "none";
+          alert("Inspection record deleted successfully!");
+          await fetchTripChecks();
+        } else {
+          alert("Error: " + resData.message);
+        }
+      } catch (err) {
+        alert("Failed to communicate with Google Sheets.");
+      } finally {
+        deleteTripCheckBtn.disabled = false;
+        deleteTripCheckBtn.textContent = "🗑️ Delete Record";
+      }
+    });
+
+    function renderTripChecksTable(items) {
+      tripChecksTableBody.innerHTML = "";
+      tripCheckCountBadge.textContent = `${items.length} records found`;
+
+      if (items.length === 0) {
+        tripChecksTableBody.innerHTML = `<tr><td colspan="14" style="text-align: center; color: var(--text-muted); padding: 20px;">No trip check records found.</td></tr>`;
+        return;
+      }
+
+      items.forEach(tc => {
+        const tr = document.createElement("tr");
+        tr.title = "Click to edit inspection details";
+        tr.innerHTML = `
+          <td>${tc["Check ID"] || tc["check id"] || "-"}</td>
+          <td><strong>${tc["Check Type"] || tc["check type"] || "-"}</strong></td>
+          <td>${formatDateForDisplay(tc["Date"] || tc["date"])}</td>
+          <td>${formatTimeForDisplay(tc["Time"] || tc["time"])}</td>
+          <td>${tc["Car Plate"] || tc["car plate"] || "-"}</td>
+          <td>${tc["Driver Iqama"] || tc["driver iqama"] || "-"}</td>
+          <td>${tc["Driver Name"] || tc["driver name"] || "-"}</td>
+          <td>${tc["Odometer (KM)"] !== undefined ? tc["Odometer (KM)"] : (tc["odometer (km)"] || "-")}</td>
+          <td>${tc["Tyres / Brakes"] || tc["tyres / brakes"] || "-"}</td>
+          <td>${tc["Lights / Fluids"] || tc["lights / fluids"] || "-"}</td>
+          <td>${tc["Cleanliness"] || tc["cleanliness"] || "-"}</td>
+          <td><span style="font-weight: bold; color: ${ (tc["Overall Status"] || tc["overall status"]) === 'Passed' ? 'var(--success)' : 'var(--danger)' }">${tc["Overall Status"] || tc["overall status"] || "-"}</span></td>
+          <td>${tc["Checked By"] || tc["checked by"] || "-"}</td>
+          <td>${tc["Remarks"] || tc["remarks"] || "-"}</td>
+        `;
+        tr.addEventListener("click", () => openEditTripCheckModal(tc));
+        tripChecksTableBody.appendChild(tr);
+      });
+    }
+
+    tripCheckSearchInput.addEventListener("input", () => {
+      const val = tripCheckSearchInput.value.trim().toLowerCase();
+      if (val === "") { renderTripChecksTable(tripChecksDatabase); return; }
+      const filtered = tripChecksDatabase.filter(tc =>
+        String(tc["Check ID"] || tc["check id"] || "").toLowerCase().includes(val) ||
+        String(tc["Car Plate"] || tc["car plate"] || "").toLowerCase().includes(val) ||
+        String(tc["Driver Name"] || tc["driver name"] || "").toLowerCase().includes(val) ||
+        String(tc["Driver Iqama"] || tc["driver iqama"] || "").toLowerCase().includes(val)
+      );
+      renderTripChecksTable(filtered);
+    });
+
+    document.getElementById("export-tripchecks-btn").addEventListener("click", () => {
+      if (tripChecksDatabase.length === 0) { alert("No trip check data available to export."); return; }
+      const worksheet = XLSX.utils.json_to_sheet(tripChecksDatabase);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Trip Check Database");
+      XLSX.writeFile(workbook, "Trip_Check_Database.xlsx");
+    });
 
     // --- ACCIDENT TRACKER LOGIC ---
     const accidentSearchInput = document.getElementById("accident-search-input");
@@ -1293,9 +1714,7 @@
           addAccidentModal.style.display = "none";
           alert("Accident record deleted successfully!");
           await fetchAccidents();
-          if (targetPlate) {
-            await recountAndSyncVehicle(targetPlate);
-          }
+          if (targetPlate) await recountAndSyncVehicle(targetPlate);
         } else {
           alert("Error: " + resData.message);
         }
@@ -1664,9 +2083,7 @@
       }
 
       let currentAvailability = vehicle["Availability"] || vehicle["availability"] || "Unassigned";
-      if (assignedDrivers.length > 0) {
-        currentAvailability = "Assigned";
-      }
+      if (assignedDrivers.length > 0) currentAvailability = "Assigned";
 
       document.getElementById("profile-vehicle-name").textContent = plateStr + " - Profile";
       document.getElementById("f-val-plate").innerHTML = plateStr || "-";
@@ -1724,7 +2141,6 @@
       }
       document.getElementById("f-val-availability").innerHTML = availabilityHtml;
 
-      // Fechas de Seguro y Tarjeta de Operación BLOQUEADAS
       document.getElementById("f-val-ins-start").innerHTML = `<input type="text" value="${formatDateForDisplay(v["Insurance Start Date"] || v["insurance start date"])}" disabled style="background: #e9ecef; cursor: not-allowed;">`;
       document.getElementById("f-val-ins-exp").innerHTML = `<input type="text" value="${formatDateForDisplay(v["Insurance Expiry Date"] || v["insurance expiry date"])}" disabled style="background: #e9ecef; cursor: not-allowed;">`;
       document.getElementById("f-val-op-start").innerHTML = `<input type="text" value="${formatDateForDisplay(v["Operation Card Start Date"] || v["operation card start date"])}" disabled style="background: #e9ecef; cursor: not-allowed;">`;
@@ -1738,9 +2154,7 @@
       const assignedDrivers = driversDatabase.filter(d => String(d["Car Plate"] || d["car plate"] || "").trim().toLowerCase() === vehiclePlate);
       
       let finalAvailability = document.getElementById("edit-availability").value;
-      if (assignedDrivers.length > 0) {
-        finalAvailability = "Assigned";
-      }
+      if (assignedDrivers.length > 0) finalAvailability = "Assigned";
 
       const updatedVehicle = {
         "Plate": plateStr,
