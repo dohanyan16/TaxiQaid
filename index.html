@@ -330,20 +330,42 @@
       background: white;
       border-radius: 12px;
       width: 100%;
-      max-width: 800px;
+      max-width: 650px;
       max-height: 90vh;
       overflow-y: auto;
       padding: 30px;
       box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     }
-    .modal-grid {
+    
+    /* Wizard / Step styles */
+    .wizard-step { display: none; }
+    .wizard-step.active-step { display: block; }
+    .wizard-step-title { font-size: 18px; font-weight: bold; color: var(--text-main); margin-bottom: 15px; border-bottom: 2px solid var(--primary); padding-bottom: 8px; }
+    .wizard-progress { font-size: 13px; font-weight: bold; color: var(--primary); margin-bottom: 15px; }
+    
+    .choice-boxes-container {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      grid-template-columns: 1fr 1fr;
       gap: 15px;
-      margin-top: 15px;
+      margin: 20px 0;
     }
-    .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; font-size: 12px; font-weight: bold; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; }
+    .choice-box {
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--text-main);
+      background: #fafafa;
+      transition: all 0.2s;
+    }
+    .choice-box:hover { border-color: var(--primary); background: #fdf2e9; }
+    .choice-box.selected { border-color: var(--primary); background: var(--primary); color: white; }
+
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-size: 13px; font-weight: bold; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; }
 
     /* Tablas de Tracker / General */
     .tracker-table-container {
@@ -550,13 +572,13 @@
           </div>
         </section>
 
-        <!-- Trip Check View (Unified Pre-Trip & Post-Trip) -->
+        <!-- Trip Check View -->
         <section id="view-tripcheck" class="view-section">
           <div class="card">
             <div class="card-header-flex">
               <div>
                 <h2>Trip Check Manager</h2>
-                <p style="margin-top: 5px; color: var(--text-muted);">Manage and log pre-trip & post-trip inspections. Click any record to edit.</p>
+                <p style="margin-top: 5px; color: var(--text-muted);">Manage and log pre-trip & post-trip inspections step by step.</p>
               </div>
               <div class="button-group-row">
                 <button id="open-add-tripcheck-modal" class="btn-primary" style="background: var(--success); width: auto; padding: 10px 16px;">➕ New Trip Check</button>
@@ -595,17 +617,12 @@
                     <th>Driver Iqama</th>
                     <th>Driver Name</th>
                     <th>Odometer (KM)</th>
-                    <th>Tyres / Brakes</th>
-                    <th>Lights / Fluids</th>
-                    <th>Cleanliness</th>
                     <th>Overall Status</th>
                     <th>Checked By</th>
                     <th>Remarks</th>
                   </tr>
                 </thead>
-                <tbody id="tripchecks-table-body">
-                  <!-- Se llena dinámicamente -->
-                </tbody>
+                <tbody id="tripchecks-table-body"></tbody>
               </table>
             </div>
           </div>
@@ -613,7 +630,6 @@
 
         <!-- Accident Tracker View -->
         <section id="view-accidents" class="view-section">
-          <!-- Cuadro Superior: Buscador, Filtros, Refresh y Añadir Accidente -->
           <div class="card">
             <div class="card-header-flex">
               <div>
@@ -657,7 +673,6 @@
             </div>
           </div>
 
-          <!-- Cuadro Inferior: Vista General y Desplazamiento -->
           <div class="card">
             <div class="card-header-flex">
               <h2>Accidents Overview</h2>
@@ -691,9 +706,7 @@
                     <th>Damage Description</th>
                   </tr>
                 </thead>
-                <tbody id="accidents-table-body">
-                  <!-- Se llena dinámicamente -->
-                </tbody>
+                <tbody id="accidents-table-body"></tbody>
               </table>
             </div>
           </div>
@@ -706,84 +719,298 @@
     </div>
   </div>
 
-  <!-- MODAL PARA AÑADIR / EDITAR TRIP CHECK -->
+  <!-- MODAL ASISTENTE PASO A PASO PARA TRIP CHECK -->
   <div id="add-tripcheck-modal" class="modal-overlay">
     <div class="modal-content">
-      <h2 id="modal-tripcheck-title">New Trip Check Inspection</h2>
-      <form id="add-tripcheck-form" style="margin-top: 20px;">
+      <div class="wizard-progress" id="wizard-progress-indicator">Step 1 of 27</div>
+      
+      <form id="add-tripcheck-form">
         <input type="hidden" id="tc-id">
 
-        <div class="modal-grid">
-          <div class="form-group">
-            <label>Check Type</label>
-            <select id="tc-type" required>
-              <option value="Pre-Trip">Pre-Trip Check</option>
-              <option value="Post-Trip">Post-Trip Check</option>
-            </select>
+        <!-- STEP 1: Check Type -->
+        <div class="wizard-step active-step" data-step="1">
+          <div class="wizard-step-title">Select Inspection Type</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc-type', 'Pre-Trip', this)">Pre-Trip Check</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc-type', 'Post-Trip', this)">Post-Trip Check</div>
+          </div>
+          <input type="hidden" id="tc-type" value="Pre-Trip" required>
+        </div>
+
+        <!-- STEP 2: Car Plate & Driver & Odometer -->
+        <div class="wizard-step" data-step="2">
+          <div class="wizard-step-title">Vehicle & Driver Assignment</div>
+          <div class="form-group search-wrapper">
+            <label>Car Plate (Fleet)</label>
+            <div class="input-with-btn">
+              <input type="text" id="tc-plate-search" placeholder="Type or select plate..." autocomplete="off">
+              <button type="button" id="toggle-tc-plate-btn" class="dropdown-arrow-btn">▼</button>
+            </div>
+            <div id="tc-plate-dropdown" class="custom-dropdown"></div>
+            <input type="hidden" id="tc-plate" required>
+          </div>
+          <div class="form-group search-wrapper">
+            <label>Driver Iqama & Name</label>
+            <div class="input-with-btn">
+              <input type="text" id="tc-iqama-search" placeholder="Type or select driver iqama/name..." autocomplete="off">
+              <button type="button" id="toggle-tc-iqama-btn" class="dropdown-arrow-btn">▼</button>
+            </div>
+            <div id="tc-iqama-dropdown" class="custom-dropdown"></div>
+            <input type="hidden" id="tc-iqama" required>
           </div>
           <div class="form-group">
-            <label>Check Date</label>
-            <input type="date" id="tc-date" required>
-          </div>
-          <div class="form-group">
-            <label>Check Time</label>
-            <input type="time" id="tc-time" required>
-          </div>
-          <div class="form-group">
-            <label>Car Plate</label>
-            <select id="tc-plate" required>
-              <option value="">-- Select Plate --</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Driver Iqama</label>
-            <select id="tc-iqama" required>
-              <option value="">-- Select Iqama --</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Driver Name</label>
+            <label>Selected Driver Name</label>
             <input type="text" id="tc-driver-name" readonly style="background: #e9ecef;">
           </div>
           <div class="form-group">
             <label>Odometer (KM)</label>
             <input type="number" id="tc-odometer" min="0" placeholder="e.g. 45000" required>
           </div>
-          <div class="form-group">
-            <label>Tyres & Wheels</label>
-            <select id="tc-tyres" required>
-              <option value="Pass">Pass</option>
-              <option value="Fail">Fail</option>
-            </select>
+        </div>
+
+        <!-- STEP 3: Valid Documents -->
+        <div class="wizard-step" data-step="3">
+          <div class="wizard-step-title">Driver has all valid documents?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_documents', 'Yes', this)">Yes</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_documents', 'No', this)">No</div>
           </div>
-          <div class="form-group">
-            <label>Brakes & Steering</label>
-            <select id="tc-brakes" required>
-              <option value="Pass">Pass</option>
-              <option value="Fail">Fail</option>
-            </select>
+          <input type="hidden" id="tc_documents" value="Yes" required>
+        </div>
+
+        <!-- STEP 4: Required Uniform -->
+        <div class="wizard-step" data-step="4">
+          <div class="wizard-step-title">Driver wearing the required uniform?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_uniform', 'Yes', this)">Yes</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_uniform', 'No', this)">No</div>
           </div>
-          <div class="form-group">
-            <label>Lights & Indicators</label>
-            <select id="tc-lights" required>
-              <option value="Pass">Pass</option>
-              <option value="Fail">Fail</option>
-            </select>
+          <input type="hidden" id="tc_uniform" value="Yes" required>
+        </div>
+
+        <!-- STEP 5: Doors -->
+        <div class="wizard-step" data-step="5">
+          <div class="wizard-step-title">All doors working properly (front / rear)?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_doors', 'Pass', this)">Pass</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_doors', 'Fail', this)">Fail</div>
           </div>
-          <div class="form-group">
-            <label>Fluid Levels / Oil</label>
-            <select id="tc-fluids" required>
-              <option value="Pass">Pass</option>
-              <option value="Fail">Fail</option>
-            </select>
+          <input type="hidden" id="tc_doors" value="Pass" required>
+        </div>
+
+        <!-- STEP 6: Trunk -->
+        <div class="wizard-step" data-step="6">
+          <div class="wizard-step-title">Trunk opens and is in working condition?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_trunk', 'Pass', this)">Pass</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_trunk', 'Fail', this)">Fail</div>
           </div>
-          <div class="form-group">
-            <label>Cleanliness / Interior</label>
-            <select id="tc-clean" required>
-              <option value="Pass">Pass</option>
-              <option value="Fail">Fail</option>
-            </select>
+          <input type="hidden" id="tc_trunk" value="Pass" required>
+        </div>
+
+        <!-- STEP 7: Bonnet -->
+        <div class="wizard-step" data-step="7">
+          <div class="wizard-step-title">Car bonnet is in working condition?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_bonnet', 'Pass', this)">Pass</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_bonnet', 'Fail', this)">Fail</div>
           </div>
+          <input type="hidden" id="tc_bonnet" value="Pass" required>
+        </div>
+
+        <!-- STEP 8: Dashboard -->
+        <div class="wizard-step" data-step="8">
+          <div class="wizard-step-title">Dashboard is undamaged and buttons are functioning?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_dashboard', 'Pass', this)">Pass</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_dashboard', 'Fail', this)">Fail</div>
+          </div>
+          <input type="hidden" id="tc_dashboard" value="Pass" required>
+        </div>
+
+        <!-- STEP 9: Mirrors -->
+        <div class="wizard-step" data-step="9">
+          <div class="wizard-step-title">Mirrors are okay and correctly adjusted?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_mirrors', 'Pass', this)">Pass</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_mirrors', 'Fail', this)">Fail</div>
+          </div>
+          <input type="hidden" id="tc_mirrors" value="Pass" required>
+        </div>
+
+        <!-- STEP 10: Horn -->
+        <div class="wizard-step" data-step="10">
+          <div class="wizard-step-title">Horn is working properly?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_horn', 'Pass', this)">Pass</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_horn', 'Fail', this)">Fail</div>
+          </div>
+          <input type="hidden" id="tc_horn" value="Pass" required>
+        </div>
+
+        <!-- STEP 11: Seats & Seat Belts -->
+        <div class="wizard-step" data-step="11">
+          <div class="wizard-step-title">Seats, including seat belts and accessories, are okay?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_seats', 'Pass', this)">Pass</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_seats', 'Fail', this)">Fail</div>
+          </div>
+          <input type="hidden" id="tc_seats" value="Pass" required>
+        </div>
+
+        <!-- STEP 12: A/C -->
+        <div class="wizard-step" data-step="12">
+          <div class="wizard-step-title">A/C is working properly?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_ac', 'Pass', this)">Pass</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_ac', 'Fail', this)">Fail</div>
+          </div>
+          <input type="hidden" id="tc_ac" value="Pass" required>
+        </div>
+
+        <!-- STEP 13: Steering & Odometer -->
+        <div class="wizard-step" data-step="13">
+          <div class="wizard-step-title">Steering (including ESC) and odometer are okay?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_steering', 'Pass', this)">Pass</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_steering', 'Fail', this)">Fail</div>
+          </div>
+          <input type="hidden" id="tc_steering" value="Pass" required>
+        </div>
+
+        <!-- STEP 14: MDT -->
+        <div class="wizard-step" data-step="14">
+          <div class="wizard-step-title">MDT and screen are working properly?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_mdt', 'Pass', this)">Pass</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_mdt', 'Fail', this)">Fail</div>
+          </div>
+          <input type="hidden" id="tc_mdt" value="Pass" required>
+        </div>
+
+        <!-- STEP 15: Charging port -->
+        <div class="wizard-step" data-step="15">
+          <div class="wizard-step-title">Charging port is present and functional?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_charging', 'Pass', this)">Pass</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_charging', 'Fail', this)">Fail</div>
+          </div>
+          <input type="hidden" id="tc_charging" value="Pass" required>
+        </div>
+
+        <!-- STEP 16: CCTV -->
+        <div class="wizard-step" data-step="16">
+          <div class="wizard-step-title">CCTV cameras are okay and direction is correct?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_cctv', 'Pass', this)">Pass</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_cctv', 'Fail', this)">Fail</div>
+          </div>
+          <input type="hidden" id="tc_cctv" value="Pass" required>
+        </div>
+
+        <!-- STEP 17: Lights -->
+        <div class="wizard-step" data-step="17">
+          <div class="wizard-step-title">All internal / external lights are available and working?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_lights', 'Pass', this)">Pass</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_lights', 'Fail', this)">Fail</div>
+          </div>
+          <input type="hidden" id="tc_lights" value="Pass" required>
+        </div>
+
+        <!-- STEP 18: Housekeeping -->
+        <div class="wizard-step" data-step="18">
+          <div class="wizard-step-title">Vehicle housekeeping is good internally and externally?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_housekeeping', 'Pass', this)">Pass</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_housekeeping', 'Fail', this)">Fail</div>
+          </div>
+          <input type="hidden" id="tc_housekeeping" value="Pass" required>
+        </div>
+
+        <!-- STEP 19: Wipers -->
+        <div class="wizard-step" data-step="19">
+          <div class="wizard-step-title">Wipers are working properly?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_wipers', 'Pass', this)">Pass</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_wipers', 'Fail', this)">Fail</div>
+          </div>
+          <input type="hidden" id="tc_wipers" value="Pass" required>
+        </div>
+
+        <!-- STEP 20: Oil Leakage -->
+        <div class="wizard-step" data-step="20">
+          <div class="wizard-step-title">No oil leakage in the engine section?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_oil_leak', 'Pass', this)">Pass</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_oil_leak', 'Fail', this)">Fail</div>
+          </div>
+          <input type="hidden" id="tc_oil_leak" value="Pass" required>
+        </div>
+
+        <!-- STEP 21: Other Leakage -->
+        <div class="wizard-step" data-step="21">
+          <div class="wizard-step-title">No other visible leakage in the engine section?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_other_leak', 'Pass', this)">Pass</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_other_leak', 'Fail', this)">Fail</div>
+          </div>
+          <input type="hidden" id="tc_other_leak" value="Pass" required>
+        </div>
+
+        <!-- STEP 22: Tyres -->
+        <div class="wizard-step" data-step="22">
+          <div class="wizard-step-title">Tyres are in good condition and spare tyre is available?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_tyres', 'Pass', this)">Pass</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_tyres', 'Fail', this)">Fail</div>
+          </div>
+          <input type="hidden" id="tc_tyres" value="Pass" required>
+        </div>
+
+        <!-- STEP 23: Brakes -->
+        <div class="wizard-step" data-step="23">
+          <div class="wizard-step-title">All brakes, including ABS, are working properly?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_brakes', 'Pass', this)">Pass</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_brakes', 'Fail', this)">Fail</div>
+          </div>
+          <input type="hidden" id="tc_brakes" value="Pass" required>
+        </div>
+
+        <!-- STEP 24: Safety Equipment -->
+        <div class="wizard-step" data-step="24">
+          <div class="wizard-step-title">Fire extinguisher, safety triangle and first-aid kit are available?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_safety', 'Pass', this)">Pass</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_safety', 'Fail', this)">Fail</div>
+          </div>
+          <input type="hidden" id="tc_safety" value="Pass" required>
+        </div>
+
+        <!-- STEP 25: Number Plates -->
+        <div class="wizard-step" data-step="25">
+          <div class="wizard-step-title">Front and rear number plates are available and secure?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_plates', 'Pass', this)">Pass</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_plates', 'Fail', this)">Fail</div>
+          </div>
+          <input type="hidden" id="tc_plates" value="Pass" required>
+        </div>
+
+        <!-- STEP 26: Toolkit -->
+        <div class="wizard-step" data-step="26">
+          <div class="wizard-step-title">Toolkit bag, ancillary equipment and air pump are available?</div>
+          <div class="choice-boxes-container">
+            <div class="choice-box selected" onclick="selectWizardChoice('tc_toolkit', 'Pass', this)">Pass</div>
+            <div class="choice-box" onclick="selectWizardChoice('tc_toolkit', 'Fail', this)">Fail</div>
+          </div>
+          <input type="hidden" id="tc_toolkit" value="Pass" required>
+        </div>
+
+        <!-- STEP 27: Overall Status & Remarks -->
+        <div class="wizard-step" data-step="27">
+          <div class="wizard-step-title">Final Status & Remarks</div>
           <div class="form-group">
             <label>Overall Status</label>
             <select id="tc-status" required>
@@ -792,17 +1019,18 @@
               <option value="Failed (Grounded)">Failed (Grounded)</option>
             </select>
           </div>
+          <div class="form-group">
+            <label>Remarks / Notes</label>
+            <textarea id="tc-remarks" rows="3" placeholder="Optional notes or observations..."></textarea>
+          </div>
         </div>
 
-        <div class="form-group" style="margin-top: 10px;">
-          <label>Remarks / Notes</label>
-          <textarea id="tc-remarks" rows="2" placeholder="Optional notes or observations..."></textarea>
-        </div>
-
-        <div class="action-row" style="margin-top: 20px;">
-          <div style="display: flex; gap: 12px;">
-            <button type="submit" id="save-tripcheck-btn" class="btn-primary" style="background: var(--success); width: auto; padding: 12px 20px;">Save Inspection Record</button>
-            <button type="button" id="delete-tripcheck-btn" class="btn-secondary" style="background: var(--danger); color: white; display: none;">🗑️ Delete Record</button>
+        <!-- WIZARD NAVIGATION BUTTONS -->
+        <div class="action-row" style="margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+          <div style="display: flex; gap: 10px;">
+            <button type="button" id="wizard-prev-btn" class="btn-secondary" style="display: none;">⬅️ Previous</button>
+            <button type="button" id="wizard-next-btn" class="btn-primary" style="width: auto; padding: 10px 20px;">Next ➡️</button>
+            <button type="submit" id="save-tripcheck-btn" class="btn-primary" style="background: var(--success); width: auto; padding: 10px 20px; display: none;">💾 Save Inspection</button>
           </div>
           <button type="button" id="close-add-tripcheck-modal" class="btn-secondary" style="width: auto;">Cancel</button>
         </div>
@@ -812,40 +1040,17 @@
 
   <!-- MODAL PARA AÑADIR / EDITAR ACCIDENTE -->
   <div id="add-accident-modal" class="modal-overlay">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 800px;">
       <h2 id="modal-accident-title">Report New Accident</h2>
       <form id="add-accident-form" style="margin-top: 20px;">
         <input type="hidden" id="add-acc-id">
-
-        <div class="modal-grid">
-          <div class="form-group">
-            <label>Accident Date</label>
-            <input type="date" id="add-acc-date" required>
-          </div>
-          <div class="form-group">
-            <label>Accident Time</label>
-            <input type="time" id="add-acc-time" required>
-          </div>
-          <div class="form-group">
-            <label>Car Plate</label>
-            <select id="add-acc-plate" required>
-              <option value="">-- Select Plate --</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Car Model</label>
-            <input type="text" id="add-acc-model" readonly style="background: #e9ecef;">
-          </div>
-          <div class="form-group">
-            <label>Driver Iqama</label>
-            <select id="add-acc-iqama" required>
-              <option value="">-- Select Iqama --</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Driver Name</label>
-            <input type="text" id="add-acc-driver-name" readonly style="background: #e9ecef;">
-          </div>
+        <div class="modal-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 15px;">
+          <div class="form-group"><label>Accident Date</label><input type="date" id="add-acc-date" required></div>
+          <div class="form-group"><label>Accident Time</label><input type="time" id="add-acc-time" required></div>
+          <div class="form-group"><label>Car Plate</label><select id="add-acc-plate" required><option value="">-- Select Plate --</option></select></div>
+          <div class="form-group"><label>Car Model</label><input type="text" id="add-acc-model" readonly style="background: #e9ecef;"></div>
+          <div class="form-group"><label>Driver Iqama</label><select id="add-acc-iqama" required><option value="">-- Select Iqama --</option></select></div>
+          <div class="form-group"><label>Driver Name</label><input type="text" id="add-acc-driver-name" readonly style="background: #e9ecef;"></div>
           <div class="form-group">
             <label>Accident Location</label>
             <select id="add-acc-location" required>
@@ -892,56 +1097,13 @@
               <option value="Walyal Ahd District">Walyal Ahd District</option>
             </select>
           </div>
-          <div class="form-group">
-            <label>Severity</label>
-            <select id="add-acc-severity" required>
-              <option value="Very Minor">Very Minor</option>
-              <option value="Minor">Minor</option>
-              <option value="Major">Major</option>
-              <option value="Critical">Critical</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Injured</label>
-            <select id="add-acc-injured" required>
-              <option value="No">No</option>
-              <option value="Yes">Yes</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Najm</label>
-            <select id="add-acc-najm" required>
-              <option value="No">No</option>
-              <option value="Yes">Yes</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Najm Report Status</label>
-            <select id="add-acc-najm-status" disabled style="background: #e9ecef;">
-              <option value="N/A">N/A</option>
-              <option value="Received">Received</option>
-              <option value="No Received">No Received</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Mistake Percentage (0 - 100)</label>
-            <input type="number" id="add-acc-mistake" min="0" max="100" value="0" required>
-          </div>
-          <div class="form-group">
-            <label>Investigation Conducted</label>
-            <select id="add-acc-investigation" required>
-              <option value="No">No</option>
-              <option value="Yes">Yes</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Investigation Status</label>
-            <select id="add-acc-inv-status" disabled style="background: #e9ecef;">
-              <option value="N/A">N/A</option>
-              <option value="Closed">Closed</option>
-              <option value="Under Process">Under Process</option>
-            </select>
-          </div>
+          <div class="form-group"><label>Severity</label><select id="add-acc-severity" required><option value="Very Minor">Very Minor</option><option value="Minor">Minor</option><option value="Major">Major</option><option value="Critical">Critical</option></select></div>
+          <div class="form-group"><label>Injured</label><select id="add-acc-injured" required><option value="No">No</option><option value="Yes">Yes</option></select></div>
+          <div class="form-group"><label>Najm</label><select id="add-acc-najm" required><option value="No">No</option><option value="Yes">Yes</option></select></div>
+          <div class="form-group"><label>Najm Report Status</label><select id="add-acc-najm-status" disabled style="background: #e9ecef;"><option value="N/A">N/A</option></select></div>
+          <div class="form-group"><label>Mistake Percentage (0 - 100)</label><input type="number" id="add-acc-mistake" min="0" max="100" value="0" required></div>
+          <div class="form-group"><label>Investigation Conducted</label><select id="add-acc-investigation" required><option value="No">No</option><option value="Yes">Yes</option></select></div>
+          <div class="form-group"><label>Investigation Status</label><select id="add-acc-inv-status" disabled style="background: #e9ecef;"><option value="N/A">N/A</option></select></div>
           <div class="form-group">
             <label>Accident Type</label>
             <select id="add-acc-type" required>
@@ -971,16 +1133,8 @@
             </select>
           </div>
         </div>
-
-        <div class="form-group" style="margin-top: 10px;">
-          <label>Accident Description</label>
-          <textarea id="add-acc-description" rows="2" placeholder="Describe what happened..." required></textarea>
-        </div>
-        <div class="form-group">
-          <label>Damage Description</label>
-          <textarea id="add-acc-damage" rows="2" placeholder="Describe vehicle damages..." required></textarea>
-        </div>
-
+        <div class="form-group" style="margin-top: 10px;"><label>Accident Description</label><textarea id="add-acc-description" rows="2" required></textarea></div>
+        <div class="form-group"><label>Damage Description</label><textarea id="add-acc-damage" rows="2" required></textarea></div>
         <div class="action-row" style="margin-top: 20px;">
           <div style="display: flex; gap: 12px;">
             <button type="submit" id="save-accident-btn" class="btn-primary" style="background: var(--success); width: auto; padding: 12px 20px;">Save Accident Record</button>
@@ -1003,8 +1157,6 @@
     const GOOGLE_SHEET_DRIVERS_URL = "https://script.google.com/macros/s/AKfycby7-NkH3HuZF2dXsLf0WGCV76bdxSZ1YXZsbs785qrgIAoBA9eal7DIRYPWypwWRPpQkA/exec";
     const GOOGLE_SHEET_FLEET_URL = "https://script.google.com/macros/s/AKfycbyaQI9cnIy7qEYt8F0BNSG2y1HOPD-8kjKU12Y9LbDNq4aLaJ3wrVEbYp2e6Mzmnfsr/exec";
     const GOOGLE_SHEET_ACCIDENTS_URL = "https://script.google.com/macros/s/AKfycbw7pMHgStWn01h_us5DdwndS20sWq9_Ox6uI-dQM1FsC_o8aHj0et96qwZxqD-lsPIs-Q/exec";
-    
-    // ⚠️ REEMPLAZA ESTA URL CON TU NUEVO DEPLIEGUE DE TRIP CHECK
     const GOOGLE_SHEET_TRIPCHECK_URL = "https://script.google.com/macros/s/TU_URL_DE_TRIP_CHECK_aqui/exec";
 
     let driversDatabase = [];
@@ -1012,10 +1164,8 @@
     let accidentsDatabase = [];
     let tripChecksDatabase = [];
     let loggedInUserName = "System User";
-    let isEditingAccidentMode = false;
-    let originalAccidentPlate = "";
-    
-    let isEditingTripCheckMode = false;
+    let currentWizardStep = 1;
+    const totalWizardSteps = 27;
 
     const loginScreen = document.getElementById("login-screen");
     const erpApp = document.getElementById("erp-app");
@@ -1098,172 +1248,67 @@
     function getKSACurrentDateTime() {
       const now = new Date();
       const formatter = new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'Asia/Riyadh',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
+        timeZone: 'Asia/Riyadh', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false
       });
-      
       const parts = formatter.formatToParts(now);
       const obj = {};
       parts.forEach(p => { if (p.type !== 'literal') obj[p.type] = p.value; });
-      
-      return {
-        date: `${obj.year}-${obj.month}-${obj.day}`,
-        time: `${obj.hour}:${obj.minute}`
-      };
+      return { date: `${obj.year}-${obj.month}-${obj.day}`, time: `${obj.hour}:${obj.minute}` };
     }
 
-    // ✅ FORMATO ESTRICTO DD/MM/YYYY PARA LA WEB
     function formatDateForDisplay(d) {
       if (!d) return "-";
-      if (d instanceof Date) {
-        if (isNaN(d.getTime())) return "-";
-        const day = String(d.getUTCDate()).padStart(2, '0');
-        const month = String(d.getUTCMonth() + 1).padStart(2, '0');
-        const year = d.getUTCFullYear();
-        return `${day}/${month}/${year}`;
-      }
-
       let s = String(d).trim();
       if (s === "" || s === "Not Yet") return "-";
-      
-      if (s.includes("T")) {
-        const cleanDate = s.split("T")[0];
-        const parts = cleanDate.split("-");
-        if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
-        return cleanDate;
-      }
-      
+      if (s.includes("T")) s = s.split("T")[0];
       if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
-        const parts = s.split("-");
-        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        const p = s.split("-");
+        return `${p[2]}/${p[1]}/${p[0]}`;
       }
-
-      const parsed = new Date(s);
-      if (!isNaN(parsed.getTime())) {
-        const day = String(parsed.getUTCDate()).padStart(2, '0');
-        const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
-        const year = parsed.getUTCFullYear();
-        return `${day}/${month}/${year}`;
-      }
-      
       return s;
     }
 
     function formatTimeForDisplay(t) {
-      if (!t || String(t).trim() === "" || t === "Not Yet") return "-";
+      if (!t || String(t).trim() === "") return "-";
       let s = String(t);
-      if (s.includes("T")) {
-        const timePart = s.split("T")[1];
-        if (timePart) {
-          const parts = timePart.split(":");
-          if (parts.length >= 2) return parts[0] + ":" + parts[1];
-          return timePart.substring(0, 5);
-        }
-      }
-      if (s.length >= 5 && s.includes(":")) return s.substring(0, 5);
+      if (s.includes("T")) s = s.split("T")[1];
+      if (s.length >= 5) return s.substring(0, 5);
       return s;
-    }
-
-    function formatDateForInput(d) {
-      if (!d) return "";
-      if (d instanceof Date) {
-        if (isNaN(d.getTime())) return "";
-        const day = String(d.getUTCDate()).padStart(2, '0');
-        const month = String(d.getUTCMonth() + 1).padStart(2, '0');
-        const year = d.getUTCFullYear();
-        return `${year}-${month}-${day}`;
-      }
-
-      let s = String(d).trim();
-      if (s === "" || s === "Not Yet") return "";
-      if (s.includes("T")) return s.split("T")[0];
-      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-      
-      const parsed = new Date(s);
-      if (isNaN(parsed.getTime())) return "";
-      
-      const day = String(parsed.getUTCDate()).padStart(2, '0');
-      const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
-      const year = parsed.getUTCFullYear();
-      return `${year}-${month}-${day}`;
     }
 
     async function fetchDrivers() {
       try {
-        document.getElementById("sync-status").textContent = "🔄 Syncing drivers with Google Sheets...";
-        document.getElementById("sync-status").style.color = "#0284c7";
-
         const res = await fetch(GOOGLE_SHEET_DRIVERS_URL);
-        if (!res.ok) throw new Error("Network error");
         driversDatabase = await res.json();
-
-        document.getElementById("sync-status").textContent = `✅ Synced ${driversDatabase.length} driver record(s).`;
-        document.getElementById("sync-status").style.color = "#2e7d32";
-      } catch (e) {
-        document.getElementById("sync-status").textContent = "❌ Failed to load drivers.";
-        document.getElementById("sync-status").style.color = "#c62828";
-      }
+      } catch (e) { console.error("Error fetching drivers"); }
     }
 
     async function fetchFleet() {
       try {
-        document.getElementById("fleet-sync-status").textContent = "🔄 Syncing fleet...";
-        document.getElementById("fleet-sync-status").style.color = "#0284c7";
-
         const res = await fetch(GOOGLE_SHEET_FLEET_URL);
-        if (!res.ok) throw new Error("Network error");
         fleetDatabase = await res.json();
-
         updateAllFleetAccidentCounts();
-
-        document.getElementById("fleet-sync-status").textContent = `✅ Synced ${fleetDatabase.length} vehicle(s).`;
-        document.getElementById("fleet-sync-status").style.color = "#2e7d32";
-      } catch (e) {
-        document.getElementById("fleet-sync-status").textContent = "❌ Failed to load fleet.";
-        document.getElementById("fleet-sync-status").style.color = "#c62828";
-      }
+      } catch (e) { console.error("Error fetching fleet"); }
     }
 
     async function fetchAccidents() {
       try {
-        document.getElementById("accident-sync-status").textContent = "🔄 Syncing accidents...";
-        document.getElementById("accident-sync-status").style.color = "#0284c7";
-
         const res = await fetch(GOOGLE_SHEET_ACCIDENTS_URL);
-        if (!res.ok) throw new Error("Network error");
         accidentsDatabase = await res.json();
-
         updateAllFleetAccidentCounts();
-
-        document.getElementById("accident-sync-status").textContent = `✅ Synced ${accidentsDatabase.length} accident record(s).`;
-        document.getElementById("accident-sync-status").style.color = "#2e7d32";
         renderAccidentsTable(accidentsDatabase);
-      } catch (e) {
-        document.getElementById("accident-sync-status").textContent = "❌ Failed to load accidents.";
-        document.getElementById("accident-sync-status").style.color = "#c62828";
-      }
+      } catch (e) { console.error("Error fetching accidents"); }
     }
 
     async function fetchTripChecks() {
       try {
         document.getElementById("tripcheck-sync-status").textContent = "🔄 Syncing trip checks...";
-        document.getElementById("tripcheck-sync-status").style.color = "#0284c7";
-
         const res = await fetch(GOOGLE_SHEET_TRIPCHECK_URL);
-        if (!res.ok) throw new Error("Network error");
         tripChecksDatabase = await res.json();
-
-        document.getElementById("tripcheck-sync-status").textContent = `✅ Synced ${tripChecksDatabase.length} check record(s).`;
-        document.getElementById("tripcheck-sync-status").style.color = "#2e7d32";
+        document.getElementById("tripcheck-sync-status").textContent = `✅ Synced ${tripChecksDatabase.length} check(s).`;
         renderTripChecksTable(tripChecksDatabase);
       } catch (e) {
         document.getElementById("tripcheck-sync-status").textContent = "❌ Failed to load trip checks.";
-        document.getElementById("tripcheck-sync-status").style.color = "#c62828";
       }
     }
 
@@ -1276,937 +1321,7 @@
       });
     }
 
-    async function recountAndSyncVehicle(plate) {
-      if (!plate) return;
-      const vehicle = fleetDatabase.find(v => String(v["Plate"] || v["plate"] || "").trim().toLowerCase() === String(plate).trim().toLowerCase());
-      if (!vehicle) return;
-
-      const count = accidentsDatabase.filter(acc => String(acc["Car Plate"] || acc["car plate"] || "").trim().toLowerCase() === String(plate).trim().toLowerCase()).length;
-      vehicle["Accidents"] = count;
-
-      try {
-        await fetch(GOOGLE_SHEET_FLEET_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify(vehicle)
-        });
-      } catch (err) {
-        console.error("Failed to sync vehicle accident count", err);
-      }
-    }
-
-    document.getElementById("refresh-fleet-btn").addEventListener("click", fetchFleet);
-    document.getElementById("refresh-db-btn").addEventListener("click", fetchDrivers);
-    document.getElementById("refresh-accidents-btn").addEventListener("click", fetchAccidents);
-    document.getElementById("refresh-tripchecks-btn").addEventListener("click", fetchTripChecks);
-
-    // --- TRIP CHECK MODAL & LOGIC ---
-    const tripCheckModal = document.getElementById("add-tripcheck-modal");
-    const openAddTripCheckBtn = document.getElementById("open-add-tripcheck-modal");
-    const closeAddTripCheckBtn = document.getElementById("close-add-tripcheck-modal");
-    const addTripCheckForm = document.getElementById("add-tripcheck-form");
-    const modalTripCheckTitle = document.getElementById("modal-tripcheck-title");
-    const saveTripCheckBtn = document.getElementById("save-tripcheck-btn");
-    const deleteTripCheckBtn = document.getElementById("delete-tripcheck-btn");
-
-    const tripCheckSearchInput = document.getElementById("tripcheck-search-input");
-    const toggleTripCheckBtn = document.getElementById("toggle-tripcheck-btn");
-    const tripCheckDropdown = document.getElementById("tripcheck-dropdown");
-    const tripChecksTableBody = document.getElementById("tripchecks-table-body");
-    const tripCheckCountBadge = document.getElementById("tripcheck-count-badge");
-
-    async function prepareTripCheckModalSelects() {
-      if (fleetDatabase.length === 0 || driversDatabase.length === 0) {
-        await Promise.all([fetchFleet(), fetchDrivers()]);
-      }
-
-      const plateSelect = document.getElementById("tc-plate");
-      plateSelect.innerHTML = `<option value="">-- Select Plate --</option>`;
-      fleetDatabase.forEach(v => {
-        const plate = v["Plate"] || v["plate"];
-        const model = v["Model"] || v["model"] || "";
-        if (plate) {
-          plateSelect.innerHTML += `<option value="${plate}">${plate} (${model})</option>`;
-        }
-      });
-
-      const iqamaSelect = document.getElementById("tc-iqama");
-      iqamaSelect.innerHTML = `<option value="">-- Select Iqama --</option>`;
-      driversDatabase.forEach(d => {
-        const iqama = d["Iqama Number"] || d["iqama"] || "";
-        const name = d["Full Name"] || d["name"] || "";
-        if (iqama) {
-          iqamaSelect.innerHTML += `<option value="${iqama}">${iqama} - ${name}</option>`;
-        }
-      });
-    }
-
-    openAddTripCheckBtn.addEventListener("click", async () => {
-      isEditingTripCheckMode = false;
-      modalTripCheckTitle.textContent = "New Trip Check Inspection";
-      saveTripCheckBtn.textContent = "Save Inspection Record";
-      saveTripCheckBtn.style.background = "var(--success)";
-      deleteTripCheckBtn.style.display = "none";
-
-      await prepareTripCheckModalSelects();
-      addTripCheckForm.reset();
-      document.getElementById("tc-id").value = "";
-
-      const ksaNow = getKSACurrentDateTime();
-      document.getElementById("tc-date").value = ksaNow.date;
-      document.getElementById("tc-time").value = ksaNow.time;
-
-      tripCheckModal.style.display = "flex";
-    });
-
-    async function openEditTripCheckModal(tc) {
-      isEditingTripCheckMode = true;
-      modalTripCheckTitle.textContent = `Edit Check: ${tc["Check ID"] || tc["check id"] || ""}`;
-      saveTripCheckBtn.textContent = "💾 Update Inspection Record";
-      saveTripCheckBtn.style.background = "#0284c7";
-      deleteTripCheckBtn.style.display = "inline-block";
-
-      await prepareTripCheckModalSelects();
-
-      document.getElementById("tc-id").value = tc["Check ID"] || tc["check id"] || "";
-      document.getElementById("tc-type").value = tc["Check Type"] || tc["check type"] || "Pre-Trip";
-      document.getElementById("tc-date").value = formatDateForInput(tc["Date"] || tc["date"]);
-      document.getElementById("tc-time").value = formatTimeForDisplay(tc["Time"] || tc["time"]);
-      document.getElementById("tc-plate").value = tc["Car Plate"] || tc["car plate"] || "";
-      document.getElementById("tc-iqama").value = tc["Driver Iqama"] || tc["driver iqama"] || "";
-      document.getElementById("tc-driver-name").value = tc["Driver Name"] || tc["driver name"] || "";
-      document.getElementById("tc-odometer").value = tc["Odometer (KM)"] || tc["odometer (km)"] || "";
-      document.getElementById("tc-tyres").value = tc["Tyres / Brakes"] || tc["tyres / brakes"] || "Pass";
-      document.getElementById("tc-brakes").value = tc["Brakes & Steering"] || tc["brakes & steering"] || "Pass";
-      document.getElementById("tc-lights").value = tc["Lights / Fluids"] || tc["lights / fluids"] || "Pass";
-      document.getElementById("tc-fluids").value = tc["Fluid Levels / Oil"] || tc["fluid levels / oil"] || "Pass";
-      document.getElementById("tc-clean").value = tc["Cleanliness"] || tc["cleanliness"] || "Pass";
-      document.getElementById("tc-status").value = tc["Overall Status"] || tc["overall status"] || "Passed";
-      document.getElementById("tc-remarks").value = tc["Remarks"] || tc["remarks"] || "";
-
-      tripCheckModal.style.display = "flex";
-    }
-
-    closeAddTripCheckBtn.addEventListener("click", () => {
-      tripCheckModal.style.display = "none";
-    });
-
-    document.getElementById("tc-plate").addEventListener("change", (e) => {
-      const selectedPlate = e.target.value;
-      const vehicle = fleetDatabase.find(v => String(v["Plate"] || v["plate"] || "").trim() === String(selectedPlate).trim());
-      if (vehicle && (vehicle["Total KM"] || vehicle["total km"])) {
-        document.getElementById("tc-odometer").value = vehicle["Total KM"] || vehicle["total km"];
-      }
-    });
-
-    document.getElementById("tc-iqama").addEventListener("change", (e) => {
-      const selectedIqama = e.target.value;
-      const driver = driversDatabase.find(d => String(d["Iqama Number"] || d["iqama"] || "").trim() === String(selectedIqama).trim());
-      document.getElementById("tc-driver-name").value = driver ? (driver["Full Name"] || driver["name"] || "") : "";
-    });
-
-    addTripCheckForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      saveTripCheckBtn.disabled = true;
-      saveTripCheckBtn.textContent = isEditingTripCheckMode ? "Updating..." : "Saving...";
-
-      const checkData = {
-        action: isEditingTripCheckMode ? "update" : "create",
-        "Check Type": document.getElementById("tc-type").value,
-        "Date": document.getElementById("tc-date").value,
-        "Time": document.getElementById("tc-time").value,
-        "Car Plate": document.getElementById("tc-plate").value,
-        "Driver Iqama": document.getElementById("tc-iqama").value,
-        "Driver Name": document.getElementById("tc-driver-name").value,
-        "Odometer (KM)": parseInt(document.getElementById("tc-odometer").value, 10) || 0,
-        "Tyres / Brakes": document.getElementById("tc-tyres").value,
-        "Brakes & Steering": document.getElementById("tc-brakes").value,
-        "Lights / Fluids": document.getElementById("tc-lights").value,
-        "Fluid Levels / Oil": document.getElementById("tc-fluids").value,
-        "Cleanliness": document.getElementById("tc-clean").value,
-        "Overall Status": document.getElementById("tc-status").value,
-        "Checked By": loggedInUserName,
-        "Remarks": document.getElementById("tc-remarks").value.trim()
-      };
-
-      if (isEditingTripCheckMode) {
-        checkData["Check ID"] = document.getElementById("tc-id").value;
-      }
-
-      try {
-        const res = await fetch(GOOGLE_SHEET_TRIPCHECK_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify(checkData)
-        });
-        const resData = await res.json();
-
-        if (resData.status === "success") {
-          await fetchTripChecks();
-          tripCheckModal.style.display = "none";
-          alert(isEditingTripCheckMode ? "Trip check updated successfully!" : "Trip check logged successfully!");
-        } else {
-          alert("Error: " + resData.message);
-        }
-      } catch (err) {
-        alert("Failed to communicate with Google Sheets.");
-      } finally {
-        saveTripCheckBtn.disabled = false;
-        saveTripCheckBtn.textContent = isEditingTripCheckMode ? "💾 Update Inspection Record" : "Save Inspection Record";
-      }
-    });
-
-    deleteTripCheckBtn.addEventListener("click", async () => {
-      const checkId = document.getElementById("tc-id").value;
-      if (!confirm(`Are you sure you want to delete inspection record "${checkId}"?`)) return;
-
-      deleteTripCheckBtn.disabled = true;
-      deleteTripCheckBtn.textContent = "Deleting...";
-
-      try {
-        const res = await fetch(GOOGLE_SHEET_TRIPCHECK_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify({ action: "delete", "Check ID": checkId })
-        });
-        const resData = await res.json();
-
-        if (resData.status === "success") {
-          tripCheckModal.style.display = "none";
-          alert("Inspection record deleted successfully!");
-          await fetchTripChecks();
-        } else {
-          alert("Error: " + resData.message);
-        }
-      } catch (err) {
-        alert("Failed to communicate with Google Sheets.");
-      } finally {
-        deleteTripCheckBtn.disabled = false;
-        deleteTripCheckBtn.textContent = "🗑️ Delete Record";
-      }
-    });
-
-    function renderTripChecksTable(items) {
-      tripChecksTableBody.innerHTML = "";
-      tripCheckCountBadge.textContent = `${items.length} records found`;
-
-      if (items.length === 0) {
-        tripChecksTableBody.innerHTML = `<tr><td colspan="14" style="text-align: center; color: var(--text-muted); padding: 20px;">No trip check records found.</td></tr>`;
-        return;
-      }
-
-      items.forEach(tc => {
-        const tr = document.createElement("tr");
-        tr.title = "Click to edit inspection details";
-        tr.innerHTML = `
-          <td>${tc["Check ID"] || tc["check id"] || "-"}</td>
-          <td><strong>${tc["Check Type"] || tc["check type"] || "-"}</strong></td>
-          <td>${formatDateForDisplay(tc["Date"] || tc["date"])}</td>
-          <td>${formatTimeForDisplay(tc["Time"] || tc["time"])}</td>
-          <td>${tc["Car Plate"] || tc["car plate"] || "-"}</td>
-          <td>${tc["Driver Iqama"] || tc["driver iqama"] || "-"}</td>
-          <td>${tc["Driver Name"] || tc["driver name"] || "-"}</td>
-          <td>${tc["Odometer (KM)"] !== undefined ? tc["Odometer (KM)"] : (tc["odometer (km)"] || "-")}</td>
-          <td>${tc["Tyres / Brakes"] || tc["tyres / brakes"] || "-"}</td>
-          <td>${tc["Lights / Fluids"] || tc["lights / fluids"] || "-"}</td>
-          <td>${tc["Cleanliness"] || tc["cleanliness"] || "-"}</td>
-          <td><span style="font-weight: bold; color: ${ (tc["Overall Status"] || tc["overall status"]) === 'Passed' ? 'var(--success)' : 'var(--danger)' }">${tc["Overall Status"] || tc["overall status"] || "-"}</span></td>
-          <td>${tc["Checked By"] || tc["checked by"] || "-"}</td>
-          <td>${tc["Remarks"] || tc["remarks"] || "-"}</td>
-        `;
-        tr.addEventListener("click", () => openEditTripCheckModal(tc));
-        tripChecksTableBody.appendChild(tr);
-      });
-    }
-
-    tripCheckSearchInput.addEventListener("input", () => {
-      const val = tripCheckSearchInput.value.trim().toLowerCase();
-      if (val === "") { renderTripChecksTable(tripChecksDatabase); return; }
-      const filtered = tripChecksDatabase.filter(tc =>
-        String(tc["Check ID"] || tc["check id"] || "").toLowerCase().includes(val) ||
-        String(tc["Car Plate"] || tc["car plate"] || "").toLowerCase().includes(val) ||
-        String(tc["Driver Name"] || tc["driver name"] || "").toLowerCase().includes(val) ||
-        String(tc["Driver Iqama"] || tc["driver iqama"] || "").toLowerCase().includes(val)
-      );
-      renderTripChecksTable(filtered);
-    });
-
-    document.getElementById("export-tripchecks-btn").addEventListener("click", () => {
-      if (tripChecksDatabase.length === 0) { alert("No trip check data available to export."); return; }
-      const worksheet = XLSX.utils.json_to_sheet(tripChecksDatabase);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Trip Check Database");
-      XLSX.writeFile(workbook, "Trip_Check_Database.xlsx");
-    });
-
-    // --- ACCIDENT TRACKER LOGIC ---
-    const accidentSearchInput = document.getElementById("accident-search-input");
-    const toggleAccidentBtn = document.getElementById("toggle-accident-btn");
-    const accidentDropdown = document.getElementById("accident-dropdown");
-    const accidentsTableBody = document.getElementById("accidents-table-body");
-    const accidentCountBadge = document.getElementById("accident-count-badge");
-
-    const addAccidentModal = document.getElementById("add-accident-modal");
-    const openAddAccidentModalBtn = document.getElementById("open-add-accident-modal");
-    const closeAddAccidentModalBtn = document.getElementById("close-add-accident-modal");
-    const addAccidentForm = document.getElementById("add-accident-form");
-    const modalAccidentTitle = document.getElementById("modal-accident-title");
-    const saveAccidentBtn = document.getElementById("save-accident-btn");
-    const deleteAccidentBtn = document.getElementById("delete-accident-btn");
-
-    async function prepareModalSelects() {
-      if (fleetDatabase.length === 0 || driversDatabase.length === 0) {
-        await Promise.all([fetchFleet(), fetchDrivers()]);
-      }
-
-      const plateSelect = document.getElementById("add-acc-plate");
-      plateSelect.innerHTML = `<option value="">-- Select Plate --</option>`;
-      fleetDatabase.forEach(v => {
-        const plate = v["Plate"] || v["plate"];
-        const model = v["Model"] || v["model"] || "";
-        if (plate) {
-          plateSelect.innerHTML += `<option value="${plate}">${plate} (${model})</option>`;
-        }
-      });
-
-      const iqamaSelect = document.getElementById("add-acc-iqama");
-      iqamaSelect.innerHTML = `<option value="">-- Select Iqama --</option>`;
-      driversDatabase.forEach(d => {
-        const iqama = d["Iqama Number"] || d["iqama"] || "";
-        const name = d["Full Name"] || d["name"] || "";
-        if (iqama) {
-          iqamaSelect.innerHTML += `<option value="${iqama}">${iqama} - ${name}</option>`;
-        }
-      });
-    }
-
-    openAddAccidentModalBtn.addEventListener("click", async () => {
-      isEditingAccidentMode = false;
-      originalAccidentPlate = "";
-      modalAccidentTitle.textContent = "Report New Accident";
-      saveAccidentBtn.textContent = "Save Accident Record";
-      saveAccidentBtn.style.background = "var(--success)";
-      deleteAccidentBtn.style.display = "none";
-
-      await prepareModalSelects();
-
-      addAccidentForm.reset();
-      document.getElementById("add-acc-id").value = "";
-      document.getElementById("add-acc-model").value = "";
-      document.getElementById("add-acc-driver-name").value = "";
-      
-      const ksaNow = getKSACurrentDateTime();
-      const dateInput = document.getElementById("add-acc-date");
-      const timeInput = document.getElementById("add-acc-time");
-      
-      dateInput.value = ksaNow.date;
-      dateInput.disabled = false;
-      dateInput.style.background = "#ffffff";
-
-      timeInput.value = ksaNow.time;
-      timeInput.disabled = false;
-      timeInput.style.background = "#ffffff";
-
-      const najmStatusSelect = document.getElementById("add-acc-najm-status");
-      najmStatusSelect.disabled = true;
-      najmStatusSelect.style.background = "#e9ecef";
-      najmStatusSelect.innerHTML = `<option value="N/A">N/A</option>`;
-
-      const invStatusSelect = document.getElementById("add-acc-inv-status");
-      invStatusSelect.disabled = true;
-      invStatusSelect.style.background = "#e9ecef";
-      invStatusSelect.innerHTML = `<option value="N/A">N/A</option>`;
-
-      addAccidentModal.style.display = "flex";
-    });
-
-    async function openEditAccidentModal(acc) {
-      isEditingAccidentMode = true;
-      originalAccidentPlate = acc["Car Plate"] || acc["car plate"] || "";
-      modalAccidentTitle.textContent = `Edit Accident: ${acc["Accident ID"] || acc["accident id"] || ""}`;
-      saveAccidentBtn.textContent = "💾 Update Accident Record";
-      saveAccidentBtn.style.background = "#0284c7";
-      deleteAccidentBtn.style.display = "inline-block";
-
-      await prepareModalSelects();
-
-      document.getElementById("add-acc-id").value = acc["Accident ID"] || acc["accident id"] || "";
-      
-      const dateInput = document.getElementById("add-acc-date");
-      const timeInput = document.getElementById("add-acc-time");
-      
-      dateInput.value = formatDateForInput(acc["Date"] || acc["date"]);
-      dateInput.disabled = true;
-      dateInput.style.background = "#e9ecef";
-
-      timeInput.value = formatTimeForDisplay(acc["Time"] || acc["time"]);
-      timeInput.disabled = true;
-      timeInput.style.background = "#e9ecef";
-
-      document.getElementById("add-acc-plate").value = acc["Car Plate"] || acc["car plate"] || "";
-      document.getElementById("add-acc-model").value = acc["Car Model"] || acc["car model"] || "";
-      document.getElementById("add-acc-iqama").value = acc["Driver Iqama"] || acc["driver iqama"] || "";
-      document.getElementById("add-acc-driver-name").value = acc["Driver Name"] || acc["driver name"] || "";
-      document.getElementById("add-acc-location").value = acc["Accident Location"] || acc["accident location"] || "";
-      document.getElementById("add-acc-severity").value = acc["Severity"] || acc["severity"] || "Minor";
-      document.getElementById("add-acc-injured").value = acc["Injured"] || acc["injured"] || "No";
-      
-      const najmVal = acc["Najm"] || acc["najm"] || "No";
-      document.getElementById("add-acc-najm").value = najmVal;
-      const najmStatusSelect = document.getElementById("add-acc-najm-status");
-      if (najmVal === "Yes") {
-        najmStatusSelect.disabled = false;
-        najmStatusSelect.style.background = "#ffffff";
-        najmStatusSelect.innerHTML = `<option value="Received">Received</option><option value="No Received">No Received</option>`;
-        najmStatusSelect.value = acc["Najm Report Status"] || acc["najm report status"] || "Received";
-      } else {
-        najmStatusSelect.disabled = true;
-        najmStatusSelect.style.background = "#e9ecef";
-        najmStatusSelect.innerHTML = `<option value="N/A">N/A</option>`;
-      }
-
-      const mistakeVal = acc["Mistake Percentage"] !== undefined ? acc["Mistake Percentage"] : (acc["mistake percentage"] !== undefined ? acc["mistake percentage"] : 0);
-      document.getElementById("add-acc-mistake").value = mistakeVal;
-
-      const invVal = acc["Investigation Conducted"] || acc["investigation conducted"] || "No";
-      document.getElementById("add-acc-investigation").value = invVal;
-      const invStatusSelect = document.getElementById("add-acc-inv-status");
-      if (invVal === "Yes") {
-        invStatusSelect.disabled = false;
-        invStatusSelect.style.background = "#ffffff";
-        invStatusSelect.innerHTML = `<option value="Closed">Closed</option><option value="Under Process">Under Process</option>`;
-        invStatusSelect.value = acc["Investigation Status"] || acc["investigation status"] || "Under Process";
-      } else {
-        invStatusSelect.disabled = true;
-        invStatusSelect.style.background = "#e9ecef";
-        invStatusSelect.innerHTML = `<option value="N/A">N/A</option>`;
-      }
-
-      document.getElementById("add-acc-type").value = acc["Accident Type"] || acc["accident type"] || "";
-      document.getElementById("add-acc-root-causes").value = acc["Root Causes"] || acc["root causes"] || "";
-      document.getElementById("add-acc-description").value = acc["Accident Description"] || acc["accident description"] || "";
-      document.getElementById("add-acc-damage").value = acc["Damage Description"] || acc["damage description"] || "";
-
-      addAccidentModal.style.display = "flex";
-    }
-
-    closeAddAccidentModalBtn.addEventListener("click", () => {
-      addAccidentModal.style.display = "none";
-    });
-
-    deleteAccidentBtn.addEventListener("click", async () => {
-      const accId = document.getElementById("add-acc-id").value;
-      const targetPlate = originalAccidentPlate;
-      if (!confirm(`Are you sure you want to delete accident record "${accId}"?`)) return;
-
-      deleteAccidentBtn.disabled = true;
-      deleteAccidentBtn.textContent = "Deleting...";
-
-      try {
-        const res = await fetch(GOOGLE_SHEET_ACCIDENTS_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify({ action: "delete", "Accident ID": accId })
-        });
-        const resData = await res.json();
-
-        if (resData.status === "success") {
-          addAccidentModal.style.display = "none";
-          alert("Accident record deleted successfully!");
-          await fetchAccidents();
-          if (targetPlate) await recountAndSyncVehicle(targetPlate);
-        } else {
-          alert("Error: " + resData.message);
-        }
-      } catch (err) {
-        alert("Failed to communicate with Google Sheets.");
-      } finally {
-        deleteAccidentBtn.disabled = false;
-        deleteAccidentBtn.textContent = "🗑️ Delete Accident";
-      }
-    });
-
-    document.getElementById("add-acc-plate").addEventListener("change", (e) => {
-      const selectedPlate = e.target.value;
-      const vehicle = fleetDatabase.find(v => String(v["Plate"] || v["plate"] || "").trim() === String(selectedPlate).trim());
-      document.getElementById("add-acc-model").value = vehicle ? `${vehicle["Brand"] || vehicle["brand"] || ""} ${vehicle["Model"] || vehicle["model"] || ""}` : "";
-    });
-
-    document.getElementById("add-acc-iqama").addEventListener("change", (e) => {
-      const selectedIqama = e.target.value;
-      const driver = driversDatabase.find(d => String(d["Iqama Number"] || d["iqama"] || "").trim() === String(selectedIqama).trim());
-      document.getElementById("add-acc-driver-name").value = driver ? (driver["Full Name"] || driver["name"] || "") : "";
-    });
-
-    document.getElementById("add-acc-najm").addEventListener("change", (e) => {
-      const val = e.target.value;
-      const statusSelect = document.getElementById("add-acc-najm-status");
-      if (val === "Yes") {
-        statusSelect.disabled = false;
-        statusSelect.style.background = "#ffffff";
-        statusSelect.innerHTML = `<option value="Received">Received</option><option value="No Received">No Received</option>`;
-      } else {
-        statusSelect.disabled = true;
-        statusSelect.style.background = "#e9ecef";
-        statusSelect.innerHTML = `<option value="N/A">N/A</option>`;
-      }
-    });
-
-    document.getElementById("add-acc-investigation").addEventListener("change", (e) => {
-      const val = e.target.value;
-      const statusSelect = document.getElementById("add-acc-inv-status");
-      if (val === "Yes") {
-        statusSelect.disabled = false;
-        statusSelect.style.background = "#ffffff";
-        statusSelect.innerHTML = `<option value="Closed">Closed</option><option value="Under Process">Under Process</option>`;
-      } else {
-        statusSelect.disabled = true;
-        statusSelect.style.background = "#e9ecef";
-        statusSelect.innerHTML = `<option value="N/A">N/A</option>`;
-      }
-    });
-
-    addAccidentForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      saveAccidentBtn.disabled = true;
-      saveAccidentBtn.textContent = isEditingAccidentMode ? "Updating..." : "Saving...";
-
-      const selectedPlate = document.getElementById("add-acc-plate").value;
-      const accId = document.getElementById("add-acc-id").value;
-
-      const accidentData = {
-        action: isEditingAccidentMode ? "update" : "create",
-        "Date": document.getElementById("add-acc-date").value,
-        "Time": document.getElementById("add-acc-time").value,
-        "Car Plate": selectedPlate,
-        "Car Model": document.getElementById("add-acc-model").value,
-        "Driver Iqama": document.getElementById("add-acc-iqama").value,
-        "Driver Name": document.getElementById("add-acc-driver-name").value,
-        "Accident Location": document.getElementById("add-acc-location").value,
-        "Severity": document.getElementById("add-acc-severity").value,
-        "Injured": document.getElementById("add-acc-injured").value,
-        "Najm": document.getElementById("add-acc-najm").value,
-        "Najm Report Status": document.getElementById("add-acc-najm-status").value,
-        "Mistake Percentage": parseInt(document.getElementById("add-acc-mistake").value, 10) || 0,
-        "Investigation Conducted": document.getElementById("add-acc-investigation").value,
-        "Investigation Status": document.getElementById("add-acc-inv-status").value,
-        "Accident Type": document.getElementById("add-acc-type").value.trim(),
-        "Accident Description": document.getElementById("add-acc-description").value.trim(),
-        "Root Causes": document.getElementById("add-acc-root-causes").value,
-        "Damage Description": document.getElementById("add-acc-damage").value.trim()
-      };
-
-      if (isEditingAccidentMode) {
-        accidentData["Accident ID"] = accId;
-      } else {
-        const ksaNow = getKSACurrentDateTime();
-        accidentData["Reporting Date"] = ksaNow.date;
-        accidentData["Reporting Time"] = ksaNow.time;
-        accidentData["Reported By"] = loggedInUserName;
-      }
-
-      try {
-        const res = await fetch(GOOGLE_SHEET_ACCIDENTS_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify(accidentData)
-        });
-        const resData = await res.json();
-
-        if (resData.status === "success") {
-          await fetchAccidents();
-
-          if (isEditingAccidentMode) {
-            if (originalAccidentPlate && originalAccidentPlate !== selectedPlate) {
-              await recountAndSyncVehicle(originalAccidentPlate);
-            }
-          }
-          await recountAndSyncVehicle(selectedPlate);
-
-          addAccidentModal.style.display = "none";
-          alert(isEditingAccidentMode ? "Accident record updated successfully!" : "Accident reported successfully!");
-          await fetchFleet();
-        } else {
-          alert("Error: " + resData.message);
-        }
-      } catch (err) {
-        alert("Failed to communicate with Google Sheets.");
-      } finally {
-        saveAccidentBtn.disabled = false;
-        saveAccidentBtn.textContent = isEditingAccidentMode ? "💾 Update Accident Record" : "Save Accident Record";
-      }
-    });
-
-    function renderAccidentsTable(items) {
-      accidentsTableBody.innerHTML = "";
-      accidentCountBadge.textContent = `${items.length} records found`;
-
-      if (items.length === 0) {
-        accidentsTableBody.innerHTML = `<tr><td colspan="22" style="text-align: center; color: var(--text-muted); padding: 20px;">No accident records found.</td></tr>`;
-        return;
-      }
-
-      items.forEach(acc => {
-        const tr = document.createElement("tr");
-        tr.title = "Click to edit accident details";
-        tr.innerHTML = `
-          <td>${acc["Accident ID"] || acc["accident id"] || "-"}</td>
-          <td>${formatDateForDisplay(acc["Date"] || acc["date"])}</td>
-          <td>${formatTimeForDisplay(acc["Time"] || acc["time"])}</td>
-          <td>${formatDateForDisplay(acc["Reporting Date"] || acc["reporting date"])}</td>
-          <td>${formatTimeForDisplay(acc["Reporting Time"] || acc["reporting time"])}</td>
-          <td>${acc["Reported By"] || acc["reported by"] || "-"}</td>
-          <td>${acc["Car Plate"] || acc["car plate"] || "-"}</td>
-          <td>${acc["Car Model"] || acc["car model"] || "-"}</td>
-          <td>${acc["Driver Iqama"] || acc["driver iqama"] || "-"}</td>
-          <td>${acc["Driver Name"] || acc["driver name"] || "-"}</td>
-          <td>${acc["Accident Location"] || acc["accident location"] || "-"}</td>
-          <td>${acc["Severity"] || acc["severity"] || "-"}</td>
-          <td>${acc["Injured"] || acc["injured"] || "-"}</td>
-          <td>${acc["Najm"] || acc["najm"] || "-"}</td>
-          <td>${acc["Najm Report Status"] || acc["najm report status"] || "-"}</td>
-          <td>${(acc["Mistake Percentage"] !== undefined) ? acc["Mistake Percentage"] + "%" : ((acc["mistake percentage"] !== undefined) ? acc["mistake percentage"] + "%" : "-")}</td>
-          <td>${acc["Investigation Conducted"] || acc["investigation conducted"] || "-"}</td>
-          <td>${acc["Investigation Status"] || acc["investigation status"] || "-"}</td>
-          <td>${acc["Accident Type"] || acc["accident type"] || "-"}</td>
-          <td>${acc["Accident Description"] || acc["accident description"] || "-"}</td>
-          <td>${acc["Root Causes"] || acc["root causes"] || "-"}</td>
-          <td>${acc["Damage Description"] || acc["damage description"] || "-"}</td>
-        `;
-        tr.addEventListener("click", () => openEditAccidentModal(acc));
-        accidentsTableBody.appendChild(tr);
-      });
-    }
-
-    function populateAccidentDropdown(items) {
-      accidentDropdown.innerHTML = "";
-      if (items.length === 0) { accidentDropdown.style.display = "none"; return; }
-      items.forEach(acc => {
-        const id = String(acc["Accident ID"] || acc["accident id"] || "");
-        const plate = String(acc["Car Plate"] || acc["car plate"] || "");
-        const driverName = String(acc["Driver Name"] || acc["driver name"] || "");
-        const iqama = String(acc["Driver Iqama"] || acc["driver iqama"] || "");
-        const div = document.createElement("div");
-        div.className = "custom-dropdown-item";
-        div.textContent = `${id} | Plate: ${plate} | ${driverName} (${iqama})`;
-        div.addEventListener("click", () => {
-          accidentSearchInput.value = id;
-          filterAccidentsTable();
-          accidentDropdown.style.display = "none";
-        });
-        accidentDropdown.appendChild(div);
-      });
-      accidentDropdown.style.display = "block";
-    }
-
-    function filterAccidentsTable() {
-      const query = accidentSearchInput.value.trim().toLowerCase();
-      const startDate = document.getElementById("filter-start-date").value;
-      const startTime = document.getElementById("filter-start-time").value || "00:00";
-      const endDate = document.getElementById("filter-end-date").value;
-      const endTime = document.getElementById("filter-end-time").value || "23:59";
-
-      const filtered = accidentsDatabase.filter(acc => {
-        const matchQuery = query === "" || 
-          String(acc["Accident ID"] || acc["accident id"] || "").toLowerCase().includes(query) ||
-          String(acc["Car Plate"] || acc["car plate"] || "").toLowerCase().includes(query) ||
-          String(acc["Driver Iqama"] || acc["driver iqama"] || "").toLowerCase().includes(query) ||
-          String(acc["Driver Name"] || acc["driver name"] || "").toLowerCase().includes(query);
-
-        if (!matchQuery) return false;
-
-        const accDate = formatDateForInput(acc["Date"] || acc["date"]);
-        if (!accDate) return true;
-
-        if (startDate && startDate !== "") {
-          const fullAccDateTime = `${accDate}T${acc["Time"] || acc["time"] || "00:00"}`;
-          const fullStartDateTime = `${startDate}T${startTime}`;
-          if (fullAccDateTime < fullStartDateTime) return false;
-        }
-
-        if (endDate && endDate !== "") {
-          const fullAccDateTime = `${accDate}T${acc["Time"] || acc["time"] || "23:59"}`;
-          const fullEndDateTime = `${endDate}T${endTime}`;
-          if (fullAccDateTime > fullEndDateTime) return false;
-        }
-
-        return true;
-      });
-
-      renderAccidentsTable(filtered);
-    }
-
-    accidentSearchInput.addEventListener("input", () => {
-      const val = accidentSearchInput.value.trim().toLowerCase();
-      if (val === "") { renderAccidentsTable(accidentsDatabase); accidentDropdown.style.display = "none"; return; }
-      const matches = accidentsDatabase.filter(acc => 
-        String(acc["Accident ID"] || acc["accident id"] || "").toLowerCase().includes(val) ||
-        String(acc["Car Plate"] || acc["car plate"] || "").toLowerCase().includes(val) ||
-        String(acc["Driver Iqama"] || acc["driver iqama"] || "").toLowerCase().includes(val) ||
-        String(acc["Driver Name"] || acc["driver name"] || "").toLowerCase().includes(val)
-      );
-      populateAccidentDropdown(matches);
-      filterAccidentsTable();
-    });
-
-    toggleAccidentBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (accidentDropdown.style.display === "block") accidentDropdown.style.display = "none";
-      else populateAccidentDropdown(accidentsDatabase);
-    });
-
-    document.addEventListener("click", (e) => { if (!e.target.closest(".search-wrapper")) accidentDropdown.style.display = "none"; });
-
-    document.getElementById("filter-start-date").addEventListener("change", filterAccidentsTable);
-    document.getElementById("filter-start-time").addEventListener("change", filterAccidentsTable);
-    document.getElementById("filter-end-date").addEventListener("change", filterAccidentsTable);
-    document.getElementById("filter-end-time").addEventListener("change", filterAccidentsTable);
-
-    document.getElementById("export-accidents-date-btn").addEventListener("click", () => {
-      const startDate = document.getElementById("filter-start-date").value;
-      const startTime = document.getElementById("filter-start-time").value || "00:00";
-      const endDate = document.getElementById("filter-end-date").value;
-      const endTime = document.getElementById("filter-end-time").value || "23:59";
-
-      const filtered = accidentsDatabase.filter(acc => {
-        const accDate = formatDateForInput(acc["Date"] || acc["date"]);
-        if (!accDate) return true;
-        if (startDate && startDate !== "") {
-          if (`${accDate}T${acc["Time"] || acc["time"] || "00:00"}` < `${startDate}T${startTime}`) return false;
-        }
-        if (endDate && endDate !== "") {
-          if (`${accDate}T${acc["Time"] || acc["time"] || "23:59"}` > `${endDate}T${endTime}`) return false;
-        }
-        return true;
-      });
-
-      if (filtered.length === 0) { alert("No accident records match the selected period."); return; }
-
-      const worksheet = XLSX.utils.json_to_sheet(filtered);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Accident Tracker Period");
-      XLSX.writeFile(workbook, "Accident_Tracker_Period.xlsx");
-    });
-
-    document.getElementById("export-fleet-excel-btn").addEventListener("click", () => {
-      if (fleetDatabase.length === 0) { alert("No fleet data available to export."); return; }
-      const worksheet = XLSX.utils.json_to_sheet(fleetDatabase);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Fleet Database");
-      XLSX.writeFile(workbook, "Fleet_Database.xlsx");
-    });
-
-    document.getElementById("export-excel-btn").addEventListener("click", () => {
-      if (driversDatabase.length === 0) { alert("No driver data available to export."); return; }
-      const worksheet = XLSX.utils.json_to_sheet(driversDatabase);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Drivers Database");
-      XLSX.writeFile(workbook, "Drivers_Database.xlsx");
-    });
-
-    let currentActiveVehicle = null;
-    let isFleetEditMode = false;
-    const fleetPlateInput = document.getElementById("fleet-plate-input");
-    const toggleFleetBtn = document.getElementById("toggle-fleet-btn");
-    const fleetDropdown = document.getElementById("fleet-dropdown");
-    const fleetProfileContainer = document.getElementById("fleet-profile-container");
-    const editFleetBtn = document.getElementById("edit-fleet-btn");
-    const cancelFleetEditBtn = document.getElementById("cancel-fleet-edit-btn");
-
-    function populateFleetDropdown(items) {
-      fleetDropdown.innerHTML = "";
-      if (items.length === 0) { fleetDropdown.style.display = "none"; return; }
-      items.forEach(v => {
-        const plate = String(v["Plate"] || v["plate"] || "");
-        const mod = String(v["Model"] || v["model"] || "");
-        const div = document.createElement("div");
-        div.className = "custom-dropdown-item";
-        div.textContent = `${plate} - ${mod}`;
-        div.addEventListener("click", () => {
-          fleetPlateInput.value = plate;
-          renderVehicleProfile(v);
-          fleetDropdown.style.display = "none";
-        });
-        fleetDropdown.appendChild(div);
-      });
-      fleetDropdown.style.display = "block";
-    }
-
-    toggleFleetBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (fleetDropdown.style.display === "block") { fleetDropdown.style.display = "none"; }
-      else {
-        const val = fleetPlateInput.value.trim().toLowerCase();
-        populateFleetDropdown(val === "" ? fleetDatabase : fleetDatabase.filter(v => String(v["Plate"] || v["plate"] || "").toLowerCase().includes(val)));
-      }
-    });
-
-    fleetPlateInput.addEventListener("input", () => {
-      const val = fleetPlateInput.value.trim().toLowerCase();
-      if (val === "") { fleetProfileContainer.style.display = "none"; fleetDropdown.style.display = "none"; return; }
-      const matches = fleetDatabase.filter(v => String(v["Plate"] || v["plate"] || "").toLowerCase().includes(val));
-      populateFleetDropdown(matches);
-      const exact = fleetDatabase.find(v => String(v["Plate"] || v["plate"] || "").toLowerCase() === val);
-      if (exact) { renderVehicleProfile(exact); fleetDropdown.style.display = "none"; }
-      else { fleetProfileContainer.style.display = "none"; }
-    });
-
-    document.addEventListener("click", (e) => { if (!e.target.closest(".search-wrapper")) fleetDropdown.style.display = "none"; });
-
-    function renderVehicleProfile(vehicle) {
-      currentActiveVehicle = vehicle;
-      isFleetEditMode = false;
-      editFleetBtn.textContent = "Edit Vehicle Details";
-      editFleetBtn.style.background = "var(--primary)";
-      cancelFleetEditBtn.style.display = "none";
-
-      const plateStr = String(vehicle["Plate"] || vehicle["plate"] || "");
-      const vehiclePlate = plateStr.trim().toLowerCase();
-      const assignedDrivers = driversDatabase.filter(d => String(d["Car Plate"] || d["car plate"] || "").trim().toLowerCase() === vehiclePlate);
-      
-      const liveAccidentCount = accidentsDatabase.filter(acc => String(acc["Car Plate"] || acc["car plate"] || "").trim().toLowerCase() === vehiclePlate).length;
-      vehicle["Accidents"] = liveAccidentCount;
-
-      let driversHtml = "";
-      if (assignedDrivers.length === 0) {
-        driversHtml = `<span style="color: var(--text-muted); font-weight: normal;">No drivers assigned</span>`;
-      } else {
-        driversHtml = `<div class="driver-tag-box">`;
-        assignedDrivers.forEach((d, idx) => {
-          const shiftText = d["Shift"] || d["shift"] ? ` (${d["Shift"] || d["shift"]})` : '';
-          driversHtml += `
-            <div class="driver-tag">
-              <strong>Driver ${idx + 1}:</strong> ${d["Full Name"] || d["name"]} | <strong>Iqama:</strong> ${d["Iqama Number"] || d["iqama"]}${shiftText}
-            </div>`;
-        });
-        driversHtml += `</div>`;
-      }
-
-      let currentAvailability = vehicle["Availability"] || vehicle["availability"] || "Unassigned";
-      if (assignedDrivers.length > 0) currentAvailability = "Assigned";
-
-      document.getElementById("profile-vehicle-name").textContent = plateStr + " - Profile";
-      document.getElementById("f-val-plate").innerHTML = plateStr || "-";
-      document.getElementById("f-val-brand").innerHTML = vehicle["Brand"] || vehicle["brand"] || "-";
-      document.getElementById("f-val-model").innerHTML = vehicle["Model"] || vehicle["model"] || "-";
-      document.getElementById("f-val-vin").innerHTML = vehicle["VIN"] || vehicle["vin"] || "-";
-      document.getElementById("f-val-fuel").innerHTML = vehicle["Fuel Type"] || vehicle["fuel type"] || "-";
-      document.getElementById("f-val-assigned-drivers").innerHTML = driversHtml;
-      document.getElementById("f-val-km").innerHTML = vehicle["Total KM"] || vehicle["total km"] || "-";
-      document.getElementById("f-val-availability").innerHTML = currentAvailability;
-      document.getElementById("f-val-accidents").innerHTML = liveAccidentCount;
-      document.getElementById("f-val-mantenimiento").innerHTML = formatDateForDisplay(vehicle["Last Maintenance"] || vehicle["last maintenance"]);
-      document.getElementById("f-val-oil").innerHTML = formatDateForDisplay(vehicle["Last Oil Change"] || vehicle["last oil change"]);
-      document.getElementById("f-val-ins-start").innerHTML = formatDateForDisplay(vehicle["Insurance Start Date"] || vehicle["insurance start date"]);
-      document.getElementById("f-val-ins-exp").innerHTML = formatDateForDisplay(vehicle["Insurance Expiry Date"] || vehicle["insurance expiry date"]);
-      document.getElementById("f-val-op-start").innerHTML = formatDateForDisplay(vehicle["Operation Card Start Date"] || vehicle["operation card start date"]);
-      document.getElementById("f-val-op-exp").innerHTML = formatDateForDisplay(vehicle["Operation Card Expiry Date"] || vehicle["operation card expiry date"]);
-
-      fleetProfileContainer.style.display = "block";
-    }
-
-    function enableFleetEditMode() {
-      if (!currentActiveVehicle) return;
-      isFleetEditMode = true;
-      editFleetBtn.textContent = "💾 Save Changes";
-      editFleetBtn.style.background = "var(--success)";
-      cancelFleetEditBtn.style.display = "inline-block";
-
-      const v = currentActiveVehicle;
-      const plateStr = String(v["Plate"] || v["plate"] || "");
-      const vehiclePlate = plateStr.trim().toLowerCase();
-      const assignedDrivers = driversDatabase.filter(d => String(d["Car Plate"] || d["car plate"] || "").trim().toLowerCase() === vehiclePlate);
-
-      document.getElementById("f-val-plate").innerHTML = plateStr || "-";
-      document.getElementById("f-val-brand").innerHTML = v["Brand"] || v["brand"] || "-";
-      document.getElementById("f-val-model").innerHTML = v["Model"] || v["model"] || "-";
-      document.getElementById("f-val-vin").innerHTML = v["VIN"] || v["vin"] || "-";
-      document.getElementById("f-val-fuel").innerHTML = v["Fuel Type"] || v["fuel type"] || "-";
-      document.getElementById("f-val-km").innerHTML = v["Total KM"] || v["total km"] || "-";
-      document.getElementById("f-val-accidents").innerHTML = v["Accidents"] || "0";
-      document.getElementById("f-val-mantenimiento").innerHTML = formatDateForDisplay(v["Last Maintenance"] || v["last maintenance"]);
-      document.getElementById("f-val-oil").innerHTML = formatDateForDisplay(v["Last Oil Change"] || v["last oil change"]);
-
-      let availabilityHtml = "";
-      if (assignedDrivers.length > 0) {
-        availabilityHtml = `<input type="text" value="Assigned" disabled style="background: #e9ecef; cursor: not-allowed;"><input type="hidden" id="edit-availability" value="Assigned">`;
-      } else {
-        const avail = v["Availability"] || v["availability"] || "Unassigned";
-        availabilityHtml = `
-          <select id="edit-availability">
-            <option value="Unassigned" ${avail==="Unassigned"?"selected":""}>Unassigned</option>
-            <option value="Under Maintenance" ${avail==="Under Maintenance"?"selected":""}>Under Maintenance</option>
-          </select>
-        `;
-      }
-      document.getElementById("f-val-availability").innerHTML = availabilityHtml;
-
-      document.getElementById("f-val-ins-start").innerHTML = `<input type="text" value="${formatDateForDisplay(v["Insurance Start Date"] || v["insurance start date"])}" disabled style="background: #e9ecef; cursor: not-allowed;">`;
-      document.getElementById("f-val-ins-exp").innerHTML = `<input type="text" value="${formatDateForDisplay(v["Insurance Expiry Date"] || v["insurance expiry date"])}" disabled style="background: #e9ecef; cursor: not-allowed;">`;
-      document.getElementById("f-val-op-start").innerHTML = `<input type="text" value="${formatDateForDisplay(v["Operation Card Start Date"] || v["operation card start date"])}" disabled style="background: #e9ecef; cursor: not-allowed;">`;
-      document.getElementById("f-val-op-exp").innerHTML = `<input type="text" value="${formatDateForDisplay(v["Operation Card Expiry Date"] || v["operation card expiry date"])}" disabled style="background: #e9ecef; cursor: not-allowed;">`;
-    }
-
-    async function saveFleetChanges() {
-      const v = currentActiveVehicle;
-      const plateStr = String(v["Plate"] || v["plate"] || "");
-      const vehiclePlate = plateStr.trim().toLowerCase();
-      const assignedDrivers = driversDatabase.filter(d => String(d["Car Plate"] || d["car plate"] || "").trim().toLowerCase() === vehiclePlate);
-      
-      let finalAvailability = document.getElementById("edit-availability").value;
-      if (assignedDrivers.length > 0) finalAvailability = "Assigned";
-
-      const updatedVehicle = {
-        "Plate": plateStr,
-        "Brand": v["Brand"] || v["brand"] || "",
-        "Model": v["Model"] || v["model"] || "",
-        "VIN": v["VIN"] || v["vin"] || "",
-        "Fuel Type": v["Fuel Type"] || v["fuel type"] || "",
-        "Total KM": v["Total KM"] || v["total km"] || "",
-        "Availability": finalAvailability,
-        "Accidents": v["Accidents"],
-        "Last Maintenance": v["Last Maintenance"] || v["last maintenance"] || "",
-        "Last Oil Change": v["Last Oil Change"] || v["last oil change"] || "",
-        "Insurance Start Date": v["Insurance Start Date"] || v["insurance start date"] || "",
-        "Insurance Expiry Date": v["Insurance Expiry Date"] || v["insurance expiry date"] || "",
-        "Operation Card Start Date": v["Operation Card Start Date"] || v["operation card start date"] || "",
-        "Operation Card Expiry Date": v["Operation Card Expiry Date"] || v["operation card expiry date"] || ""
-      };
-
-      editFleetBtn.disabled = true;
-      editFleetBtn.textContent = "Saving...";
-
-      try {
-        const res = await fetch(GOOGLE_SHEET_FLEET_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify(updatedVehicle)
-        });
-        const resData = await res.json();
-        if (resData.status === "success") {
-          const idx = fleetDatabase.findIndex(veh => String(veh["Plate"] || veh["plate"]).trim() === plateStr.trim());
-          if (idx !== -1) fleetDatabase[idx] = updatedVehicle;
-
-          fleetPlateInput.value = plateStr;
-          renderVehicleProfile(updatedVehicle);
-          alert("Vehicle details updated successfully!");
-        }
-      } catch (err) {
-        alert("Error saving vehicle.");
-      } finally {
-        editFleetBtn.disabled = false;
-      }
-    }
-
-    editFleetBtn.addEventListener("click", () => {
-      if (!isFleetEditMode) enableFleetEditMode();
-      else saveFleetChanges();
-    });
-
-    cancelFleetEditBtn.addEventListener("click", () => {
-      if (currentActiveVehicle) renderVehicleProfile(currentActiveVehicle);
-    });
-
+    // --- DRIVERS MANAGEMENT LOGIC ---
     let currentActiveDriver = null;
     let isEditMode = false;
     const iqamaInput = document.getElementById("driver-iqama-input");
@@ -2277,10 +1392,6 @@
       const exact = driversDatabase.find(d => String(d["Full Name"] || d["name"] || "").toLowerCase() === val);
       if (exact) { iqamaInput.value = exact["Iqama Number"] || exact["iqama"] || ""; renderDriverProfile(exact); nameDropdown.style.display = "none"; }
       else { profileContainer.style.display = "none"; }
-    });
-
-    document.addEventListener("click", (e) => {
-      if (!e.target.closest(".search-wrapper")) { iqamaDropdown.style.display = "none"; nameDropdown.style.display = "none"; }
     });
 
     function renderDriverProfile(driver) {
@@ -2382,38 +1493,10 @@
           const index = driversDatabase.findIndex(driver => String(driver["Iqama Number"] || driver["iqama"]).trim() === String(updatedDriver["Iqama Number"]).trim());
           if (index !== -1) driversDatabase[index] = updatedDriver;
 
-          if (selectedPlate) {
-            const vehicle = fleetDatabase.find(v => String(v["Plate"] || v["plate"]).trim() === String(selectedPlate).trim());
-            if (vehicle) {
-              vehicle["Availability"] = "Assigned";
-              await fetch(GOOGLE_SHEET_FLEET_URL, {
-                method: "POST",
-                headers: { "Content-Type": "text/plain" },
-                body: JSON.stringify(vehicle)
-              });
-            }
-          }
-
-          const oldPlate = d["Car Plate"] || d["car plate"];
-          if (oldPlate && oldPlate !== selectedPlate) {
-            const remainingDrivers = driversDatabase.filter(driver => String(driver["Car Plate"] || driver["car plate"] || "").trim() === String(oldPlate).trim());
-            if (remainingDrivers.length === 0) {
-              const oldVehicle = fleetDatabase.find(v => String(v["Plate"] || v["plate"]).trim() === String(oldPlate).trim());
-              if (oldVehicle) {
-                oldVehicle["Availability"] = "Unassigned";
-                await fetch(GOOGLE_SHEET_FLEET_URL, {
-                  method: "POST",
-                  headers: { "Content-Type": "text/plain" },
-                  body: JSON.stringify(oldVehicle)
-                });
-              }
-            }
-          }
-
           iqamaInput.value = updatedDriver["Iqama Number"];
           nameInput.value = updatedDriver["Full Name"];
           renderDriverProfile(updatedDriver);
-          alert("Driver updated and Fleet status synchronized successfully!");
+          alert("Driver updated successfully!");
         }
       } catch (err) {
         alert("Could not update Google Sheets.");
@@ -2429,6 +1512,412 @@
 
     cancelEditBtn.addEventListener("click", () => {
       if (currentActiveDriver) renderDriverProfile(currentActiveDriver);
+    });
+
+    // --- FLEET MANAGEMENT LOGIC ---
+    let currentActiveVehicle = null;
+    let isFleetEditMode = false;
+    const fleetPlateInput = document.getElementById("fleet-plate-input");
+    const toggleFleetBtn = document.getElementById("toggle-fleet-btn");
+    const fleetDropdown = document.getElementById("fleet-dropdown");
+    const fleetProfileContainer = document.getElementById("fleet-profile-container");
+    const editFleetBtn = document.getElementById("edit-fleet-btn");
+    const cancelFleetEditBtn = document.getElementById("cancel-fleet-edit-btn");
+
+    function populateFleetDropdown(items) {
+      fleetDropdown.innerHTML = "";
+      if (items.length === 0) { fleetDropdown.style.display = "none"; return; }
+      items.forEach(v => {
+        const plate = String(v["Plate"] || v["plate"] || "");
+        const mod = String(v["Model"] || v["model"] || "");
+        const div = document.createElement("div");
+        div.className = "custom-dropdown-item";
+        div.textContent = `${plate} - ${mod}`;
+        div.addEventListener("click", () => {
+          fleetPlateInput.value = plate;
+          renderVehicleProfile(v);
+          fleetDropdown.style.display = "none";
+        });
+        fleetDropdown.appendChild(div);
+      });
+      fleetDropdown.style.display = "block";
+    }
+
+    toggleFleetBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (fleetDropdown.style.display === "block") { fleetDropdown.style.display = "none"; }
+      else {
+        const val = fleetPlateInput.value.trim().toLowerCase();
+        populateFleetDropdown(val === "" ? fleetDatabase : fleetDatabase.filter(v => String(v["Plate"] || v["plate"] || "").toLowerCase().includes(val)));
+      }
+    });
+
+    fleetPlateInput.addEventListener("input", () => {
+      const val = fleetPlateInput.value.trim().toLowerCase();
+      if (val === "") { fleetProfileContainer.style.display = "none"; fleetDropdown.style.display = "none"; return; }
+      const matches = fleetDatabase.filter(v => String(v["Plate"] || v["plate"] || "").toLowerCase().includes(val));
+      populateFleetDropdown(matches);
+      const exact = fleetDatabase.find(v => String(v["Plate"] || v["plate"] || "").toLowerCase() === val);
+      if (exact) { renderVehicleProfile(exact); fleetDropdown.style.display = "none"; }
+      else { fleetProfileContainer.style.display = "none"; }
+    });
+
+    function renderVehicleProfile(vehicle) {
+      currentActiveVehicle = vehicle;
+      isFleetEditMode = false;
+      editFleetBtn.textContent = "Edit Vehicle Details";
+      editFleetBtn.style.background = "var(--primary)";
+      cancelFleetEditBtn.style.display = "none";
+
+      const plateStr = String(vehicle["Plate"] || vehicle["plate"] || "");
+      const vehiclePlate = plateStr.trim().toLowerCase();
+      const assignedDrivers = driversDatabase.filter(d => String(d["Car Plate"] || d["car plate"] || "").trim().toLowerCase() === vehiclePlate);
+      
+      let driversHtml = "";
+      if (assignedDrivers.length === 0) {
+        driversHtml = `<span style="color: var(--text-muted); font-weight: normal;">No drivers assigned</span>`;
+      } else {
+        driversHtml = `<div class="driver-tag-box">`;
+        assignedDrivers.forEach((d, idx) => {
+          const shiftText = d["Shift"] || d["shift"] ? ` (${d["Shift"] || d["shift"]})` : '';
+          driversHtml += `
+            <div class="driver-tag">
+              <strong>Driver ${idx + 1}:</strong> ${d["Full Name"] || d["name"]} | <strong>Iqama:</strong> ${d["Iqama Number"] || d["iqama"]}${shiftText}
+            </div>`;
+        });
+        driversHtml += `</div>`;
+      }
+
+      let currentAvailability = vehicle["Availability"] || vehicle["availability"] || "Unassigned";
+      if (assignedDrivers.length > 0) currentAvailability = "Assigned";
+
+      document.getElementById("profile-vehicle-name").textContent = plateStr + " - Profile";
+      document.getElementById("f-val-plate").innerHTML = plateStr || "-";
+      document.getElementById("f-val-brand").innerHTML = vehicle["Brand"] || vehicle["brand"] || "-";
+      document.getElementById("f-val-model").innerHTML = vehicle["Model"] || vehicle["model"] || "-";
+      document.getElementById("f-val-vin").innerHTML = vehicle["VIN"] || vehicle["vin"] || "-";
+      document.getElementById("f-val-fuel").innerHTML = vehicle["Fuel Type"] || vehicle["fuel type"] || "-";
+      document.getElementById("f-val-assigned-drivers").innerHTML = driversHtml;
+      document.getElementById("f-val-km").innerHTML = vehicle["Total KM"] || vehicle["total km"] || "-";
+      document.getElementById("f-val-availability").innerHTML = currentAvailability;
+      document.getElementById("f-val-accidents").innerHTML = vehicle["Accidents"] || "0";
+      document.getElementById("f-val-mantenimiento").innerHTML = formatDateForDisplay(vehicle["Last Maintenance"] || vehicle["last maintenance"]);
+      document.getElementById("f-val-oil").innerHTML = formatDateForDisplay(vehicle["Last Oil Change"] || vehicle["last oil change"]);
+      document.getElementById("f-val-ins-start").innerHTML = formatDateForDisplay(vehicle["Insurance Start Date"] || vehicle["insurance start date"]);
+      document.getElementById("f-val-ins-exp").innerHTML = formatDateForDisplay(vehicle["Insurance Expiry Date"] || vehicle["insurance expiry date"]);
+      document.getElementById("f-val-op-start").innerHTML = formatDateForDisplay(vehicle["Operation Card Start Date"] || vehicle["operation card start date"]);
+      document.getElementById("f-val-op-exp").innerHTML = formatDateForDisplay(vehicle["Operation Card Expiry Date"] || vehicle["operation card expiry date"]);
+
+      fleetProfileContainer.style.display = "block";
+    }
+
+    // --- WIZARD TRIP CHECK LOGIC ---
+    const tripCheckModal = document.getElementById("add-tripcheck-modal");
+    const openAddTripCheckBtn = document.getElementById("open-add-tripcheck-modal");
+    const closeAddTripCheckBtn = document.getElementById("close-add-tripcheck-modal");
+    const addTripCheckForm = document.getElementById("add-tripcheck-form");
+    const wizardPrevBtn = document.getElementById("wizard-prev-btn");
+    const wizardNextBtn = document.getElementById("wizard-next-btn");
+    const saveTripCheckBtn = document.getElementById("save-tripcheck-btn");
+    const progressIndicator = document.getElementById("wizard-progress-indicator");
+
+    window.selectWizardChoice = function(inputId, value, element) {
+      document.getElementById(inputId).value = value;
+      const parent = element.parentElement;
+      parent.querySelectorAll(".choice-box").forEach(box => box.classList.remove("selected"));
+      element.classList.add("selected");
+    };
+
+    function showWizardStep(step) {
+      currentWizardStep = step;
+      document.querySelectorAll(".wizard-step").forEach(el => el.classList.remove("active-step"));
+      document.querySelector(`.wizard-step[data-step="${step}"]`).classList.add("active-step");
+      progressIndicator.textContent = `Step ${step} of ${totalWizardSteps}`;
+
+      wizardPrevBtn.style.display = step === 1 ? "none" : "inline-block";
+      if (step === totalWizardSteps) {
+        wizardNextBtn.style.display = "none";
+        saveTripCheckBtn.style.display = "inline-block";
+      } else {
+        wizardNextBtn.style.display = "inline-block";
+        saveTripCheckBtn.style.display = "none";
+      }
+    }
+
+    openAddTripCheckBtn.addEventListener("click", async () => {
+      await Promise.all([fetchFleet(), fetchDrivers()]);
+      setupTripCheckSelects();
+      addTripCheckForm.reset();
+      document.getElementById("tc-id").value = "";
+      
+      document.querySelectorAll(".choice-box").forEach(box => box.classList.remove("selected"));
+      document.querySelectorAll(".wizard-step").forEach(stepEl => {
+        const firstBox = stepEl.querySelector(".choice-box");
+        if (firstBox) firstBox.classList.add("selected");
+      });
+
+      showWizardStep(1);
+      tripCheckModal.style.display = "flex";
+    });
+
+    closeAddTripCheckBtn.addEventListener("click", () => {
+      tripCheckModal.style.display = "none";
+    });
+
+    wizardNextBtn.addEventListener("click", () => {
+      if (currentWizardStep === 2) {
+        if (!document.getElementById("tc-plate").value) { alert("Please select a valid Car Plate."); return; }
+        if (!document.getElementById("tc-iqama").value) { alert("Please select a valid Driver."); return; }
+        if (!document.getElementById("tc-odometer").value) { alert("Please enter odometer KM."); return; }
+      }
+      if (currentWizardStep < totalWizardSteps) {
+        showWizardStep(currentWizardStep + 1);
+      }
+    });
+
+    wizardPrevBtn.addEventListener("click", () => {
+      if (currentWizardStep > 1) {
+        showWizardStep(currentWizardStep - 1);
+      }
+    });
+
+    function setupTripCheckSelects() {
+      const plateSearch = document.getElementById("tc-plate-search");
+      const plateDropdown = document.getElementById("tc-plate-dropdown");
+      const plateInput = document.getElementById("tc-plate");
+      const togglePlateBtn = document.getElementById("toggle-tc-plate-btn");
+
+      const iqamaSearch = document.getElementById("tc-iqama-search");
+      const iqamaDropdown = document.getElementById("tc-iqama-dropdown");
+      const iqamaInput = document.getElementById("tc-iqama");
+      const toggleIqamaBtn = document.getElementById("toggle-tc-iqama-btn");
+
+      function renderPlateDropdown(items) {
+        plateDropdown.innerHTML = "";
+        if (items.length === 0) { plateDropdown.style.display = "none"; return; }
+        items.forEach(v => {
+          const plate = v["Plate"] || v["plate"];
+          const div = document.createElement("div");
+          div.className = "custom-dropdown-item";
+          div.textContent = `${plate} (${v["Model"] || v["model"] || ""})`;
+          div.addEventListener("click", () => {
+            plateSearch.value = plate;
+            plateInput.value = plate;
+            plateDropdown.style.display = "none";
+            if (v["Total KM"] || v["total km"]) {
+              document.getElementById("tc-odometer").value = v["Total KM"] || v["total km"];
+            }
+          });
+          plateDropdown.appendChild(div);
+        });
+        plateDropdown.style.display = "block";
+      }
+
+      plateSearch.oninput = (e) => {
+        const val = e.target.value.toLowerCase();
+        plateInput.value = "";
+        const matches = fleetDatabase.filter(v => String(v["Plate"] || v["plate"] || "").toLowerCase().includes(val));
+        renderPlateDropdown(matches);
+      };
+      togglePlateBtn.onclick = (e) => {
+        e.stopPropagation();
+        renderPlateDropdown(fleetDatabase);
+      };
+
+      function renderIqamaDropdown(items) {
+        iqamaDropdown.innerHTML = "";
+        if (items.length === 0) { iqamaDropdown.style.display = "none"; return; }
+        items.forEach(d => {
+          const iqama = d["Iqama Number"] || d["iqama"] || "";
+          const name = d["Full Name"] || d["name"] || "";
+          const div = document.createElement("div");
+          div.className = "custom-dropdown-item";
+          div.textContent = `${iqama} - ${name}`;
+          div.addEventListener("click", () => {
+            iqamaSearch.value = `${iqama} - ${name}`;
+            iqamaInput.value = iqama;
+            document.getElementById("tc-driver-name").value = name;
+            iqamaDropdown.style.display = "none";
+          });
+          iqamaDropdown.appendChild(div);
+        });
+        iqamaDropdown.style.display = "block";
+      }
+
+      iqamaSearch.oninput = (e) => {
+        const val = e.target.value.toLowerCase();
+        iqamaInput.value = "";
+        document.getElementById("tc-driver-name").value = "";
+        const matches = driversDatabase.filter(d => 
+          String(d["Iqama Number"] || d["iqama"] || "").toLowerCase().includes(val) ||
+          String(d["Full Name"] || d["name"] || "").toLowerCase().includes(val)
+        );
+        renderIqamaDropdown(matches);
+      };
+      toggleIqamaBtn.onclick = (e) => {
+        e.stopPropagation();
+        renderIqamaDropdown(driversDatabase);
+      };
+    }
+
+    addTripCheckForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      saveTripCheckBtn.disabled = true;
+      saveTripCheckBtn.textContent = "Saving inspection...";
+
+      const ksaNow = getKSACurrentDateTime();
+      const checkData = {
+        action: "create",
+        "Check Type": document.getElementById("tc-type").value,
+        "Date": ksaNow.date,
+        "Time": ksaNow.time,
+        "Car Plate": document.getElementById("tc-plate").value,
+        "Driver Iqama": document.getElementById("tc-iqama").value,
+        "Driver Name": document.getElementById("tc-driver-name").value,
+        "Odometer (KM)": parseInt(document.getElementById("tc-odometer").value, 10) || 0,
+        "Valid Documents": document.getElementById("tc_documents").value,
+        "Required Uniform": document.getElementById("tc_uniform").value,
+        "Doors Working": document.getElementById("tc_doors").value,
+        "Trunk Condition": document.getElementById("tc_trunk").value,
+        "Bonnet Condition": document.getElementById("tc_bonnet").value,
+        "Dashboard Condition": document.getElementById("tc_dashboard").value,
+        "Mirrors Condition": document.getElementById("tc_mirrors").value,
+        "Horn Working": document.getElementById("tc_horn").value,
+        "Seats & Belts": document.getElementById("tc_seats").value,
+        "A/C Working": document.getElementById("tc_ac").value,
+        "Steering & Odometer": document.getElementById("tc_steering").value,
+        "MDT & Screen": document.getElementById("tc_mdt").value,
+        "Charging Port": document.getElementById("tc_charging").value,
+        "CCTV Cameras": document.getElementById("tc_cctv").value,
+        "Lights Working": document.getElementById("tc_lights").value,
+        "Housekeeping": document.getElementById("tc_housekeeping").value,
+        "Wipers Working": document.getElementById("tc_wipers").value,
+        "Oil Leakage": document.getElementById("tc_oil_leak").value,
+        "Other Leakage": document.getElementById("tc_other_leak").value,
+        "Tyres & Spare": document.getElementById("tc_tyres").value,
+        "Brakes & ABS": document.getElementById("tc_brakes").value,
+        "Safety Equipment": document.getElementById("tc_safety").value,
+        "Number Plates": document.getElementById("tc_plates").value,
+        "Toolkit Bag": document.getElementById("tc_toolkit").value,
+        "Overall Status": document.getElementById("tc-status").value,
+        "Checked By": loggedInUserName,
+        "Remarks": document.getElementById("tc-remarks").value.trim()
+      };
+
+      try {
+        const res = await fetch(GOOGLE_SHEET_TRIPCHECK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify(checkData)
+        });
+        const resData = await res.json();
+        if (resData.status === "success") {
+          await fetchTripChecks();
+          tripCheckModal.style.display = "none";
+          alert("Trip check successfully logged!");
+        } else {
+          alert("Error: " + resData.message);
+        }
+      } catch (err) {
+        alert("Failed to communicate with Google Sheets.");
+      } finally {
+        saveTripCheckBtn.disabled = false;
+        saveTripCheckBtn.textContent = "💾 Save Inspection";
+      }
+    });
+
+    function renderTripChecksTable(items) {
+      const tbody = document.getElementById("tripchecks-table-body");
+      tbody.innerHTML = "";
+      document.getElementById("tripcheck-count-badge").textContent = `${items.length} records found`;
+
+      if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: var(--text-muted); padding: 20px;">No trip check records found.</td></tr>`;
+        return;
+      }
+
+      items.forEach(tc => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${tc["Check ID"] || tc["check id"] || "-"}</td>
+          <td><strong>${tc["Check Type"] || tc["check type"] || "-"}</strong></td>
+          <td>${formatDateForDisplay(tc["Date"] || tc["date"])}</td>
+          <td>${formatTimeForDisplay(tc["Time"] || tc["time"])}</td>
+          <td>${tc["Car Plate"] || tc["car plate"] || "-"}</td>
+          <td>${tc["Driver Iqama"] || tc["driver iqama"] || "-"}</td>
+          <td>${tc["Driver Name"] || tc["driver name"] || "-"}</td>
+          <td>${tc["Odometer (KM)"] || tc["odometer (km)"] || "-"}</td>
+          <td><span style="font-weight: bold; color: ${ (tc["Overall Status"] || tc["overall status"]) === 'Passed' ? 'var(--success)' : 'var(--danger)' }">${tc["Overall Status"] || tc["overall status"] || "-"}</span></td>
+          <td>${tc["Checked By"] || tc["checked by"] || "-"}</td>
+          <td>${tc["Remarks"] || tc["remarks"] || "-"}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById("export-tripchecks-btn").addEventListener("click", () => {
+      if (tripChecksDatabase.length === 0) { alert("No trip check data available to export."); return; }
+      const worksheet = XLSX.utils.json_to_sheet(tripChecksDatabase);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Trip Check Database");
+      XLSX.writeFile(workbook, "Trip_Check_Database.xlsx");
+    });
+
+    function renderAccidentsTable(items) {
+      const tbody = document.getElementById("accidents-table-body");
+      tbody.innerHTML = "";
+      document.getElementById("accident-count-badge").textContent = `${items.length} records found`;
+      if (items.length === 0) { tbody.innerHTML = `<tr><td colspan="22" style="text-align: center; padding: 20px;">No accidents.</td></tr>`; return; }
+      items.forEach(acc => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${acc["Accident ID"] || "-"}</td>
+          <td>${formatDateForDisplay(acc["Date"])}</td>
+          <td>${formatTimeForDisplay(acc["Time"])}</td>
+          <td>${formatDateForDisplay(acc["Reporting Date"])}</td>
+          <td>${formatTimeForDisplay(acc["Reporting Time"])}</td>
+          <td>${acc["Reported By"] || "-"}</td>
+          <td>${acc["Car Plate"] || "-"}</td>
+          <td>${acc["Car Model"] || "-"}</td>
+          <td>${acc["Driver Iqama"] || "-"}</td>
+          <td>${acc["Driver Name"] || "-"}</td>
+          <td>${acc["Accident Location"] || "-"}</td>
+          <td>${acc["Severity"] || "-"}</td>
+          <td>${acc["Injured"] || "-"}</td>
+          <td>${acc["Najm"] || "-"}</td>
+          <td>${acc["Najm Report Status"] || "-"}</td>
+          <td>${acc["Mistake Percentage"] !== undefined ? acc["Mistake Percentage"] + "%" : "-"}</td>
+          <td>${acc["Investigation Conducted"] || "-"}</td>
+          <td>${acc["Investigation Status"] || "-"}</td>
+          <td>${acc["Accident Type"] || "-"}</td>
+          <td>${acc["Accident Description"] || "-"}</td>
+          <td>${acc["Root Causes"] || "-"}</td>
+          <td>${acc["Damage Description"] || "-"}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    const openAddAccidentModalBtn = document.getElementById("open-add-accident-modal");
+    const closeAddAccidentModalBtn = document.getElementById("close-add-accident-modal");
+    const addAccidentModal = document.getElementById("add-accident-modal");
+    openAddAccidentModalBtn.addEventListener("click", () => { addAccidentModal.style.display = "flex"; });
+    closeAddAccidentModalBtn.addEventListener("click", () => { addAccidentModal.style.display = "none"; });
+
+    document.getElementById("export-fleet-excel-btn").addEventListener("click", () => {
+      if (fleetDatabase.length === 0) { alert("No fleet data available to export."); return; }
+      const worksheet = XLSX.utils.json_to_sheet(fleetDatabase);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Fleet Database");
+      XLSX.writeFile(workbook, "Fleet_Database.xlsx");
+    });
+
+    document.getElementById("export-excel-btn").addEventListener("click", () => {
+      if (driversDatabase.length === 0) { alert("No driver data available to export."); return; }
+      const worksheet = XLSX.utils.json_to_sheet(driversDatabase);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Drivers Database");
+      XLSX.writeFile(workbook, "Drivers_Database.xlsx");
     });
   </script>
 </body>
