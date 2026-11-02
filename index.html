@@ -780,7 +780,7 @@
               <option value="Under Process">Under Process</option>
             </select>
           </div>
-<div class="form-group">
+          <div class="form-group">
             <label>Accident Type</label>
             <select id="add-acc-type" required>
               <option value="">-- Select Accident Type --</option>
@@ -1011,7 +1011,6 @@
         if (!res.ok) throw new Error("Network error");
         fleetDatabase = await res.json();
 
-        // Actualizar contadores de accidentes locales basados en accidentes existentes
         updateAllFleetAccidentCounts();
 
         document.getElementById("fleet-sync-status").textContent = `✅ Synced ${fleetDatabase.length} vehicle(s).`;
@@ -1045,18 +1044,18 @@
     function updateAllFleetAccidentCounts() {
       if (fleetDatabase.length === 0 || accidentsDatabase.length === 0) return;
       fleetDatabase.forEach(v => {
-        const plate = String(v["Plate"] || "").trim().toLowerCase();
-        const count = accidentsDatabase.filter(acc => String(acc["Car Plate"] || "").trim().toLowerCase() === plate).length;
+        const plate = String(v["Plate"] || v["plate"] || "").trim().toLowerCase();
+        const count = accidentsDatabase.filter(acc => String(acc["Car Plate"] || acc["car plate"] || "").trim().toLowerCase() === plate).length;
         v["Accidents"] = count;
       });
     }
 
     async function recountAndSyncVehicle(plate) {
       if (!plate) return;
-      const vehicle = fleetDatabase.find(v => String(v["Plate"] || "").trim().toLowerCase() === String(plate).trim().toLowerCase());
+      const vehicle = fleetDatabase.find(v => String(v["Plate"] || v["plate"] || "").trim().toLowerCase() === String(plate).trim().toLowerCase());
       if (!vehicle) return;
 
-      const count = accidentsDatabase.filter(acc => String(acc["Car Plate"] || "").trim().toLowerCase() === String(plate).trim().toLowerCase()).length;
+      const count = accidentsDatabase.filter(acc => String(acc["Car Plate"] || acc["car plate"] || "").trim().toLowerCase() === String(plate).trim().toLowerCase()).length;
       vehicle["Accidents"] = count;
 
       try {
@@ -1157,69 +1156,70 @@
 
     async function openEditAccidentModal(acc) {
       isEditingAccidentMode = true;
-      originalAccidentPlate = acc["Car Plate"] || "";
-      modalAccidentTitle.textContent = `Edit Accident: ${acc["Accident ID"] || ""}`;
+      originalAccidentPlate = acc["Car Plate"] || acc["car plate"] || "";
+      modalAccidentTitle.textContent = `Edit Accident: ${acc["Accident ID"] || acc["accident id"] || ""}`;
       saveAccidentBtn.textContent = "💾 Update Accident Record";
       saveAccidentBtn.style.background = "#0284c7";
       deleteAccidentBtn.style.display = "inline-block";
 
       await prepareModalSelects();
 
-      document.getElementById("add-acc-id").value = acc["Accident ID"] || "";
+      document.getElementById("add-acc-id").value = acc["Accident ID"] || acc["accident id"] || "";
       
       const dateInput = document.getElementById("add-acc-date");
       const timeInput = document.getElementById("add-acc-time");
       
-      dateInput.value = formatDateForInput(acc["Date"]);
+      dateInput.value = formatDateForInput(acc["Date"] || acc["date"]);
       dateInput.disabled = true;
       dateInput.style.background = "#e9ecef";
 
-      timeInput.value = formatTimeForDisplay(acc["Time"]);
+      timeInput.value = formatTimeForDisplay(acc["Time"] || acc["time"]);
       timeInput.disabled = true;
       timeInput.style.background = "#e9ecef";
 
-      document.getElementById("add-acc-plate").value = acc["Car Plate"] || "";
-      document.getElementById("add-acc-model").value = acc["Car Model"] || "";
-      document.getElementById("add-acc-iqama").value = acc["Driver Iqama"] || "";
-      document.getElementById("add-acc-driver-name").value = acc["Driver Name"] || "";
-      document.getElementById("add-acc-location").value = acc["Accident Location"] || "";
-      document.getElementById("add-acc-severity").value = acc["Severity"] || "Minor";
-      document.getElementById("add-acc-injured").value = acc["Injured"] || "No";
+      document.getElementById("add-acc-plate").value = acc["Car Plate"] || acc["car plate"] || "";
+      document.getElementById("add-acc-model").value = acc["Car Model"] || acc["car model"] || "";
+      document.getElementById("add-acc-iqama").value = acc["Driver Iqama"] || acc["driver iqama"] || "";
+      document.getElementById("add-acc-driver-name").value = acc["Driver Name"] || acc["driver name"] || "";
+      document.getElementById("add-acc-location").value = acc["Accident Location"] || acc["accident location"] || "";
+      document.getElementById("add-acc-severity").value = acc["Severity"] || acc["severity"] || "Minor";
+      document.getElementById("add-acc-injured").value = acc["Injured"] || acc["injured"] || "No";
       
-      const najmVal = acc["Najm"] || "No";
+      const najmVal = acc["Najm"] || acc["najm"] || "No";
       document.getElementById("add-acc-najm").value = najmVal;
       const najmStatusSelect = document.getElementById("add-acc-najm-status");
       if (najmVal === "Yes") {
         najmStatusSelect.disabled = false;
         najmStatusSelect.style.background = "#ffffff";
         najmStatusSelect.innerHTML = `<option value="Received">Received</option><option value="No Received">No Received</option>`;
-        najmStatusSelect.value = acc["Najm Report Status"] || "Received";
+        najmStatusSelect.value = acc["Najm Report Status"] || acc["najm report status"] || "Received";
       } else {
         najmStatusSelect.disabled = true;
         najmStatusSelect.style.background = "#e9ecef";
         najmStatusSelect.innerHTML = `<option value="N/A">N/A</option>`;
       }
 
-      document.getElementById("add-acc-mistake").value = acc["Mistake Percentage"] !== undefined ? acc["Mistake Percentage"] : 0;
+      const mistakeVal = acc["Mistake Percentage"] !== undefined ? acc["Mistake Percentage"] : (acc["mistake percentage"] !== undefined ? acc["mistake percentage"] : 0);
+      document.getElementById("add-acc-mistake").value = mistakeVal;
 
-      const invVal = acc["Investigation Conducted"] || "No";
+      const invVal = acc["Investigation Conducted"] || acc["investigation conducted"] || "No";
       document.getElementById("add-acc-investigation").value = invVal;
       const invStatusSelect = document.getElementById("add-acc-inv-status");
       if (invVal === "Yes") {
         invStatusSelect.disabled = false;
         invStatusSelect.style.background = "#ffffff";
         invStatusSelect.innerHTML = `<option value="Closed">Closed</option><option value="Under Process">Under Process</option>`;
-        invStatusSelect.value = acc["Investigation Status"] || "Under Process";
+        invStatusSelect.value = acc["Investigation Status"] || acc["investigation status"] || "Under Process";
       } else {
         invStatusSelect.disabled = true;
         invStatusSelect.style.background = "#e9ecef";
         invStatusSelect.innerHTML = `<option value="N/A">N/A</option>`;
       }
 
-      document.getElementById("add-acc-type").value = acc["Accident Type"] || "";
-      document.getElementById("add-acc-root-causes").value = acc["Root Causes"] || "";
-      document.getElementById("add-acc-description").value = acc["Accident Description"] || "";
-      document.getElementById("add-acc-damage").value = acc["Damage Description"] || "";
+      document.getElementById("add-acc-type").value = acc["Accident Type"] || acc["accident type"] || "";
+      document.getElementById("add-acc-root-causes").value = acc["Root Causes"] || acc["root causes"] || "";
+      document.getElementById("add-acc-description").value = acc["Accident Description"] || acc["accident description"] || "";
+      document.getElementById("add-acc-damage").value = acc["Damage Description"] || acc["damage description"] || "";
 
       addAccidentModal.style.display = "flex";
     }
@@ -1264,14 +1264,14 @@
 
     document.getElementById("add-acc-plate").addEventListener("change", (e) => {
       const selectedPlate = e.target.value;
-      const vehicle = fleetDatabase.find(v => String(v["Plate"] || v["plate"]).trim() === String(selectedPlate).trim());
+      const vehicle = fleetDatabase.find(v => String(v["Plate"] || v["plate"] || "").trim() === String(selectedPlate).trim());
       document.getElementById("add-acc-model").value = vehicle ? `${vehicle["Brand"] || vehicle["brand"] || ""} ${vehicle["Model"] || vehicle["model"] || ""}` : "";
     });
 
     document.getElementById("add-acc-iqama").addEventListener("change", (e) => {
       const selectedIqama = e.target.value;
-      const driver = driversDatabase.find(d => String(d["Iqama Number"] || d["iqama"]).trim() === String(selectedIqama).trim());
-      document.getElementById("add-acc-driver-name").value = driver ? (driver["Full Name"] || driver["name"]) : "";
+      const driver = driversDatabase.find(d => String(d["Iqama Number"] || d["iqama"] || "").trim() === String(selectedIqama).trim());
+      document.getElementById("add-acc-driver-name").value = driver ? (driver["Full Name"] || driver["name"] || "") : "";
     });
 
     document.getElementById("add-acc-najm").addEventListener("change", (e) => {
@@ -1350,10 +1350,8 @@
         const resData = await res.json();
 
         if (resData.status === "success") {
-          // Recargar la lista de accidentes para tener los datos frescos
           await fetchAccidents();
 
-          // Actualizar recuento de vehículos afectados (si se cambió de placa en edición, actualizar ambos)
           if (isEditingAccidentMode) {
             if (originalAccidentPlate && originalAccidentPlate !== selectedPlate) {
               await recountAndSyncVehicle(originalAccidentPlate);
@@ -1388,28 +1386,28 @@
         const tr = document.createElement("tr");
         tr.title = "Click to edit accident details";
         tr.innerHTML = `
-          <td>${acc["Accident ID"] || "-"}</td>
-          <td>${formatDateForDisplay(acc["Date"])}</td>
-          <td>${formatTimeForDisplay(acc["Time"])}</td>
-          <td>${formatDateForDisplay(acc["Reporting Date"])}</td>
-          <td>${formatTimeForDisplay(acc["Reporting Time"])}</td>
-          <td>${acc["Reported By"] || "-"}</td>
-          <td>${acc["Car Plate"] || "-"}</td>
-          <td>${acc["Car Model"] || "-"}</td>
-          <td>${acc["Driver Iqama"] || "-"}</td>
-          <td>${acc["Driver Name"] || "-"}</td>
-          <td>${acc["Accident Location"] || "-"}</td>
-          <td>${acc["Severity"] || "-"}</td>
-          <td>${acc["Injured"] || "-"}</td>
-          <td>${acc["Najm"] || "-"}</td>
-          <td>${acc["Najm Report Status"] || "-"}</td>
-          <td>${acc["Mistake Percentage"] !== undefined ? acc["Mistake Percentage"] + "%" : "-"}</td>
-          <td>${acc["Investigation Conducted"] || "-"}</td>
-          <td>${acc["Investigation Status"] || "-"}</td>
-          <td>${acc["Accident Type"] || "-"}</td>
-          <td>${acc["Accident Description"] || "-"}</td>
-          <td>${acc["Root Causes"] || "-"}</td>
-          <td>${acc["Damage Description"] || "-"}</td>
+          <td>${acc["Accident ID"] || acc["accident id"] || "-"}</td>
+          <td>${formatDateForDisplay(acc["Date"] || acc["date"])}</td>
+          <td>${formatTimeForDisplay(acc["Time"] || acc["time"])}</td>
+          <td>${formatDateForDisplay(acc["Reporting Date"] || acc["reporting date"])}</td>
+          <td>${formatTimeForDisplay(acc["Reporting Time"] || acc["reporting time"])}</td>
+          <td>${acc["Reported By"] || acc["reported by"] || "-"}</td>
+          <td>${acc["Car Plate"] || acc["car plate"] || "-"}</td>
+          <td>${acc["Car Model"] || acc["car model"] || "-"}</td>
+          <td>${acc["Driver Iqama"] || acc["driver iqama"] || "-"}</td>
+          <td>${acc["Driver Name"] || acc["driver name"] || "-"}</td>
+          <td>${acc["Accident Location"] || acc["accident location"] || "-"}</td>
+          <td>${acc["Severity"] || acc["severity"] || "-"}</td>
+          <td>${acc["Injured"] || acc["injured"] || "-"}</td>
+          <td>${acc["Najm"] || acc["najm"] || "-"}</td>
+          <td>${acc["Najm Report Status"] || acc["najm report status"] || "-"}</td>
+          <td>${(acc["Mistake Percentage"] !== undefined) ? acc["Mistake Percentage"] + "%" : ((acc["mistake percentage"] !== undefined) ? acc["mistake percentage"] + "%" : "-")}</td>
+          <td>${acc["Investigation Conducted"] || acc["investigation conducted"] || "-"}</td>
+          <td>${acc["Investigation Status"] || acc["investigation status"] || "-"}</td>
+          <td>${acc["Accident Type"] || acc["accident type"] || "-"}</td>
+          <td>${acc["Accident Description"] || acc["accident description"] || "-"}</td>
+          <td>${acc["Root Causes"] || acc["root causes"] || "-"}</td>
+          <td>${acc["Damage Description"] || acc["damage description"] || "-"}</td>
         `;
         tr.addEventListener("click", () => openEditAccidentModal(acc));
         accidentsTableBody.appendChild(tr);
@@ -1420,10 +1418,10 @@
       accidentDropdown.innerHTML = "";
       if (items.length === 0) { accidentDropdown.style.display = "none"; return; }
       items.forEach(acc => {
-        const id = String(acc["Accident ID"] || "");
-        const plate = String(acc["Car Plate"] || "");
-        const driverName = String(acc["Driver Name"] || "");
-        const iqama = String(acc["Driver Iqama"] || "");
+        const id = String(acc["Accident ID"] || acc["accident id"] || "");
+        const plate = String(acc["Car Plate"] || acc["car plate"] || "");
+        const driverName = String(acc["Driver Name"] || acc["driver name"] || "");
+        const iqama = String(acc["Driver Iqama"] || acc["driver iqama"] || "");
         const div = document.createElement("div");
         div.className = "custom-dropdown-item";
         div.textContent = `${id} | Plate: ${plate} | ${driverName} (${iqama})`;
@@ -1446,24 +1444,24 @@
 
       const filtered = accidentsDatabase.filter(acc => {
         const matchQuery = query === "" || 
-          String(acc["Accident ID"] || "").toLowerCase().includes(query) ||
-          String(acc["Car Plate"] || "").toLowerCase().includes(query) ||
-          String(acc["Driver Iqama"] || "").toLowerCase().includes(query) ||
-          String(acc["Driver Name"] || "").toLowerCase().includes(query);
+          String(acc["Accident ID"] || acc["accident id"] || "").toLowerCase().includes(query) ||
+          String(acc["Car Plate"] || acc["car plate"] || "").toLowerCase().includes(query) ||
+          String(acc["Driver Iqama"] || acc["driver iqama"] || "").toLowerCase().includes(query) ||
+          String(acc["Driver Name"] || acc["driver name"] || "").toLowerCase().includes(query);
 
         if (!matchQuery) return false;
 
-        const accDate = formatDateForInput(acc["Date"]);
+        const accDate = formatDateForInput(acc["Date"] || acc["date"]);
         if (!accDate) return true;
 
         if (startDate && startDate !== "") {
-          const fullAccDateTime = `${accDate}T${acc["Time"] || "00:00"}`;
+          const fullAccDateTime = `${accDate}T${acc["Time"] || acc["time"] || "00:00"}`;
           const fullStartDateTime = `${startDate}T${startTime}`;
           if (fullAccDateTime < fullStartDateTime) return false;
         }
 
         if (endDate && endDate !== "") {
-          const fullAccDateTime = `${accDate}T${acc["Time"] || "23:59"}`;
+          const fullAccDateTime = `${accDate}T${acc["Time"] || acc["time"] || "23:59"}`;
           const fullEndDateTime = `${endDate}T${endTime}`;
           if (fullAccDateTime > fullEndDateTime) return false;
         }
@@ -1478,10 +1476,10 @@
       const val = accidentSearchInput.value.trim().toLowerCase();
       if (val === "") { renderAccidentsTable(accidentsDatabase); accidentDropdown.style.display = "none"; return; }
       const matches = accidentsDatabase.filter(acc => 
-        String(acc["Accident ID"] || "").toLowerCase().includes(val) ||
-        String(acc["Car Plate"] || "").toLowerCase().includes(val) ||
-        String(acc["Driver Iqama"] || "").toLowerCase().includes(val) ||
-        String(acc["Driver Name"] || "").toLowerCase().includes(val)
+        String(acc["Accident ID"] || acc["accident id"] || "").toLowerCase().includes(val) ||
+        String(acc["Car Plate"] || acc["car plate"] || "").toLowerCase().includes(val) ||
+        String(acc["Driver Iqama"] || acc["driver iqama"] || "").toLowerCase().includes(val) ||
+        String(acc["Driver Name"] || acc["driver name"] || "").toLowerCase().includes(val)
       );
       populateAccidentDropdown(matches);
       filterAccidentsTable();
@@ -1507,13 +1505,13 @@
       const endTime = document.getElementById("filter-end-time").value || "23:59";
 
       const filtered = accidentsDatabase.filter(acc => {
-        const accDate = formatDateForInput(acc["Date"]);
+        const accDate = formatDateForInput(acc["Date"] || acc["date"]);
         if (!accDate) return true;
         if (startDate && startDate !== "") {
-          if (`${accDate}T${acc["Time"] || "00:00"}` < `${startDate}T${startTime}`) return false;
+          if (`${accDate}T${acc["Time"] || acc["time"] || "00:00"}` < `${startDate}T${startTime}`) return false;
         }
         if (endDate && endDate !== "") {
-          if (`${accDate}T${acc["Time"] || "23:59"}` > `${endDate}T${endTime}`) return false;
+          if (`${accDate}T${acc["Time"] || acc["time"] || "23:59"}` > `${endDate}T${endTime}`) return false;
         }
         return true;
       });
@@ -1555,8 +1553,8 @@
       fleetDropdown.innerHTML = "";
       if (items.length === 0) { fleetDropdown.style.display = "none"; return; }
       items.forEach(v => {
-        const plate = String(v["Plate"] || "");
-        const mod = String(v["Model"] || "");
+        const plate = String(v["Plate"] || v["plate"] || "");
+        const mod = String(v["Model"] || v["model"] || "");
         const div = document.createElement("div");
         div.className = "custom-dropdown-item";
         div.textContent = `${plate} - ${mod}`;
@@ -1575,16 +1573,16 @@
       if (fleetDropdown.style.display === "block") { fleetDropdown.style.display = "none"; }
       else {
         const val = fleetPlateInput.value.trim().toLowerCase();
-        populateFleetDropdown(val === "" ? fleetDatabase : fleetDatabase.filter(v => String(v["Plate"] || "").toLowerCase().includes(val)));
+        populateFleetDropdown(val === "" ? fleetDatabase : fleetDatabase.filter(v => String(v["Plate"] || v["plate"] || "").toLowerCase().includes(val)));
       }
     });
 
     fleetPlateInput.addEventListener("input", () => {
       const val = fleetPlateInput.value.trim().toLowerCase();
       if (val === "") { fleetProfileContainer.style.display = "none"; fleetDropdown.style.display = "none"; return; }
-      const matches = fleetDatabase.filter(v => String(v["Plate"] || "").toLowerCase().includes(val));
+      const matches = fleetDatabase.filter(v => String(v["Plate"] || v["plate"] || "").toLowerCase().includes(val));
       populateFleetDropdown(matches);
-      const exact = fleetDatabase.find(v => String(v["Plate"] || "").toLowerCase() === val);
+      const exact = fleetDatabase.find(v => String(v["Plate"] || v["plate"] || "").toLowerCase() === val);
       if (exact) { renderVehicleProfile(exact); fleetDropdown.style.display = "none"; }
       else { fleetProfileContainer.style.display = "none"; }
     });
@@ -1598,11 +1596,11 @@
       editFleetBtn.style.background = "var(--primary)";
       cancelFleetEditBtn.style.display = "none";
 
-      const vehiclePlate = String(vehicle["Plate"] || "").trim().toLowerCase();
-      const assignedDrivers = driversDatabase.filter(d => String(d["Car Plate"] || "").trim().toLowerCase() === vehiclePlate);
+      const plateStr = String(vehicle["Plate"] || vehicle["plate"] || "");
+      const vehiclePlate = plateStr.trim().toLowerCase();
+      const assignedDrivers = driversDatabase.filter(d => String(d["Car Plate"] || d["car plate"] || "").trim().toLowerCase() === vehiclePlate);
       
-      // Contar en tiempo real desde la base de datos de accidentes cargada
-      const liveAccidentCount = accidentsDatabase.filter(acc => String(acc["Car Plate"] || "").trim().toLowerCase() === vehiclePlate).length;
+      const liveAccidentCount = accidentsDatabase.filter(acc => String(acc["Car Plate"] || acc["car plate"] || "").trim().toLowerCase() === vehiclePlate).length;
       vehicle["Accidents"] = liveAccidentCount;
 
       let driversHtml = "";
@@ -1611,36 +1609,36 @@
       } else {
         driversHtml = `<div class="driver-tag-box">`;
         assignedDrivers.forEach((d, idx) => {
-          const shiftText = d["Shift"] ? ` (${d["Shift"]})` : '';
+          const shiftText = d["Shift"] || d["shift"] ? ` (${d["Shift"] || d["shift"]})` : '';
           driversHtml += `
             <div class="driver-tag">
-              <strong>Driver ${idx + 1}:</strong> ${d["Full Name"]} | <strong>Iqama:</strong> ${d["Iqama Number"]}${shiftText}
+              <strong>Driver ${idx + 1}:</strong> ${d["Full Name"] || d["name"]} | <strong>Iqama:</strong> ${d["Iqama Number"] || d["iqama"]}${shiftText}
             </div>`;
         });
         driversHtml += `</div>`;
       }
 
-      let currentAvailability = vehicle["Availability"] || "Unassigned";
+      let currentAvailability = vehicle["Availability"] || vehicle["availability"] || "Unassigned";
       if (assignedDrivers.length > 0) {
         currentAvailability = "Assigned";
       }
 
-      document.getElementById("profile-vehicle-name").textContent = vehicle["Plate"] + " - Profile";
-      document.getElementById("f-val-plate").innerHTML = vehicle["Plate"] || "-";
-      document.getElementById("f-val-brand").innerHTML = vehicle["Brand"] || "-";
-      document.getElementById("f-val-model").innerHTML = vehicle["Model"] || "-";
-      document.getElementById("f-val-vin").innerHTML = vehicle["VIN"] || "-";
-      document.getElementById("f-val-fuel").innerHTML = vehicle["Fuel Type"] || "-";
+      document.getElementById("profile-vehicle-name").textContent = plateStr + " - Profile";
+      document.getElementById("f-val-plate").innerHTML = plateStr || "-";
+      document.getElementById("f-val-brand").innerHTML = vehicle["Brand"] || vehicle["brand"] || "-";
+      document.getElementById("f-val-model").innerHTML = vehicle["Model"] || vehicle["model"] || "-";
+      document.getElementById("f-val-vin").innerHTML = vehicle["VIN"] || vehicle["vin"] || "-";
+      document.getElementById("f-val-fuel").innerHTML = vehicle["Fuel Type"] || vehicle["fuel type"] || "-";
       document.getElementById("f-val-assigned-drivers").innerHTML = driversHtml;
-      document.getElementById("f-val-km").innerHTML = vehicle["Total KM"] || "-";
+      document.getElementById("f-val-km").innerHTML = vehicle["Total KM"] || vehicle["total km"] || "-";
       document.getElementById("f-val-availability").innerHTML = currentAvailability;
       document.getElementById("f-val-accidents").innerHTML = liveAccidentCount;
-      document.getElementById("f-val-mantenimiento").innerHTML = formatDateForDisplay(vehicle["Last Maintenance"]);
-      document.getElementById("f-val-oil").innerHTML = formatDateForDisplay(vehicle["Last Oil Change"]);
-      document.getElementById("f-val-ins-start").innerHTML = `<input type="text" value="${formatDateForDisplay(v["Insurance Start Date"])}" disabled style="background: #e9ecef; cursor: not-allowed;">`;
-      document.getElementById("f-val-ins-exp").innerHTML = `<input type="text" value="${formatDateForDisplay(v["Insurance Expiry Date"])}" disabled style="background: #e9ecef; cursor: not-allowed;">`;
-      document.getElementById("f-val-op-start").innerHTML = `<input type="text" value="${formatDateForDisplay(v["Operation Card Start Date"])}" disabled style="background: #e9ecef; cursor: not-allowed;">`;
-      document.getElementById("f-val-op-exp").innerHTML = `<input type="text" value="${formatDateForDisplay(v["Operation Card Expiry Date"])}" disabled style="background: #e9ecef; cursor: not-allowed;">`;
+      document.getElementById("f-val-mantenimiento").innerHTML = formatDateForDisplay(vehicle["Last Maintenance"] || vehicle["last maintenance"]);
+      document.getElementById("f-val-oil").innerHTML = formatDateForDisplay(vehicle["Last Oil Change"] || vehicle["last oil change"]);
+      document.getElementById("f-val-ins-start").innerHTML = formatDateForDisplay(vehicle["Insurance Start Date"] || vehicle["insurance start date"]);
+      document.getElementById("f-val-ins-exp").innerHTML = formatDateForDisplay(vehicle["Insurance Expiry Date"] || vehicle["insurance expiry date"]);
+      document.getElementById("f-val-op-start").innerHTML = formatDateForDisplay(vehicle["Operation Card Start Date"] || vehicle["operation card start date"]);
+      document.getElementById("f-val-op-exp").innerHTML = formatDateForDisplay(vehicle["Operation Card Expiry Date"] || vehicle["operation card expiry date"]);
 
       fleetProfileContainer.style.display = "block";
     }
@@ -1653,24 +1651,25 @@
       cancelFleetEditBtn.style.display = "inline-block";
 
       const v = currentActiveVehicle;
-      const vehiclePlate = String(v["Plate"] || "").trim().toLowerCase();
-      const assignedDrivers = driversDatabase.filter(d => String(d["Car Plate"] || "").trim().toLowerCase() === vehiclePlate);
+      const plateStr = String(v["Plate"] || v["plate"] || "");
+      const vehiclePlate = plateStr.trim().toLowerCase();
+      const assignedDrivers = driversDatabase.filter(d => String(d["Car Plate"] || d["car plate"] || "").trim().toLowerCase() === vehiclePlate);
 
-      document.getElementById("f-val-plate").innerHTML = v["Plate"] || "-";
-      document.getElementById("f-val-brand").innerHTML = v["Brand"] || "-";
-      document.getElementById("f-val-model").innerHTML = v["Model"] || "-";
-      document.getElementById("f-val-vin").innerHTML = v["VIN"] || "-";
-      document.getElementById("f-val-fuel").innerHTML = v["Fuel Type"] || "-";
-      document.getElementById("f-val-km").innerHTML = v["Total KM"] || "-";
+      document.getElementById("f-val-plate").innerHTML = plateStr || "-";
+      document.getElementById("f-val-brand").innerHTML = v["Brand"] || v["brand"] || "-";
+      document.getElementById("f-val-model").innerHTML = v["Model"] || v["model"] || "-";
+      document.getElementById("f-val-vin").innerHTML = v["VIN"] || v["vin"] || "-";
+      document.getElementById("f-val-fuel").innerHTML = v["Fuel Type"] || v["fuel type"] || "-";
+      document.getElementById("f-val-km").innerHTML = v["Total KM"] || v["total km"] || "-";
       document.getElementById("f-val-accidents").innerHTML = v["Accidents"] || "0";
-      document.getElementById("f-val-mantenimiento").innerHTML = formatDateForDisplay(v["Last Maintenance"]);
-      document.getElementById("f-val-oil").innerHTML = formatDateForDisplay(v["Last Oil Change"]);
+      document.getElementById("f-val-mantenimiento").innerHTML = formatDateForDisplay(v["Last Maintenance"] || v["last maintenance"]);
+      document.getElementById("f-val-oil").innerHTML = formatDateForDisplay(v["Last Oil Change"] || v["last oil change"]);
 
       let availabilityHtml = "";
       if (assignedDrivers.length > 0) {
         availabilityHtml = `<input type="text" value="Assigned" disabled style="background: #e9ecef; cursor: not-allowed;"><input type="hidden" id="edit-availability" value="Assigned">`;
       } else {
-        const avail = v["Availability"] || "Unassigned";
+        const avail = v["Availability"] || v["availability"] || "Unassigned";
         availabilityHtml = `
           <select id="edit-availability">
             <option value="Unassigned" ${avail==="Unassigned"?"selected":""}>Unassigned</option>
@@ -1680,16 +1679,18 @@
       }
       document.getElementById("f-val-availability").innerHTML = availabilityHtml;
 
-      document.getElementById("f-val-ins-start").innerHTML = `<input type="date" id="edit-ins-start" value="${formatDateForInput(v["Insurance Start Date"])}">`;
-      document.getElementById("f-val-ins-exp").innerHTML = `<input type="date" id="edit-ins-exp" value="${formatDateForInput(v["Insurance Expiry Date"])}">`;
-      document.getElementById("f-val-op-start").innerHTML = `<input type="date" id="edit-op-start" value="${formatDateForInput(v["Operation Card Start Date"])}">`;
-      document.getElementById("f-val-op-exp").innerHTML = `<input type="date" id="edit-op-exp" value="${formatDateForInput(v["Operation Card Expiry Date"])}">`;
+      // Fechas de Seguro y Tarjeta de Operación BLOQUEADAS
+      document.getElementById("f-val-ins-start").innerHTML = `<input type="text" value="${formatDateForDisplay(v["Insurance Start Date"] || v["insurance start date"])}" disabled style="background: #e9ecef; cursor: not-allowed;">`;
+      document.getElementById("f-val-ins-exp").innerHTML = `<input type="text" value="${formatDateForDisplay(v["Insurance Expiry Date"] || v["insurance expiry date"])}" disabled style="background: #e9ecef; cursor: not-allowed;">`;
+      document.getElementById("f-val-op-start").innerHTML = `<input type="text" value="${formatDateForDisplay(v["Operation Card Start Date"] || v["operation card start date"])}" disabled style="background: #e9ecef; cursor: not-allowed;">`;
+      document.getElementById("f-val-op-exp").innerHTML = `<input type="text" value="${formatDateForDisplay(v["Operation Card Expiry Date"] || v["operation card expiry date"])}" disabled style="background: #e9ecef; cursor: not-allowed;">`;
     }
 
     async function saveFleetChanges() {
       const v = currentActiveVehicle;
-      const vehiclePlate = String(v["Plate"] || "").trim().toLowerCase();
-      const assignedDrivers = driversDatabase.filter(d => String(d["Car Plate"] || "").trim().toLowerCase() === vehiclePlate);
+      const plateStr = String(v["Plate"] || v["plate"] || "");
+      const vehiclePlate = plateStr.trim().toLowerCase();
+      const assignedDrivers = driversDatabase.filter(d => String(d["Car Plate"] || d["car plate"] || "").trim().toLowerCase() === vehiclePlate);
       
       let finalAvailability = document.getElementById("edit-availability").value;
       if (assignedDrivers.length > 0) {
@@ -1697,20 +1698,20 @@
       }
 
       const updatedVehicle = {
-        "Plate": v["Plate"],
-        "Brand": v["Brand"],
-        "Model": v["Model"],
-        "VIN": v["VIN"],
-        "Fuel Type": v["Fuel Type"],
-        "Total KM": v["Total KM"],
+        "Plate": plateStr,
+        "Brand": v["Brand"] || v["brand"] || "",
+        "Model": v["Model"] || v["model"] || "",
+        "VIN": v["VIN"] || v["vin"] || "",
+        "Fuel Type": v["Fuel Type"] || v["fuel type"] || "",
+        "Total KM": v["Total KM"] || v["total km"] || "",
         "Availability": finalAvailability,
         "Accidents": v["Accidents"],
-        "Last Maintenance": v["Last Maintenance"],
-        "Last Oil Change": v["Last Oil Change"],
-        "Insurance Start Date": v["Insurance Start Date"],
-        "Insurance Expiry Date": v["Insurance Expiry Date"],
-        "Operation Card Start Date": v["Operation Card Start Date"],
-        "Operation Card Expiry Date": v["Operation Card Expiry Date"]
+        "Last Maintenance": v["Last Maintenance"] || v["last maintenance"] || "",
+        "Last Oil Change": v["Last Oil Change"] || v["last oil change"] || "",
+        "Insurance Start Date": v["Insurance Start Date"] || v["insurance start date"] || "",
+        "Insurance Expiry Date": v["Insurance Expiry Date"] || v["insurance expiry date"] || "",
+        "Operation Card Start Date": v["Operation Card Start Date"] || v["operation card start date"] || "",
+        "Operation Card Expiry Date": v["Operation Card Expiry Date"] || v["operation card expiry date"] || ""
       };
 
       editFleetBtn.disabled = true;
@@ -1724,10 +1725,10 @@
         });
         const resData = await res.json();
         if (resData.status === "success") {
-          const idx = fleetDatabase.findIndex(veh => String(veh["Plate"]).trim() === String(currentActiveVehicle["Plate"]).trim());
+          const idx = fleetDatabase.findIndex(veh => String(veh["Plate"] || veh["plate"]).trim() === plateStr.trim());
           if (idx !== -1) fleetDatabase[idx] = updatedVehicle;
 
-          fleetPlateInput.value = updatedVehicle["Plate"];
+          fleetPlateInput.value = plateStr;
           renderVehicleProfile(updatedVehicle);
           alert("Vehicle details updated successfully!");
         }
@@ -1763,8 +1764,8 @@
       dropdownElement.innerHTML = "";
       if (items.length === 0) { dropdownElement.style.display = "none"; return; }
       items.forEach(driver => {
-        const iqamaVal = String(driver["Iqama Number"] || "");
-        const nameVal = String(driver["Full Name"] || "");
+        const iqamaVal = String(driver["Iqama Number"] || driver["iqama"] || "");
+        const nameVal = String(driver["Full Name"] || driver["name"] || "");
         const div = document.createElement("div");
         div.className = "custom-dropdown-item";
         div.textContent = type === 'iqama' ? `${iqamaVal} - ${nameVal}` : `${nameVal} (${iqamaVal})`;
@@ -1785,7 +1786,7 @@
       else {
         nameDropdown.style.display = "none";
         const val = iqamaInput.value.trim().toLowerCase();
-        populateDriverDropdown(iqamaDropdown, val === "" ? driversDatabase : driversDatabase.filter(d => String(d["Iqama Number"] || "").toLowerCase().includes(val)), 'iqama');
+        populateDriverDropdown(iqamaDropdown, val === "" ? driversDatabase : driversDatabase.filter(d => String(d["Iqama Number"] || d["iqama"] || "").toLowerCase().includes(val)), 'iqama');
       }
     });
 
@@ -1795,27 +1796,27 @@
       else {
         iqamaDropdown.style.display = "none";
         const val = nameInput.value.trim().toLowerCase();
-        populateDriverDropdown(nameDropdown, val === "" ? driversDatabase : driversDatabase.filter(d => String(d["Full Name"] || "").toLowerCase().includes(val)), 'name');
+        populateDriverDropdown(nameDropdown, val === "" ? driversDatabase : driversDatabase.filter(d => String(d["Full Name"] || d["name"] || "").toLowerCase().includes(val)), 'name');
       }
     });
 
     iqamaInput.addEventListener("input", () => {
       const val = iqamaInput.value.trim().toLowerCase();
       if (val === "") { profileContainer.style.display = "none"; nameInput.value = ""; return; }
-      const matches = driversDatabase.filter(d => String(d["Iqama Number"] || "").toLowerCase().includes(val));
+      const matches = driversDatabase.filter(d => String(d["Iqama Number"] || d["iqama"] || "").toLowerCase().includes(val));
       populateDriverDropdown(iqamaDropdown, matches, 'iqama');
-      const exact = driversDatabase.find(d => String(d["Iqama Number"] || "").toLowerCase() === val);
-      if (exact) { nameInput.value = exact["Full Name"] || ""; renderDriverProfile(exact); iqamaDropdown.style.display = "none"; }
+      const exact = driversDatabase.find(d => String(d["Iqama Number"] || d["iqama"] || "").toLowerCase() === val);
+      if (exact) { nameInput.value = exact["Full Name"] || exact["name"] || ""; renderDriverProfile(exact); iqamaDropdown.style.display = "none"; }
       else { profileContainer.style.display = "none"; }
     });
 
     nameInput.addEventListener("input", () => {
       const val = nameInput.value.trim().toLowerCase();
       if (val === "") { profileContainer.style.display = "none"; iqamaInput.value = ""; return; }
-      const matches = driversDatabase.filter(d => String(d["Full Name"] || "").toLowerCase().includes(val));
+      const matches = driversDatabase.filter(d => String(d["Full Name"] || d["name"] || "").toLowerCase().includes(val));
       populateDriverDropdown(nameDropdown, matches, 'name');
-      const exact = driversDatabase.find(d => String(d["Full Name"] || "").toLowerCase() === val);
-      if (exact) { iqamaInput.value = exact["Iqama Number"] || ""; renderDriverProfile(exact); nameDropdown.style.display = "none"; }
+      const exact = driversDatabase.find(d => String(d["Full Name"] || d["name"] || "").toLowerCase() === val);
+      if (exact) { iqamaInput.value = exact["Iqama Number"] || exact["iqama"] || ""; renderDriverProfile(exact); nameDropdown.style.display = "none"; }
       else { profileContainer.style.display = "none"; }
     });
 
@@ -1830,27 +1831,28 @@
       editDriverBtn.style.background = "var(--primary)";
       cancelEditBtn.style.display = "none";
 
-      document.getElementById("profile-driver-name").textContent = (driver["Full Name"] || "Driver") + " - Profile";
-      document.getElementById("val-iqama").innerHTML = driver["Iqama Number"] || "-";
-      document.getElementById("val-name").innerHTML = driver["Full Name"] || "-";
-      document.getElementById("val-nationality").innerHTML = driver["Nationality"] || "-";
-      document.getElementById("val-passport").innerHTML = driver["Passport Number"] || "-";
-      document.getElementById("val-tid").innerHTML = driver["TID"] || "-";
-      document.getElementById("val-passport-exp").innerHTML = formatDateForDisplay(driver["Passport Expiry Date"]);
-      document.getElementById("val-iqama-issue").innerHTML = formatDateForDisplay(driver["Iqama Issue Date"]);
-      document.getElementById("val-dob").innerHTML = formatDateForDisplay(driver["Date of Birth"]);
-      document.getElementById("val-iqama-exp").innerHTML = formatDateForDisplay(driver["Iqama Expiry Date"]);
-      document.getElementById("val-work-start").innerHTML = formatDateForDisplay(driver["Employment Start Date"]);
-      document.getElementById("val-phone").innerHTML = driver["Phone Number"] || "-";
-      document.getElementById("val-driver-id").innerHTML = driver["Driver ID"] || "-";
-      document.getElementById("val-arrangement").innerHTML = driver["Arrangement"] || "-";
+      const fullName = driver["Full Name"] || driver["name"] || "Driver";
+      document.getElementById("profile-driver-name").textContent = fullName + " - Profile";
+      document.getElementById("val-iqama").innerHTML = driver["Iqama Number"] || driver["iqama"] || "-";
+      document.getElementById("val-name").innerHTML = fullName;
+      document.getElementById("val-nationality").innerHTML = driver["Nationality"] || driver["nationality"] || "-";
+      document.getElementById("val-passport").innerHTML = driver["Passport Number"] || driver["passport number"] || "-";
+      document.getElementById("val-tid").innerHTML = driver["TID"] || driver["tid"] || "-";
+      document.getElementById("val-passport-exp").innerHTML = formatDateForDisplay(driver["Passport Expiry Date"] || driver["passport expiry date"]);
+      document.getElementById("val-iqama-issue").innerHTML = formatDateForDisplay(driver["Iqama Issue Date"] || driver["iqama issue date"]);
+      document.getElementById("val-dob").innerHTML = formatDateForDisplay(driver["Date of Birth"] || driver["date of birth"]);
+      document.getElementById("val-iqama-exp").innerHTML = formatDateForDisplay(driver["Iqama Expiry Date"] || driver["iqama expiry date"]);
+      document.getElementById("val-work-start").innerHTML = formatDateForDisplay(driver["Employment Start Date"] || driver["employment start date"]);
+      document.getElementById("val-phone").innerHTML = driver["Phone Number"] || driver["phone number"] || "-";
+      document.getElementById("val-driver-id").innerHTML = driver["Driver ID"] || driver["driver id"] || "-";
+      document.getElementById("val-arrangement").innerHTML = driver["Arrangement"] || driver["arrangement"] || "-";
       
-      const licenseVal = driver["KSA Driving License Date"];
+      const licenseVal = driver["KSA Driving License Date"] || driver["ksa driving license date"];
       document.getElementById("val-license-date").innerHTML = (licenseVal && licenseVal !== "Not Yet") ? formatDateForDisplay(licenseVal) : "Not Yet";
 
-      document.getElementById("val-shift").innerHTML = driver["Shift"] || "-";
-      document.getElementById("val-car-plate").innerHTML = driver["Car Plate"] || "-";
-      document.getElementById("val-status").innerHTML = driver["Status"] || "-";
+      document.getElementById("val-shift").innerHTML = driver["Shift"] || driver["shift"] || "-";
+      document.getElementById("val-car-plate").innerHTML = driver["Car Plate"] || driver["car plate"] || "-";
+      document.getElementById("val-status").innerHTML = driver["Status"] || driver["status"] || "-";
 
       profileContainer.style.display = "block";
     }
@@ -1863,22 +1865,23 @@
       cancelEditBtn.style.display = "inline-block";
 
       const d = currentActiveDriver;
-      document.getElementById("val-phone").innerHTML = `<input type="text" id="edit-phone" value="${d["Phone Number"] || ''}">`;
+      document.getElementById("val-phone").innerHTML = `<input type="text" id="edit-phone" value="${d["Phone Number"] || d["phone number"] || ''}">`;
       
-      const arrVal = d["Arrangement"] || "";
+      const arrVal = d["Arrangement"] || d["arrangement"] || "";
       document.getElementById("val-arrangement").innerHTML = `<select id="edit-arrangement"><option value="Salary" ${arrVal==="Salary"?"selected":""}>Salary</option><option value="270 SAR per day" ${arrVal==="270 SAR per day"?"selected":""}>270 SAR per day</option></select>`;
       
-      const shiftVal = d["Shift"] || "";
+      const shiftVal = d["Shift"] || d["shift"] || "";
       document.getElementById("val-shift").innerHTML = `<select id="edit-shift"><option value="Night Shift" ${shiftVal==="Night Shift"?"selected":""}>Night Shift</option><option value="Day Shift" ${shiftVal==="Day Shift"?"selected":""}>Day Shift</option></select>`;
       
       let plateOptions = `<option value="">-- Unassigned --</option>`;
       fleetDatabase.forEach(v => {
-        const sel = (d["Car Plate"] === v["Plate"]) ? "selected" : "";
-        plateOptions += `<option value="${v["Plate"]}" ${sel}>${v["Plate"]} (${v["Model"]})</option>`;
+        const vPlate = v["Plate"] || v["plate"];
+        const sel = ((d["Car Plate"] || d["car plate"]) === vPlate) ? "selected" : "";
+        plateOptions += `<option value="${vPlate}" ${sel}>${vPlate} (${v["Model"] || v["model"]})</option>`;
       });
       document.getElementById("val-car-plate").innerHTML = `<select id="edit-car-plate">${plateOptions}</select>`;
       
-      const statusVal = d["Status"] || "";
+      const statusVal = d["Status"] || d["status"] || "";
       document.getElementById("val-status").innerHTML = `<select id="edit-status"><option value="Available" ${statusVal==="Available"?"selected":""}>Available</option><option value="Not Available" ${statusVal==="Not Available"?"selected":""}>Not Available</option><option value="No Longer in the Project" ${statusVal==="No Longer in the Project"?"selected":""}>No Longer in the Project</option></select>`;
     }
 
@@ -1887,20 +1890,20 @@
       const selectedPlate = document.getElementById("edit-car-plate").value;
 
       const updatedDriver = {
-        "Iqama Number": d["Iqama Number"],
-        "Full Name": d["Full Name"],
-        "Nationality": d["Nationality"],
-        "Passport Number": d["Passport Number"],
-        "TID": d["TID"],
-        "Passport Expiry Date": d["Passport Expiry Date"],
-        "Iqama Issue Date": d["Iqama Issue Date"],
-        "Date of Birth": d["Date of Birth"],
-        "Iqama Expiry Date": d["Iqama Expiry Date"],
-        "Employment Start Date": d["Employment Start Date"],
+        "Iqama Number": d["Iqama Number"] || d["iqama"],
+        "Full Name": d["Full Name"] || d["name"],
+        "Nationality": d["Nationality"] || d["nationality"],
+        "Passport Number": d["Passport Number"] || d["passport number"],
+        "TID": d["TID"] || d["tid"],
+        "Passport Expiry Date": d["Passport Expiry Date"] || d["passport expiry date"],
+        "Iqama Issue Date": d["Iqama Issue Date"] || d["iqama issue date"],
+        "Date of Birth": d["Date of Birth"] || d["date of birth"],
+        "Iqama Expiry Date": d["Iqama Expiry Date"] || d["iqama expiry date"],
+        "Employment Start Date": d["Employment Start Date"] || d["employment start date"],
         "Phone Number": document.getElementById("edit-phone").value.trim(),
-        "Driver ID": d["Driver ID"],
+        "Driver ID": d["Driver ID"] || d["driver id"],
         "Arrangement": document.getElementById("edit-arrangement").value,
-        "KSA Driving License Date": d["KSA Driving License Date"],
+        "KSA Driving License Date": d["KSA Driving License Date"] || d["ksa driving license date"],
         "Shift": document.getElementById("edit-shift").value,
         "Car Plate": selectedPlate,
         "Status": document.getElementById("edit-status").value
@@ -1917,11 +1920,11 @@
         });
         const resData = await response.json();
         if (resData.status === "success") {
-          const index = driversDatabase.findIndex(driver => String(driver["Iqama Number"]).trim() === String(d["Iqama Number"]).trim());
+          const index = driversDatabase.findIndex(driver => String(driver["Iqama Number"] || driver["iqama"]).trim() === String(updatedDriver["Iqama Number"]).trim());
           if (index !== -1) driversDatabase[index] = updatedDriver;
 
           if (selectedPlate) {
-            const vehicle = fleetDatabase.find(v => String(v["Plate"]).trim() === String(selectedPlate).trim());
+            const vehicle = fleetDatabase.find(v => String(v["Plate"] || v["plate"]).trim() === String(selectedPlate).trim());
             if (vehicle) {
               vehicle["Availability"] = "Assigned";
               await fetch(GOOGLE_SHEET_FLEET_URL, {
@@ -1932,11 +1935,11 @@
             }
           }
 
-          const oldPlate = d["Car Plate"];
+          const oldPlate = d["Car Plate"] || d["car plate"];
           if (oldPlate && oldPlate !== selectedPlate) {
-            const remainingDrivers = driversDatabase.filter(driver => String(driver["Car Plate"] || "").trim() === String(oldPlate).trim());
+            const remainingDrivers = driversDatabase.filter(driver => String(driver["Car Plate"] || driver["car plate"] || "").trim() === String(oldPlate).trim());
             if (remainingDrivers.length === 0) {
-              const oldVehicle = fleetDatabase.find(v => String(v["Plate"]).trim() === String(oldPlate).trim());
+              const oldVehicle = fleetDatabase.find(v => String(v["Plate"] || v["plate"]).trim() === String(oldPlate).trim());
               if (oldVehicle) {
                 oldVehicle["Availability"] = "Unassigned";
                 await fetch(GOOGLE_SHEET_FLEET_URL, {
