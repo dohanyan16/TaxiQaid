@@ -1,0 +1,61 @@
+/* Trip Check wizard, dialog controls, and export button. */
+/* Wizard / Step styles */
+    .wizard-step { display: none; }
+    .wizard-step.active-step { display: block; }
+    .wizard-step-title { font-size: 18px; font-weight: bold; color: var(--text-main); margin-bottom: 15px; border-bottom: 2px solid var(--primary); padding-bottom: 8px; }
+    .wizard-progress { font-size: 13px; font-weight: bold; color: var(--primary); margin-bottom: 15px; }
+    
+    .choice-boxes-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .choice-box {
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--text-main);
+      background: #fafafa;
+      transition: all 0.2s;
+    }
+    .choice-box:hover { border-color: var(--primary); background: #fdf2e9; }
+    .choice-box.selected { border-color: var(--primary); background: var(--primary); color: white; }
+
+#export-tripchecks-btn { background: #217346; color: white; }
+#open-add-tripcheck-modal { background: var(--success); width: auto; padding: 10px 16px; }
+
+/* Trip Check: list filtering, editing affordances and automatic scoring. */
+.tripcheck-filters { display: grid; grid-template-columns: minmax(200px, 250px) minmax(260px, 1fr); align-items: end; gap: 16px; margin-top: 18px; }
+.tripcheck-filter-field label, .tripcheck-filter-search > label { display: block; font-size: 13px; font-weight: bold; color: var(--text-main); margin-bottom: 7px; }
+.tripcheck-filter-field select { margin: 0; }
+.tripcheck-filter-search .input-with-btn { margin: 0; }
+.tripcheck-modal-content { max-width: 750px; }
+#tripcheck-modal-title { margin-bottom: 8px; }
+.tripcheck-prototype-note { color: #735315; background: #fff6db; border: 1px solid #f0d28b; padding: 10px 12px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; }
+#view-tripcheck .tripcheck-record-row { cursor: pointer; }
+#view-tripcheck .tripcheck-record-row:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.tripcheck-edit-btn { padding: 7px 11px; border-radius: 7px; border: 1px solid var(--primary); color: var(--primary); background: #fff9f3; font-size: 13px; font-weight: 700; cursor: pointer; }
+.tripcheck-edit-btn:hover, .tripcheck-edit-btn:focus-visible { background: var(--primary); color: white; }
+#add-tripcheck-modal .choice-box { user-select: none; }
+#add-tripcheck-modal .choice-box:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+#add-tripcheck-modal .choice-box[data-choice="Defect"].selected { border-color: var(--danger); background: var(--danger); }
+.tripcheck-score-panel { padding: 18px; background: #f8f9fa; border: 1px solid var(--border-color); border-radius: 12px; margin: 15px 0 20px; }
+.tripcheck-score-topline { display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+#tc-score-percentage { color: var(--primary); font-size: 30px; }
+.tripcheck-score-track { display: flex; height: 18px; background: #e3e6eb; border-radius: 20px; overflow: hidden; }
+.tripcheck-score-fill { height: 100%; background: var(--success); width: 0%; flex-shrink: 0; transition: width .2s ease; }
+.tripcheck-score-fill.is-pass { background: var(--success); }
+.tripcheck-score-defect-fill { background: var(--danger); width: 0%; height: 100%; flex-shrink: 0; transition: width .2s ease; }
+.tripcheck-empty-table { text-align: center; color: var(--text-muted); padding: 20px; }
+#tc-score-breakdown { color: var(--text-muted); font-size: 13px; margin-top: 10px; }
+.tripcheck-status-field { font-weight: 700; background: #f3f4f6; color: #9a5318; cursor: not-allowed; }
+.tripcheck-status-field.is-pass { color: var(--success); background: #eef8ee; }
+.tripcheck-help-text { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-top: -8px; }
+.tripcheck-status-tag { display: inline-block; padding: 5px 9px; border-radius: 16px; font-size: 12px; font-weight: 700; background: #fff0e1; color: #955013; }
+.tripcheck-status-tag.is-pass { background: #e6f5e8; color: var(--success); }
+@media(max-width: 740px) { .tripcheck-filters { grid-template-columns: 1fr; } .tripcheck-modal-content { padding: 18px; } .tripcheck-score-topline { align-items: baseline; } }
