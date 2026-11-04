@@ -521,14 +521,16 @@
                 <button id="export-excel-btn" class="btn-secondary" style="background: #217346; color: white;">📥 Export Excel</button>
               </div>
             </div>
-            <div id="sync-status" class="status-badge">Connecting to Google Sheets...</div>
-            <div class="search-row" style="grid-template-columns: 1fr 1fr;">
-              <div class="search-wrapper">
-                <label style="font-size: 13px; font-weight: bold; color: var(--text-main);">Search by Iqama Number</label>
-                <div class="input-with-btn">
-                  <input type="text" id="driver-iqama-input" placeholder="Type Iqama number..." autocomplete="off">
-                  <button type="button" id="toggle-iqama-btn" class="dropdown-arrow-btn">▼</button>
-                </div>
+            <div class="search-row">
+            <div class="search-wrapper">
+              <label style="font-size: 13px; font-weight: bold; color: var(--text-main);">Search Driver (Iqama or Full Name)</label>
+          <div class="input-with-btn">
+      <input type="text" id="driver-search-input" placeholder="Type Iqama number or full name..." autocomplete="off">
+      <button type="button" id="toggle-driver-btn" class="dropdown-arrow-btn">▼</button>
+    </div>
+    <div id="driver-dropdown" class="custom-dropdown"></div>
+  </div>
+</div>
                 <div id="iqama-dropdown" class="custom-dropdown"></div>
               </div>
               <div class="search-wrapper">
