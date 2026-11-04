@@ -1614,6 +1614,11 @@
 
     toggleFleetBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
+      if (fleetProfileContainer.style.display === "block" && !isFleetEditMode) {  
+      clearFleetSelection();                                                     
+      populateFleetDropdown(fleetDatabase);                                    
+      return;                                                                  
+      } 
       if (driversDatabase.length === 0) await fetchDrivers();
       if (fleetDropdown.style.display === "block") { fleetDropdown.style.display = "none"; }
       else {
@@ -1632,7 +1637,19 @@
       if (exact) { renderVehicleProfile(exact); fleetDropdown.style.display = "none"; }
       else { fleetProfileContainer.style.display = "none"; }
     });
+    function clearFleetSelection() {
+  fleetPlateInput.value = "";
+  fleetProfileContainer.style.display = "none";
+  currentActiveVehicle = null;
+}
 
+fleetPlateInput.addEventListener("click", () => {
+  if (fleetProfileContainer.style.display === "block" && !isFleetEditMode) {
+    clearFleetSelection();
+    populateFleetDropdown(fleetDatabase);
+  }
+});
+    
     function renderVehicleProfile(vehicle) {
       currentActiveVehicle = vehicle;
       isFleetEditMode = false;
