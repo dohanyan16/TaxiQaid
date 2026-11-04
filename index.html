@@ -462,7 +462,7 @@
                 <button id="export-fleet-excel-btn" class="btn-secondary" style="background: #217346; color: white;">📥 Export Excel</button>
               </div>
             </div>
-            <div id="fleet-sync-status" class="status-badge">Connecting to Google Sheets...</div>
+            <div id="fleet-sync-status" class="status-badge">Connecting to  Sheets...</div>
             <div class="search-row">
               <div class="search-wrapper">
                 <label style="font-size: 13px; font-weight: bold; color: var(--text-main);">Search by Plate</label>
@@ -521,7 +521,7 @@
                 <button id="export-excel-btn" class="btn-secondary" style="background: #217346; color: white;">📥 Export Excel</button>
               </div>
             </div>
-            <div id="sync-status" class="status-badge">Connecting to Google Sheets...</div>
+            <div id="sync-status" class="status-badge">Connecting to  Sheets...</div>
             <div class="search-row" style="grid-template-columns: 1fr 1fr;">
               <div class="search-wrapper">
                 <label style="font-size: 13px; font-weight: bold; color: var(--text-main);">Search by Iqama Number</label>
@@ -586,7 +586,7 @@
                 <button id="export-tripchecks-btn" class="btn-secondary" style="background: #217346; color: white;">📥 Export Excel</button>
               </div>
             </div>
-            <div id="tripcheck-sync-status" class="status-badge">Connecting to Google Sheets...</div>
+            <div id="tripcheck-sync-status" class="status-badge">Connecting to  Sheets...</div>
             
             <div class="search-row" style="margin-top: 15px;">
               <div class="search-wrapper">
@@ -642,7 +642,7 @@
                 <button id="export-accidents-date-btn" class="btn-secondary" style="background: #217346; color: white;">📥 Export Period Excel</button>
               </div>
             </div>
-            <div id="accident-sync-status" class="status-badge">Connecting to Google Sheets...</div>
+            <div id="accident-sync-status" class="status-badge">Connecting to  Sheets...</div>
             
             <div class="search-row" style="grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
               <div>
@@ -1154,10 +1154,10 @@
     const { createClient } = supabase;
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY);
 
-    const GOOGLE_SHEET_DRIVERS_URL = "https://script.google.com/macros/s/AKfycby7-NkH3HuZF2dXsLf0WGCV76bdxSZ1YXZsbs785qrgIAoBA9eal7DIRYPWypwWRPpQkA/exec";
+    const _SHEET_DRIVERS_URL = "https://script..com/macros/s/AKfycby7-NkH3HuZF2dXsLf0WGCV76bdxSZ1YXZsbs785qrgIAoBA9eal7DIRYPWypwWRPpQkA/exec";
     const GOOGLE_SHEET_FLEET_URL = "https://script.google.com/macros/s/AKfycbyaQI9cnIy7qEYt8F0BNSG2y1HOPD-8kjKU12Y9LbDNq4aLaJ3wrVEbYp2e6Mzmnfsr/exec";
     const GOOGLE_SHEET_ACCIDENTS_URL = "https://script.google.com/macros/s/AKfycbw7pMHgStWn01h_us5DdwndS20sWq9_Ox6uI-dQM1FsC_o8aHj0et96qwZxqD-lsPIs-Q/exec";
-    const GOOGLE_SHEET_TRIPCHECK_URL = ;
+    const GOOGLE_SHEET_TRIPCHECK_URL = "https://script.google.com/macros/s";
 
     let driversDatabase = [];
     let fleetDatabase = [];
