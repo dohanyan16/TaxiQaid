@@ -680,7 +680,7 @@ function createTripCheckPdf(record, logo) {
   doc.text("PRE / POST TRIP CHECKLIST", 49, 24);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.text("Vehicle Inspection Report - Check 360", 49, 30);
+  doc.text("Vehicle Inspection Report", 49, 30);
   doc.setDrawColor(...accent);
   doc.setLineWidth(.65);
   doc.line(12, 36, 198, 36);
@@ -768,7 +768,7 @@ function createTripCheckPdf(record, logo) {
   doc.line(12, 284, 198, 284);
   doc.setFont("helvetica", "normal"); doc.setFontSize(7);
   doc.setTextColor(100, 111, 123);
-  doc.text("Taxi Qaid ERP - locally stored inspection report", 12, 289);
+  doc.text("Taxi Qaid", 12, 289);
   doc.text("Page 1 / 1", 198, 289, {align: "right"});
   return doc;
 }
