@@ -462,7 +462,7 @@
                 <button id="export-fleet-excel-btn" class="btn-secondary" style="background: #217346; color: white;">📥 Export Excel</button>
               </div>
             </div>
-            <div id="fleet-sync-status" class="status-badge">Connecting to  Sheets...</div>
+            <div id="fleet-sync-status" class="status-badge">Connecting to Google Sheets...</div>
             <div class="search-row">
               <div class="search-wrapper">
                 <label style="font-size: 13px; font-weight: bold; color: var(--text-main);">Search by Plate</label>
@@ -521,7 +521,7 @@
                 <button id="export-excel-btn" class="btn-secondary" style="background: #217346; color: white;">📥 Export Excel</button>
               </div>
             </div>
-            <div id="sync-status" class="status-badge">Connecting to  Sheets...</div>
+            <div id="sync-status" class="status-badge">Connecting to Google Sheets...</div>
             <div class="search-row" style="grid-template-columns: 1fr 1fr;">
               <div class="search-wrapper">
                 <label style="font-size: 13px; font-weight: bold; color: var(--text-main);">Search by Iqama Number</label>
@@ -586,7 +586,7 @@
                 <button id="export-tripchecks-btn" class="btn-secondary" style="background: #217346; color: white;">📥 Export Excel</button>
               </div>
             </div>
-            <div id="tripcheck-sync-status" class="status-badge">Connecting to  Sheets...</div>
+            <div id="tripcheck-sync-status" class="status-badge">Connecting to Google Sheets...</div>
             
             <div class="search-row" style="margin-top: 15px;">
               <div class="search-wrapper">
@@ -642,7 +642,7 @@
                 <button id="export-accidents-date-btn" class="btn-secondary" style="background: #217346; color: white;">📥 Export Period Excel</button>
               </div>
             </div>
-            <div id="accident-sync-status" class="status-badge">Connecting to  Sheets...</div>
+            <div id="accident-sync-status" class="status-badge">Connecting to Google Sheets...</div>
             
             <div class="search-row" style="grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
               <div>
@@ -1154,10 +1154,11 @@
     const { createClient } = supabase;
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY);
 
-    const _SHEET_DRIVERS_URL = "https://script..com/macros/s/AKfycby7-NkH3HuZF2dXsLf0WGCV76bdxSZ1YXZsbs785qrgIAoBA9eal7DIRYPWypwWRPpQkA/exec";
+    const GOOGLE_SHEET_DRIVERS_URL = "https://script.google.com/macros/s/AKfycby7-NkH3HuZF2dXsLf0WGCV76bdxSZ1YXZsbs785qrgIAoBA9eal7DIRYPWypwWRPpQkA/exec";
     const GOOGLE_SHEET_FLEET_URL = "https://script.google.com/macros/s/AKfycbyaQI9cnIy7qEYt8F0BNSG2y1HOPD-8kjKU12Y9LbDNq4aLaJ3wrVEbYp2e6Mzmnfsr/exec";
     const GOOGLE_SHEET_ACCIDENTS_URL = "https://script.google.com/macros/s/AKfycbw7pMHgStWn01h_us5DdwndS20sWq9_Ox6uI-dQM1FsC_o8aHj0et96qwZxqD-lsPIs-Q/exec";
-    const GOOGLE_SHEET_TRIPCHECK_URL = "https://script.google.com/macros/s";
+    // PENDIENTE: pega aquí la URL completa del Apps Script de Trip Check (termina en /exec)
+    const GOOGLE_SHEET_TRIPCHECK_URL = "https://script.google.com/macros/s/PEGA_AQUI_TU_ID_DE_DESPLIEGUE/exec";
 
     let driversDatabase = [];
     let fleetDatabase = [];
@@ -1276,6 +1277,20 @@
       return s;
     }
 
+    // Convierte valores de la hoja al formato que aceptan <input type="date"> y <input type="time">
+    function toDateInput(d) {
+      if (!d) return "";
+      let s = String(d).trim();
+      if (s.includes("T")) s = s.split("T")[0];
+      return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : "";
+    }
+    function toTimeInput(t) {
+      if (!t) return "";
+      let s = String(t);
+      if (s.includes("T")) s = s.split("T")[1];
+      return s.length >= 5 ? s.substring(0, 5) : "";
+    }
+
     // --- GOOGLE SHEETS FETCH FUNCTIONS CON VERIFICACIÓN VISUAL ---
     async function fetchDrivers() {
       try {
@@ -1318,7 +1333,7 @@
         const res = await fetch(GOOGLE_SHEET_ACCIDENTS_URL);
         accidentsDatabase = await res.json();
         updateAllFleetAccidentCounts();
-        renderAccidentsTable(accidentsDatabase);
+        applyAccidentFilters();
         
         if (syncBadge) syncBadge.textContent = `✅ Synced ${accidentsDatabase.length} accident record(s).`;
       } catch (e) {
@@ -1335,7 +1350,7 @@
         
         const res = await fetch(GOOGLE_SHEET_TRIPCHECK_URL);
         tripChecksDatabase = await res.json();
-        renderTripChecksTable(tripChecksDatabase);
+        applyTripCheckFilters();
         
         if (syncBadge) syncBadge.textContent = `✅ Synced ${tripChecksDatabase.length} check(s).`;
       } catch (e) {
@@ -1358,6 +1373,17 @@
         const count = accidentsDatabase.filter(acc => String(acc["Car Plate"] || acc["car plate"] || "").trim().toLowerCase() === plate).length;
         v["Accidents"] = count;
       });
+    }
+
+    // --- UTILIDADES DE MATRÍCULA (vínculo Fleet <-> Drivers) ---
+    function normalizePlate(p) {
+      return String(p || "").replace(/[\s\-_.]/g, "").toLowerCase();
+    }
+
+    function getAssignedDrivers(plate) {
+      const target = normalizePlate(plate);
+      if (!target) return [];
+      return driversDatabase.filter(d => normalizePlate(d["Car Plate"] || d["car plate"]) === target);
     }
 
     // --- DRIVERS MANAGEMENT LOGIC ---
@@ -1485,7 +1511,7 @@
       let plateOptions = `<option value="">-- Unassigned --</option>`;
       fleetDatabase.forEach(v => {
         const vPlate = v["Plate"] || v["plate"];
-        const sel = ((d["Car Plate"] || d["car plate"]) === vPlate) ? "selected" : "";
+        const sel = (normalizePlate(d["Car Plate"] || d["car plate"]) === normalizePlate(vPlate)) ? "selected" : "";
         plateOptions += `<option value="${vPlate}" ${sel}>${vPlate} (${v["Model"] || v["model"]})</option>`;
       });
       document.getElementById("val-car-plate").innerHTML = `<select id="edit-car-plate">${plateOptions}</select>`;
@@ -1536,9 +1562,13 @@
           nameInput.value = updatedDriver["Full Name"];
           renderDriverProfile(updatedDriver);
           alert("Driver updated successfully!");
+        } else {
+          alert("Error: " + (resData.message || "Unknown error"));
+          editDriverBtn.textContent = "💾 Save Changes";
         }
       } catch (err) {
         alert("Could not update Google Sheets.");
+        editDriverBtn.textContent = "💾 Save Changes";
       } finally {
         editDriverBtn.disabled = false;
       }
@@ -1552,16 +1582,8 @@
     cancelEditBtn.addEventListener("click", () => {
       if (currentActiveDriver) renderDriverProfile(currentActiveDriver);
     });
-function normalizePlate(p) {
-  return String(p || "").replace(/[\s\-_.]/g, "").toLowerCase();
-}
 
-function getAssignedDrivers(plate) {
-  const target = normalizePlate(plate);
-  if (!target) return [];
-  return driversDatabase.filter(d => normalizePlate(d["Car Plate"] || d["car plate"]) === target);
-}
-// --- FLEET MANAGEMENT LOGIC ---
+    // --- FLEET MANAGEMENT LOGIC ---
     let currentActiveVehicle = null;
     let isFleetEditMode = false;
     const fleetPlateInput = document.getElementById("fleet-plate-input");
@@ -1600,8 +1622,7 @@ function getAssignedDrivers(plate) {
       }
     });
 
-    fleetPlateInput.addEventListener("input", () => {
-      fleetPlateInput.addEventListener("input", async () => {
+    fleetPlateInput.addEventListener("input", async () => {
       if (driversDatabase.length === 0) await fetchDrivers();
       const val = fleetPlateInput.value.trim().toLowerCase();
       if (val === "") { fleetProfileContainer.style.display = "none"; fleetDropdown.style.display = "none"; return; }
@@ -1660,7 +1681,7 @@ function getAssignedDrivers(plate) {
       fleetProfileContainer.style.display = "block";
     }
 
-function enableFleetEditMode() {
+    function enableFleetEditMode() {
       if (!currentActiveVehicle) return;
       isFleetEditMode = true;
       editFleetBtn.textContent = "💾 Save Vehicle Changes";
@@ -1674,7 +1695,7 @@ function enableFleetEditMode() {
       // Estilo visual para campos bloqueados/deshabilitados
       const disabledAttr = 'disabled style="background: #e9ecef; cursor: not-allowed;"';
 
-      // 1. Bloquear absolutamente todos los demás campos para que no se puedan modificar
+      // 1. Bloquear todos los demás campos para que no se puedan modificar
       document.getElementById("f-val-brand").innerHTML = `<input type="text" id="edit-fleet-brand" value="${v["Brand"] || v["brand"] || ''}" ${disabledAttr}>`;
       document.getElementById("f-val-model").innerHTML = `<input type="text" id="edit-fleet-model" value="${v["Model"] || v["model"] || ''}" ${disabledAttr}>`;
       document.getElementById("f-val-vin").innerHTML = `<input type="text" id="edit-fleet-vin" value="${v["VIN"] || v["vin"] || ''}" ${disabledAttr}>`;
@@ -1703,13 +1724,13 @@ function enableFleetEditMode() {
           </select>`;
       }
 
-      // 3. Bloquear también todas las fechas informativas
-      document.getElementById("f-val-mantenimiento").innerHTML = `<input type="date" id="edit-fleet-maint" value="${v["Last Maintenance"] || v["last maintenance"] || ''}" ${disabledAttr}>`;
-      document.getElementById("f-val-oil").innerHTML = `<input type="date" id="edit-fleet-oil" value="${v["Last Oil Change"] || v["last oil change"] || ''}" ${disabledAttr}>`;
-      document.getElementById("f-val-ins-start").innerHTML = `<input type="date" id="edit-fleet-ins-start" value="${v["Insurance Start Date"] || v["insurance start date"] || ''}" ${disabledAttr}>`;
-      document.getElementById("f-val-ins-exp").innerHTML = `<input type="date" id="edit-fleet-ins-exp" value="${v["Insurance Expiry Date"] || v["insurance expiry date"] || ''}" ${disabledAttr}>`;
-      document.getElementById("f-val-op-start").innerHTML = `<input type="date" id="edit-fleet-op-start" value="${v["Operation Card Start Date"] || v["operation card start date"] || ''}" ${disabledAttr}>`;
-      document.getElementById("f-val-op-exp").innerHTML = `<input type="date" id="edit-fleet-op-exp" value="${v["Operation Card Expiry Date"] || v["operation card expiry date"] || ''}" ${disabledAttr}>`;
+      // 3. Fechas informativas bloqueadas (convertidas a formato válido para input date)
+      document.getElementById("f-val-mantenimiento").innerHTML = `<input type="date" id="edit-fleet-maint" value="${toDateInput(v["Last Maintenance"] || v["last maintenance"])}" ${disabledAttr}>`;
+      document.getElementById("f-val-oil").innerHTML = `<input type="date" id="edit-fleet-oil" value="${toDateInput(v["Last Oil Change"] || v["last oil change"])}" ${disabledAttr}>`;
+      document.getElementById("f-val-ins-start").innerHTML = `<input type="date" id="edit-fleet-ins-start" value="${toDateInput(v["Insurance Start Date"] || v["insurance start date"])}" ${disabledAttr}>`;
+      document.getElementById("f-val-ins-exp").innerHTML = `<input type="date" id="edit-fleet-ins-exp" value="${toDateInput(v["Insurance Expiry Date"] || v["insurance expiry date"])}" ${disabledAttr}>`;
+      document.getElementById("f-val-op-start").innerHTML = `<input type="date" id="edit-fleet-op-start" value="${toDateInput(v["Operation Card Start Date"] || v["operation card start date"])}" ${disabledAttr}>`;
+      document.getElementById("f-val-op-exp").innerHTML = `<input type="date" id="edit-fleet-op-exp" value="${toDateInput(v["Operation Card Expiry Date"] || v["operation card expiry date"])}" ${disabledAttr}>`;
     }
 
     async function saveEditedVehicle() {
@@ -1748,9 +1769,7 @@ function enableFleetEditMode() {
             fleetDatabase[index] = updatedVehicle;
           }
 
-          if (typeof updateAllFleetAccidentCounts === "function") {
-            updateAllFleetAccidentCounts();
-          }
+          updateAllFleetAccidentCounts();
 
           fleetPlateInput.value = updatedVehicle["Plate"];
           renderVehicleProfile(updatedVehicle);
@@ -1762,7 +1781,7 @@ function enableFleetEditMode() {
         alert("Could not update Google Sheets.");
       } finally {
         editFleetBtn.disabled = false;
-        editFleetBtn.textContent = "Edit Vehicle Details";
+        editFleetBtn.textContent = isFleetEditMode ? "💾 Save Vehicle Changes" : "Edit Vehicle Details";
       }
     }
 
@@ -1774,6 +1793,7 @@ function enableFleetEditMode() {
     cancelFleetEditBtn.addEventListener("click", () => {
       if (currentActiveVehicle) renderVehicleProfile(currentActiveVehicle);
     });
+
     // --- WIZARD TRIP CHECK LOGIC ---
     const tripCheckModal = document.getElementById("add-tripcheck-modal");
     const openAddTripCheckBtn = document.getElementById("open-add-tripcheck-modal");
@@ -2212,8 +2232,8 @@ function enableFleetEditMode() {
           setupAccidentModalSelects();
           document.getElementById("modal-accident-title").textContent = "Edit Accident Record";
           document.getElementById("add-acc-id").value = acc["Accident ID"] || acc["accident id"] || "";
-          document.getElementById("add-acc-date").value = acc["Date"] || acc["date"] || "";
-          document.getElementById("add-acc-time").value = acc["Time"] || acc["time"] || "";
+          document.getElementById("add-acc-date").value = toDateInput(acc["Date"] || acc["date"]);
+          document.getElementById("add-acc-time").value = toTimeInput(acc["Time"] || acc["time"]);
           document.getElementById("add-acc-plate").value = acc["Car Plate"] || acc["car plate"] || "";
           document.getElementById("add-acc-model").value = acc["Car Model"] || acc["car model"] || "";
           document.getElementById("add-acc-iqama").value = acc["Driver Iqama"] || acc["driver iqama"] || "";
@@ -2293,6 +2313,7 @@ function enableFleetEditMode() {
       }
     });
 
+    // --- EXPORTS ---
     document.getElementById("export-fleet-excel-btn").addEventListener("click", () => {
       if (fleetDatabase.length === 0) { alert("No fleet data available to export."); return; }
       const worksheet = XLSX.utils.json_to_sheet(fleetDatabase);
@@ -2307,6 +2328,99 @@ function enableFleetEditMode() {
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Drivers Database");
       XLSX.writeFile(workbook, "Drivers_Database.xlsx");
+    });
+
+    // --- BÚSQUEDA, FILTROS Y EXPORT (Trip Check y Accidents) ---
+    function getField(o, k) { return o[k] || o[k.toLowerCase()] || ""; }
+    function matchText(o, keys, q) { return keys.some(k => String(getField(o, k)).toLowerCase().includes(q)); }
+
+    const TC_KEYS = ["Check ID", "Car Plate", "Driver Iqama", "Driver Name"];
+    const ACC_KEYS = ["Accident ID", "Car Plate", "Driver Iqama", "Driver Name"];
+
+    function getFilteredTripChecks() {
+      const q = document.getElementById("tripcheck-search-input").value.trim().toLowerCase();
+      return tripChecksDatabase.filter(o => !q || matchText(o, TC_KEYS, q));
+    }
+    function applyTripCheckFilters() { renderTripChecksTable(getFilteredTripChecks()); }
+
+    function getFilteredAccidents() {
+      const q = document.getElementById("accident-search-input").value.trim().toLowerCase();
+      const sd = document.getElementById("filter-start-date").value;
+      const st = document.getElementById("filter-start-time").value || "00:00";
+      const ed = document.getElementById("filter-end-date").value;
+      const et = document.getElementById("filter-end-time").value || "23:59";
+      const start = sd ? `${sd}T${st}` : "";
+      const end = ed ? `${ed}T${et}` : "";
+      return accidentsDatabase.filter(o => {
+        if (q && !matchText(o, ACC_KEYS, q)) return false;
+        if (start || end) {
+          const dt = `${toDateInput(getField(o, "Date"))}T${toTimeInput(getField(o, "Time")) || "00:00"}`;
+          if (start && dt < start) return false;
+          if (end && dt > end) return false;
+        }
+        return true;
+      });
+    }
+    function applyAccidentFilters() { renderAccidentsTable(getFilteredAccidents()); }
+
+    function setupSearchDropdown({ input, btn, dd, getData, keys, label, apply }) {
+      const inp = document.getElementById(input);
+      const b = document.getElementById(btn);
+      const d = document.getElementById(dd);
+      function show() {
+        const q = inp.value.trim().toLowerCase();
+        const items = getData().filter(o => !q || matchText(o, keys, q));
+        d.innerHTML = "";
+        if (items.length === 0) { d.style.display = "none"; return; }
+        items.slice(0, 100).forEach(o => {
+          const div = document.createElement("div");
+          div.className = "custom-dropdown-item";
+          div.textContent = label(o);
+          div.addEventListener("click", () => {
+            inp.value = getField(o, keys[0]);
+            d.style.display = "none";
+            apply();
+          });
+          d.appendChild(div);
+        });
+        d.style.display = "block";
+      }
+      inp.addEventListener("input", () => { apply(); show(); });
+      b.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (d.style.display === "block") d.style.display = "none"; else show();
+      });
+    }
+
+    setupSearchDropdown({
+      input: "tripcheck-search-input", btn: "toggle-tripcheck-btn", dd: "tripcheck-dropdown",
+      getData: () => tripChecksDatabase, keys: TC_KEYS, apply: applyTripCheckFilters,
+      label: o => `${getField(o, "Check ID")} - ${getField(o, "Car Plate")} - ${getField(o, "Driver Name")}`
+    });
+    setupSearchDropdown({
+      input: "accident-search-input", btn: "toggle-accident-btn", dd: "accident-dropdown",
+      getData: () => accidentsDatabase, keys: ACC_KEYS, apply: applyAccidentFilters,
+      label: o => `${getField(o, "Accident ID")} - ${getField(o, "Car Plate")} - ${getField(o, "Driver Name")}`
+    });
+
+    ["filter-start-date", "filter-start-time", "filter-end-date", "filter-end-time"].forEach(id => {
+      document.getElementById(id).addEventListener("change", applyAccidentFilters);
+    });
+
+    document.getElementById("export-accidents-date-btn").addEventListener("click", () => {
+      const data = getFilteredAccidents();
+      if (data.length === 0) { alert("No accident data available for the selected period."); return; }
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Accidents");
+      XLSX.writeFile(workbook, "Accidents_Period.xlsx");
+    });
+
+    // Cerrar desplegables al hacer clic fuera
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest(".search-wrapper")) {
+        document.querySelectorAll(".custom-dropdown").forEach(d => d.style.display = "none");
+      }
     });
   </script>
 </body>
