@@ -620,9 +620,10 @@ for (const id of ["tc-plate-search", "tc-iqama-search", "tc-odometer", "tc-remar
 
 /** Load third-party PDF/ZIP libraries only when the export button is used. */
 const TRIPCHECK_EXPORT_LIBRARIES = Object.freeze([
-  ["jspdf", "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"],
+  ["jspdf", "https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"],
   ["JSZip", "https://cdn.jsdelivr.net/npm/jszip@3.10.2/dist/jszip.min.js"]
 ]);
+
 const tripCheckLibraryLoads = new Map();
 function loadTripCheckExportLibrary(name, url) {
   if (name === "jspdf" && window.jspdf?.jsPDF) return Promise.resolve();
