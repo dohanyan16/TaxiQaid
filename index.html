@@ -312,7 +312,7 @@
     }
 
     .field-item input, .field-item select { margin-bottom: 0; padding: 8px 10px; font-size: 14px; background: #ffffff; }
-    .status-badge { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
+    .status-badge { font-size: 13px; font-weight: bold; color: var(--text-muted); margin-top: 5px; }
     .action-row { display: flex; gap: 12px; align-items: center; justify-content: space-between; }
 
     /* Modales generales */
@@ -1276,41 +1276,80 @@
       return s;
     }
 
+    // --- GOOGLE SHEETS FETCH FUNCTIONS CON VERIFICACIÓN VISUAL ---
     async function fetchDrivers() {
       try {
+        const syncBadge = document.getElementById("sync-status");
+        if (syncBadge) syncBadge.textContent = "🔄 Syncing drivers database...";
+        
         const res = await fetch(GOOGLE_SHEET_DRIVERS_URL);
         driversDatabase = await res.json();
-      } catch (e) { console.error("Error fetching drivers"); }
+        
+        if (syncBadge) syncBadge.textContent = `✅ Synced ${driversDatabase.length} driver(s) successfully.`;
+      } catch (e) {
+        console.error("Error fetching drivers", e);
+        const syncBadge = document.getElementById("sync-status");
+        if (syncBadge) syncBadge.textContent = "❌ Failed to connect to Drivers Google Sheet.";
+      }
     }
 
     async function fetchFleet() {
       try {
+        const syncBadge = document.getElementById("fleet-sync-status");
+        if (syncBadge) syncBadge.textContent = "🔄 Syncing fleet database...";
+        
         const res = await fetch(GOOGLE_SHEET_FLEET_URL);
         fleetDatabase = await res.json();
         updateAllFleetAccidentCounts();
-      } catch (e) { console.error("Error fetching fleet"); }
+        
+        if (syncBadge) syncBadge.textContent = `✅ Synced ${fleetDatabase.length} vehicle(s) successfully.`;
+      } catch (e) {
+        console.error("Error fetching fleet", e);
+        const syncBadge = document.getElementById("fleet-sync-status");
+        if (syncBadge) syncBadge.textContent = "❌ Failed to connect to Fleet Google Sheet.";
+      }
     }
 
     async function fetchAccidents() {
       try {
+        const syncBadge = document.getElementById("accident-sync-status");
+        if (syncBadge) syncBadge.textContent = "🔄 Syncing accident records...";
+        
         const res = await fetch(GOOGLE_SHEET_ACCIDENTS_URL);
         accidentsDatabase = await res.json();
         updateAllFleetAccidentCounts();
         renderAccidentsTable(accidentsDatabase);
-      } catch (e) { console.error("Error fetching accidents"); }
+        
+        if (syncBadge) syncBadge.textContent = `✅ Synced ${accidentsDatabase.length} accident record(s).`;
+      } catch (e) {
+        console.error("Error fetching accidents", e);
+        const syncBadge = document.getElementById("accident-sync-status");
+        if (syncBadge) syncBadge.textContent = "❌ Failed to connect to Accidents Google Sheet.";
+      }
     }
 
     async function fetchTripChecks() {
       try {
-        document.getElementById("tripcheck-sync-status").textContent = "🔄 Syncing trip checks...";
+        const syncBadge = document.getElementById("tripcheck-sync-status");
+        if (syncBadge) syncBadge.textContent = "🔄 Syncing trip checks...";
+        
         const res = await fetch(GOOGLE_SHEET_TRIPCHECK_URL);
         tripChecksDatabase = await res.json();
-        document.getElementById("tripcheck-sync-status").textContent = `✅ Synced ${tripChecksDatabase.length} check(s).`;
         renderTripChecksTable(tripChecksDatabase);
+        
+        if (syncBadge) syncBadge.textContent = `✅ Synced ${tripChecksDatabase.length} check(s).`;
       } catch (e) {
-        document.getElementById("tripcheck-sync-status").textContent = "❌ Failed to load trip checks.";
+        console.error("Error fetching trip checks", e);
+        const syncBadge = document.getElementById("tripcheck-sync-status");
+        if (syncBadge) syncBadge.textContent = "❌ Failed to connect to Trip Check Google Sheet.";
       }
     }
+
+    // Botones de Refresco Manual
+    document.getElementById("refresh-db-btn").addEventListener("click", fetchDrivers);
+    document.getElementById("refresh-fleet-btn").addEventListener("click", fetchFleet);
+    document.getElementById("refresh-accidents-btn").addEventListener("click", fetchAccidents);
+    document.getElementById("refresh-tripchecks-btn").addEventListener("click", fetchTripChecks);
 
     function updateAllFleetAccidentCounts() {
       if (fleetDatabase.length === 0 || accidentsDatabase.length === 0) return;
