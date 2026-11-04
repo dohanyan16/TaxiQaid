@@ -1554,6 +1554,7 @@
     });
 
     // --- FLEET MANAGEMENT LOGIC ---
+// --- FLEET MANAGEMENT LOGIC ---
     let currentActiveVehicle = null;
     let isFleetEditMode = false;
     const fleetPlateInput = document.getElementById("fleet-plate-input");
@@ -1649,6 +1650,89 @@
 
       fleetProfileContainer.style.display = "block";
     }
+
+    function enableFleetEditMode() {
+      if (!currentActiveVehicle) return;
+      isFleetEditMode = true;
+      editFleetBtn.textContent = "💾 Save Vehicle Changes";
+      editFleetBtn.style.background = "var(--success)";
+      cancelFleetEditBtn.style.display = "inline-block";
+
+      const v = currentActiveVehicle;
+      document.getElementById("f-val-brand").innerHTML = `<input type="text" id="edit-fleet-brand" value="${v["Brand"] || v["brand"] || ''}">`;
+      document.getElementById("f-val-model").innerHTML = `<input type="text" id="edit-fleet-model" value="${v["Model"] || v["model"] || ''}">`;
+      document.getElementById("f-val-vin").innerHTML = `<input type="text" id="edit-fleet-vin" value="${v["VIN"] || v["vin"] || ''}">`;
+      
+      const fuelVal = v["Fuel Type"] || v["fuel type"] || "";
+      document.getElementById("f-val-fuel").innerHTML = `<select id="edit-fleet-fuel"><option value="Petrol" ${fuelVal==="Petrol"?"selected":""}>Petrol</option><option value="Hybrid" ${fuelVal==="Hybrid"?"selected":""}>Hybrid</option><option value="Electric" ${fuelVal==="Electric"?"selected":""}>Electric</option></select>`;
+      
+      document.getElementById("f-val-km").innerHTML = `<input type="number" id="edit-fleet-km" value="${v["Total KM"] || v["total km"] || 0}">`;
+      
+      const availVal = v["Availability"] || v["availability"] || "";
+      document.getElementById("f-val-availability").innerHTML = `<select id="edit-fleet-availability"><option value="Available" ${availVal==="Available"?"selected":""}>Available</option><option value="Assigned" ${availVal==="Assigned"?"selected":""}>Assigned</option><option value="Maintenance" ${availVal==="Maintenance"?"selected":""}>Maintenance</option><option value="Grounded" ${availVal==="Grounded"?"selected":""}>Grounded</option></select>`;
+      
+      document.getElementById("f-val-mantenimiento").innerHTML = `<input type="date" id="edit-fleet-maint" value="${v["Last Maintenance"] || v["last maintenance"] || ''}">`;
+      document.getElementById("f-val-oil").innerHTML = `<input type="date" id="edit-fleet-oil" value="${v["Last Oil Change"] || v["last oil change"] || ''}">`;
+      document.getElementById("f-val-ins-start").innerHTML = `<input type="date" id="edit-fleet-ins-start" value="${v["Insurance Start Date"] || v["insurance start date"] || ''}">`;
+      document.getElementById("f-val-ins-exp").innerHTML = `<input type="date" id="edit-fleet-ins-exp" value="${v["Insurance Expiry Date"] || v["insurance expiry date"] || ''}">`;
+      document.getElementById("f-val-op-start").innerHTML = `<input type="date" id="edit-fleet-op-start" value="${v["Operation Card Start Date"] || v["operation card start date"] || ''}">`;
+      document.getElementById("f-val-op-exp").innerHTML = `<input type="date" id="edit-fleet-op-exp" value="${v["Operation Card Expiry Date"] || v["operation card expiry date"] || ''}">`;
+    }
+
+    async function saveEditedVehicle() {
+      const v = currentActiveVehicle;
+      const updatedVehicle = {
+        action: "update",
+        "Plate": v["Plate"] || v["plate"],
+        "Brand": document.getElementById("edit-fleet-brand").value.trim(),
+        "Model": document.getElementById("edit-fleet-model").value.trim(),
+        "VIN": document.getElementById("edit-fleet-vin").value.trim(),
+        "Fuel Type": document.getElementById("edit-fleet-fuel").value,
+        "Total KM": parseInt(document.getElementById("edit-fleet-km").value, 10) || 0,
+        "Availability": document.getElementById("edit-fleet-availability").value,
+        "Last Maintenance": document.getElementById("edit-fleet-maint").value,
+        "Last Oil Change": document.getElementById("edit-fleet-oil").value,
+        "Insurance Start Date": document.getElementById("edit-fleet-ins-start").value,
+        "Insurance Expiry Date": document.getElementById("edit-fleet-ins-exp").value,
+        "Operation Card Start Date": document.getElementById("edit-fleet-op-start").value,
+        "Operation Card Expiry Date": document.getElementById("edit-fleet-op-exp").value
+      };
+
+      editFleetBtn.disabled = true;
+      editFleetBtn.textContent = "Saving...";
+
+      try {
+        const response = await fetch(GOOGLE_SHEET_FLEET_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify(updatedVehicle)
+        });
+        const resData = await response.json();
+        if (resData.status === "success") {
+          const index = fleetDatabase.findIndex(veh => String(veh["Plate"] || veh["plate"]).trim().toLowerCase() === String(updatedVehicle["Plate"]).trim().toLowerCase());
+          if (index !== -1) fleetDatabase[index] = updatedVehicle;
+
+          fleetPlateInput.value = updatedVehicle["Plate"];
+          renderVehicleProfile(updatedVehicle);
+          alert("Vehicle updated successfully!");
+        } else {
+          alert("Error: " + resData.message);
+        }
+      } catch (err) {
+        alert("Could not update Google Sheets.");
+      } finally {
+        editFleetBtn.disabled = false;
+      }
+    }
+
+    editFleetBtn.addEventListener("click", () => {
+      if (!isFleetEditMode) enableFleetEditMode();
+      else saveEditedVehicle();
+    });
+
+    cancelFleetEditBtn.addEventListener("click", () => {
+      if (currentActiveVehicle) renderVehicleProfile(currentActiveVehicle);
+    });
 
     // --- WIZARD TRIP CHECK LOGIC ---
     const tripCheckModal = document.getElementById("add-tripcheck-modal");
