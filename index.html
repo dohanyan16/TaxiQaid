@@ -1157,7 +1157,7 @@
     const GOOGLE_SHEET_DRIVERS_URL = "https://script.google.com/macros/s/AKfycby7-NkH3HuZF2dXsLf0WGCV76bdxSZ1YXZsbs785qrgIAoBA9eal7DIRYPWypwWRPpQkA/exec";
     const GOOGLE_SHEET_FLEET_URL = "https://script.google.com/macros/s/AKfycbyaQI9cnIy7qEYt8F0BNSG2y1HOPD-8kjKU12Y9LbDNq4aLaJ3wrVEbYp2e6Mzmnfsr/exec";
     const GOOGLE_SHEET_ACCIDENTS_URL = "https://script.google.com/macros/s/AKfycbw7pMHgStWn01h_us5DdwndS20sWq9_Ox6uI-dQM1FsC_o8aHj0et96qwZxqD-lsPIs-Q/exec";
-    const GOOGLE_SHEET_TRIPCHECK_URL = "https://script.google.com/macros/s/TU_URL_DE_TRIP_CHECK_aqui/exec";
+    const GOOGLE_SHEET_TRIPCHECK_URL = 
 
     let driversDatabase = [];
     let fleetDatabase = [];
@@ -1553,7 +1553,6 @@
       if (currentActiveDriver) renderDriverProfile(currentActiveDriver);
     });
 
-    // --- FLEET MANAGEMENT LOGIC ---
 // --- FLEET MANAGEMENT LOGIC ---
     let currentActiveVehicle = null;
     let isFleetEditMode = false;
@@ -1659,24 +1658,53 @@
       cancelFleetEditBtn.style.display = "inline-block";
 
       const v = currentActiveVehicle;
-      document.getElementById("f-val-brand").innerHTML = `<input type="text" id="edit-fleet-brand" value="${v["Brand"] || v["brand"] || ''}">`;
-      document.getElementById("f-val-model").innerHTML = `<input type="text" id="edit-fleet-model" value="${v["Model"] || v["model"] || ''}">`;
-      document.getElementById("f-val-vin").innerHTML = `<input type="text" id="edit-fleet-vin" value="${v["VIN"] || v["vin"] || ''}">`;
+      const plateStr = String(v["Plate"] || v["plate"] || "").trim().toLowerCase();
+      
+      // Comprobar si el vehículo tiene conductores asignados
+      const assignedDrivers = driversDatabase.filter(d => 
+        String(d["Car Plate"] || d["car plate"] || "").trim().toLowerCase() === plateStr
+      );
+      const hasDriver = assignedDrivers.length > 0;
+
+      // Estilo común para elementos deshabilitados/bloqueados
+      const disabledAttr = 'disabled style="background: #e9ecef; cursor: not-allowed;"';
+
+      // 1. Bloquear absolutamente todos los campos informativos
+      document.getElementById("f-val-brand").innerHTML = `<input type="text" id="edit-fleet-brand" value="${v["Brand"] || v["brand"] || ''}" ${disabledAttr}>`;
+      document.getElementById("f-val-model").innerHTML = `<input type="text" id="edit-fleet-model" value="${v["Model"] || v["model"] || ''}" ${disabledAttr}>`;
+      document.getElementById("f-val-vin").innerHTML = `<input type="text" id="edit-fleet-vin" value="${v["VIN"] || v["vin"] || ''}" ${disabledAttr}>`;
       
       const fuelVal = v["Fuel Type"] || v["fuel type"] || "";
-      document.getElementById("f-val-fuel").innerHTML = `<select id="edit-fleet-fuel"><option value="Petrol" ${fuelVal==="Petrol"?"selected":""}>Petrol</option><option value="Hybrid" ${fuelVal==="Hybrid"?"selected":""}>Hybrid</option><option value="Electric" ${fuelVal==="Electric"?"selected":""}>Electric</option></select>`;
+      document.getElementById("f-val-fuel").innerHTML = `<select id="edit-fleet-fuel" ${disabledAttr}><option value="${fuelVal}">${fuelVal}</option></select>`;
       
-      document.getElementById("f-val-km").innerHTML = `<input type="number" id="edit-fleet-km" value="${v["Total KM"] || v["total km"] || 0}">`;
+      document.getElementById("f-val-km").innerHTML = `<input type="number" id="edit-fleet-km" value="${v["Total KM"] || v["total km"] || 0}" ${disabledAttr}>`;
       
-      const availVal = v["Availability"] || v["availability"] || "";
-      document.getElementById("f-val-availability").innerHTML = `<select id="edit-fleet-availability"><option value="Available" ${availVal==="Available"?"selected":""}>Available</option><option value="Assigned" ${availVal==="Assigned"?"selected":""}>Assigned</option><option value="Maintenance" ${availVal==="Maintenance"?"selected":""}>Maintenance</option><option value="Grounded" ${availVal==="Grounded"?"selected":""}>Grounded</option></select>`;
-      
-      document.getElementById("f-val-mantenimiento").innerHTML = `<input type="date" id="edit-fleet-maint" value="${v["Last Maintenance"] || v["last maintenance"] || ''}">`;
-      document.getElementById("f-val-oil").innerHTML = `<input type="date" id="edit-fleet-oil" value="${v["Last Oil Change"] || v["last oil change"] || ''}">`;
-      document.getElementById("f-val-ins-start").innerHTML = `<input type="date" id="edit-fleet-ins-start" value="${v["Insurance Start Date"] || v["insurance start date"] || ''}">`;
-      document.getElementById("f-val-ins-exp").innerHTML = `<input type="date" id="edit-fleet-ins-exp" value="${v["Insurance Expiry Date"] || v["insurance expiry date"] || ''}">`;
-      document.getElementById("f-val-op-start").innerHTML = `<input type="date" id="edit-fleet-op-start" value="${v["Operation Card Start Date"] || v["operation card start date"] || ''}">`;
-      document.getElementById("f-val-op-exp").innerHTML = `<input type="date" id="edit-fleet-op-exp" value="${v["Operation Card Expiry Date"] || v["operation card expiry date"] || ''}">`;
+      // 2. Control condicional de Availability
+      const availVal = v["Availability"] || v["availability"] || "Unassigned";
+
+      if (hasDriver) {
+        // SI TIENE DRIVER: Bloqueado fijado en "Assigned"
+        document.getElementById("f-val-availability").innerHTML = `
+          <select id="edit-fleet-availability" ${disabledAttr}>
+            <option value="Assigned" selected>Assigned</option>
+          </select>`;
+      } else {
+        // SI NO TIENE DRIVER: Habilitado únicamente con "Unassigned" y "Under Maintenance"
+        const isMaint = availVal === "Under Maintenance" || availVal === "Maintenance";
+        document.getElementById("f-val-availability").innerHTML = `
+          <select id="edit-fleet-availability">
+            <option value="Unassigned" ${!isMaint ? "selected" : ""}>Unassigned</option>
+            <option value="Under Maintenance" ${isMaint ? "selected" : ""}>Under Maintenance</option>
+          </select>`;
+      }
+
+      // 3. Bloquear fechas
+      document.getElementById("f-val-mantenimiento").innerHTML = `<input type="date" id="edit-fleet-maint" value="${v["Last Maintenance"] || v["last maintenance"] || ''}" ${disabledAttr}>`;
+      document.getElementById("f-val-oil").innerHTML = `<input type="date" id="edit-fleet-oil" value="${v["Last Oil Change"] || v["last oil change"] || ''}" ${disabledAttr}>`;
+      document.getElementById("f-val-ins-start").innerHTML = `<input type="date" id="edit-fleet-ins-start" value="${v["Insurance Start Date"] || v["insurance start date"] || ''}" ${disabledAttr}>`;
+      document.getElementById("f-val-ins-exp").innerHTML = `<input type="date" id="edit-fleet-ins-exp" value="${v["Insurance Expiry Date"] || v["insurance expiry date"] || ''}" ${disabledAttr}>`;
+      document.getElementById("f-val-op-start").innerHTML = `<input type="date" id="edit-fleet-op-start" value="${v["Operation Card Start Date"] || v["operation card start date"] || ''}" ${disabledAttr}>`;
+      document.getElementById("f-val-op-exp").innerHTML = `<input type="date" id="edit-fleet-op-exp" value="${v["Operation Card Expiry Date"] || v["operation card expiry date"] || ''}" ${disabledAttr}>`;
     }
 
     async function saveEditedVehicle() {
@@ -1710,7 +1738,14 @@
         const resData = await response.json();
         if (resData.status === "success") {
           const index = fleetDatabase.findIndex(veh => String(veh["Plate"] || veh["plate"]).trim().toLowerCase() === String(updatedVehicle["Plate"]).trim().toLowerCase());
-          if (index !== -1) fleetDatabase[index] = updatedVehicle;
+          if (index !== -1) {
+            updatedVehicle["Accidents"] = fleetDatabase[index]["Accidents"] || 0;
+            fleetDatabase[index] = updatedVehicle;
+          }
+
+          if (typeof updateAllFleetAccidentCounts === "function") {
+            updateAllFleetAccidentCounts();
+          }
 
           fleetPlateInput.value = updatedVehicle["Plate"];
           renderVehicleProfile(updatedVehicle);
@@ -1722,6 +1757,7 @@
         alert("Could not update Google Sheets.");
       } finally {
         editFleetBtn.disabled = false;
+        editFleetBtn.textContent = "Edit Vehicle Details";
       }
     }
 
@@ -1733,7 +1769,6 @@
     cancelFleetEditBtn.addEventListener("click", () => {
       if (currentActiveVehicle) renderVehicleProfile(currentActiveVehicle);
     });
-
     // --- WIZARD TRIP CHECK LOGIC ---
     const tripCheckModal = document.getElementById("add-tripcheck-modal");
     const openAddTripCheckBtn = document.getElementById("open-add-tripcheck-modal");
