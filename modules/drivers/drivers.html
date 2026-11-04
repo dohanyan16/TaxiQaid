@@ -1,0 +1,54 @@
+<!-- Drivers module: edit this file to change the feature markup. -->
+<section class="view-section" id="view-drivers">
+<div class="card">
+<div class="card-header-flex">
+<div>
+<h2>Driver Lookup</h2>
+<p style="margin-top: 5px; color: var(--text-muted);">Type Iqama or Full Name to search records.</p>
+</div>
+<div class="button-group-row">
+<button class="btn-secondary" id="refresh-db-btn">🔄 Refresh</button>
+<button class="btn-secondary" id="export-excel-btn">📥 Export Excel</button>
+</div>
+</div>
+<div class="status-badge" id="sync-status">Connecting to Google Sheets...</div>
+<div class="search-row">
+<div class="search-wrapper">
+<label style="font-size: 13px; font-weight: bold; color: var(--text-main);">Search Driver (Iqama or Full Name)</label>
+<div class="input-with-btn">
+<input autocomplete="off" id="driver-search-input" placeholder="Type Iqama number or full name..." type="text"/>
+<button class="dropdown-arrow-btn" id="toggle-driver-btn" type="button">▼</button>
+</div>
+<div class="custom-dropdown" id="driver-dropdown"></div>
+</div>
+</div>
+</div>
+<div id="driver-profile-container" style="display: none;">
+<div class="profile-card">
+<h2 id="profile-driver-name">Driver Profile</h2>
+<div class="profile-grid">
+<div class="field-item"><div class="field-label">Iqama Number</div><div class="field-value" id="val-iqama">-</div></div>
+<div class="field-item"><div class="field-label">Full Name</div><div class="field-value" id="val-name">-</div></div>
+<div class="field-item"><div class="field-label">Nationality</div><div class="field-value" id="val-nationality">-</div></div>
+<div class="field-item"><div class="field-label">Passport Number</div><div class="field-value" id="val-passport">-</div></div>
+<div class="field-item"><div class="field-label">TID</div><div class="field-value" id="val-tid">-</div></div>
+<div class="field-item"><div class="field-label">Passport Expiry Date</div><div class="field-value" id="val-passport-exp">-</div></div>
+<div class="field-item"><div class="field-label">Iqama Issue Date</div><div class="field-value" id="val-iqama-issue">-</div></div>
+<div class="field-item"><div class="field-label">Date of Birth</div><div class="field-value" id="val-dob">-</div></div>
+<div class="field-item"><div class="field-label">Iqama Expiry Date</div><div class="field-value" id="val-iqama-exp">-</div></div>
+<div class="field-item"><div class="field-label">Employment Start Date</div><div class="field-value" id="val-work-start">-</div></div>
+<div class="field-item"><div class="field-label">Phone Number</div><div class="field-value" id="val-phone">-</div></div>
+<div class="field-item"><div class="field-label">Driver ID</div><div class="field-value" id="val-driver-id">-</div></div>
+<div class="field-item"><div class="field-label">Arrangement</div><div class="field-value" id="val-arrangement">-</div></div>
+<div class="field-item"><div class="field-label">KSA Driving License Date</div><div class="field-value" id="val-license-date">-</div></div>
+<div class="field-item"><div class="field-label">Shift</div><div class="field-value" id="val-shift">-</div></div>
+<div class="field-item"><div class="field-label">Car Plate</div><div class="field-value" id="val-car-plate">-</div></div>
+<div class="field-item"><div class="field-label">Status</div><div class="field-value" id="val-status">-</div></div>
+</div>
+<div class="action-row">
+<button class="btn-primary" id="edit-driver-btn">Edit Driver Details</button>
+<button class="btn-secondary" id="cancel-edit-btn" style="display: none;">Cancel</button>
+</div>
+</div>
+</div>
+</section>

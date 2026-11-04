@@ -1,0 +1,32 @@
+<!-- Shared application layout: sidebar, header, and the module view outlet. -->
+<div id="erp-app" style="display: none;">
+    <aside class="sidebar" id="sidebar">
+      <button id="sidebar-toggle" class="btn-collapse" title="Toggle Sidebar">◀</button>
+      <ul class="sidebar-menu">
+        <li class="active" data-view="dashboard"><a href="#"><span class="nav-text">Dashboard</span></a></li>
+        <li data-view="fleet"><a href="#"><span class="nav-text">Fleet Management</span></a></li>
+        <li data-view="drivers"><a href="#"><span class="nav-text">Drivers Management</span></a></li>
+        <li data-view="tripcheck"><a href="#"><span class="nav-text">Trip Check</span></a></li>
+        <li data-view="breakdowns"><a href="#"><span class="nav-text">Breakdowns Tracker</span></a></li>
+        <li data-view="maintenance"><a href="#"><span class="nav-text">Maintenance Tracker</span></a></li>
+        <li data-view="accidents"><a href="#"><span class="nav-text">Accident Tracker</span></a></li>
+      </ul>
+      <div class="sidebar-footer">
+        <button id="logout-button" class="btn-logout"><span class="nav-text">Sign Out</span></button>
+      </div>
+    </aside>
+
+    <div class="right-wrapper">
+      <header class="header-bar">
+        <div class="header-left-group">
+          <img src="assets/TaxiQaidLogo.jpg" alt="TaxiQaid Logo" class="header-logo">
+          <h1 id="page-title">Dashboard</h1>
+        </div>
+      </header>
+
+      <main class="main-content" id="module-views"></main>
+
+    </div>
+  </div>
+
+  <!-- TRIP CHECK STEP-BY-STEP WIZARD -->
