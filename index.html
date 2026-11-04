@@ -508,7 +508,7 @@
           </div>
         </section>
 
-        <!-- Drivers Management View -->
+                <!-- Drivers Management View -->
         <section id="view-drivers" class="view-section">
           <div class="card">
             <div class="card-header-flex">
@@ -521,25 +521,15 @@
                 <button id="export-excel-btn" class="btn-secondary" style="background: #217346; color: white;">📥 Export Excel</button>
               </div>
             </div>
+            <div id="sync-status" class="status-badge">Connecting to Google Sheets...</div>
             <div class="search-row">
-            <div class="search-wrapper">
-              <label style="font-size: 13px; font-weight: bold; color: var(--text-main);">Search Driver (Iqama or Full Name)</label>
-          <div class="input-with-btn">
-      <input type="text" id="driver-search-input" placeholder="Type Iqama number or full name..." autocomplete="off">
-      <button type="button" id="toggle-driver-btn" class="dropdown-arrow-btn">▼</button>
-    </div>
-    <div id="driver-dropdown" class="custom-dropdown"></div>
-  </div>
-</div>
-                <div id="iqama-dropdown" class="custom-dropdown"></div>
-              </div>
               <div class="search-wrapper">
-                <label style="font-size: 13px; font-weight: bold; color: var(--text-main);">Search by Full Name</label>
+                <label style="font-size: 13px; font-weight: bold; color: var(--text-main);">Search Driver (Iqama or Full Name)</label>
                 <div class="input-with-btn">
-                  <input type="text" id="driver-name-input" placeholder="Type full name..." autocomplete="off">
-                  <button type="button" id="toggle-name-btn" class="dropdown-arrow-btn">▼</button>
+                  <input type="text" id="driver-search-input" placeholder="Type Iqama number or full name..." autocomplete="off">
+                  <button type="button" id="toggle-driver-btn" class="dropdown-arrow-btn">▼</button>
                 </div>
-                <div id="name-dropdown" class="custom-dropdown"></div>
+                <div id="driver-dropdown" class="custom-dropdown"></div>
               </div>
             </div>
           </div>
@@ -574,6 +564,7 @@
           </div>
         </section>
 
+        
         <!-- Trip Check View -->
         <section id="view-tripcheck" class="view-section">
           <div class="card">
@@ -1388,77 +1379,78 @@
       return driversDatabase.filter(d => normalizePlate(d["Car Plate"] || d["car plate"]) === target);
     }
 
-    // --- DRIVERS MANAGEMENT LOGIC ---
+        // --- DRIVERS MANAGEMENT LOGIC ---
     let currentActiveDriver = null;
     let isEditMode = false;
-    const iqamaInput = document.getElementById("driver-iqama-input");
-    const nameInput = document.getElementById("driver-name-input");
-    const toggleIqamaBtn = document.getElementById("toggle-iqama-btn");
-    const toggleNameBtn = document.getElementById("toggle-name-btn");
-    const iqamaDropdown = document.getElementById("iqama-dropdown");
-    const nameDropdown = document.getElementById("name-dropdown");
     const profileContainer = document.getElementById("driver-profile-container");
     const editDriverBtn = document.getElementById("edit-driver-btn");
     const cancelEditBtn = document.getElementById("cancel-edit-btn");
+    const driverSearchInput = document.getElementById("driver-search-input");
+    const toggleDriverBtn = document.getElementById("toggle-driver-btn");
+    const driverDropdown = document.getElementById("driver-dropdown");
 
-    function populateDriverDropdown(dropdownElement, items, type) {
-      dropdownElement.innerHTML = "";
-      if (items.length === 0) { dropdownElement.style.display = "none"; return; }
-      items.forEach(driver => {
-        const iqamaVal = String(driver["Iqama Number"] || driver["iqama"] || "");
-        const nameVal = String(driver["Full Name"] || driver["name"] || "");
-        const div = document.createElement("div");
-        div.className = "custom-dropdown-item";
-        div.textContent = type === 'iqama' ? `${iqamaVal} - ${nameVal}` : `${nameVal} (${iqamaVal})`;
-        div.addEventListener("click", () => {
-          iqamaInput.value = iqamaVal;
-          nameInput.value = nameVal;
-          renderDriverProfile(driver);
-          dropdownElement.style.display = "none";
-        });
-        dropdownElement.appendChild(div);
-      });
-      dropdownElement.style.display = "block";
+    function driverLabel(d) {
+      return `${d["Iqama Number"] || d["iqama"] || ""} - ${d["Full Name"] || d["name"] || ""}`;
     }
 
-    toggleIqamaBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (iqamaDropdown.style.display === "block") iqamaDropdown.style.display = "none";
-      else {
-        nameDropdown.style.display = "none";
-        const val = iqamaInput.value.trim().toLowerCase();
-        populateDriverDropdown(iqamaDropdown, val === "" ? driversDatabase : driversDatabase.filter(d => String(d["Iqama Number"] || d["iqama"] || "").toLowerCase().includes(val)), 'iqama');
-      }
-    });
+    function filterDrivers(val) {
+      return driversDatabase.filter(d => driverLabel(d).toLowerCase().includes(val));
+    }
 
-    toggleNameBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (nameDropdown.style.display === "block") nameDropdown.style.display = "none";
-      else {
-        iqamaDropdown.style.display = "none";
-        const val = nameInput.value.trim().toLowerCase();
-        populateDriverDropdown(nameDropdown, val === "" ? driversDatabase : driversDatabase.filter(d => String(d["Full Name"] || d["name"] || "").toLowerCase().includes(val)), 'name');
-      }
-    });
+    function populateDriverDropdown(items) {
+      driverDropdown.innerHTML = "";
+      if (items.length === 0) { driverDropdown.style.display = "none"; return; }
+      items.forEach(driver => {
+        const div = document.createElement("div");
+        div.className = "custom-dropdown-item";
+        div.textContent = driverLabel(driver);
+        div.addEventListener("click", () => {
+          driverSearchInput.value = driverLabel(driver);
+          renderDriverProfile(driver);
+          driverDropdown.style.display = "none";
+        });
+        driverDropdown.appendChild(div);
+      });
+      driverDropdown.style.display = "block";
+    }
 
-    iqamaInput.addEventListener("input", () => {
-      const val = iqamaInput.value.trim().toLowerCase();
-      if (val === "") { profileContainer.style.display = "none"; nameInput.value = ""; return; }
-      const matches = driversDatabase.filter(d => String(d["Iqama Number"] || d["iqama"] || "").toLowerCase().includes(val));
-      populateDriverDropdown(iqamaDropdown, matches, 'iqama');
-      const exact = driversDatabase.find(d => String(d["Iqama Number"] || d["iqama"] || "").toLowerCase() === val);
-      if (exact) { nameInput.value = exact["Full Name"] || exact["name"] || ""; renderDriverProfile(exact); iqamaDropdown.style.display = "none"; }
+    function clearDriverSelection() {
+      driverSearchInput.value = "";
+      profileContainer.style.display = "none";
+      currentActiveDriver = null;
+    }
+
+    driverSearchInput.addEventListener("input", () => {
+      const val = driverSearchInput.value.trim().toLowerCase();
+      if (val === "") { profileContainer.style.display = "none"; driverDropdown.style.display = "none"; return; }
+      populateDriverDropdown(filterDrivers(val));
+      const exact = driversDatabase.find(d =>
+        String(d["Iqama Number"] || d["iqama"] || "").toLowerCase() === val ||
+        String(d["Full Name"] || d["name"] || "").toLowerCase() === val ||
+        driverLabel(d).toLowerCase() === val
+      );
+      if (exact) { renderDriverProfile(exact); driverDropdown.style.display = "none"; }
       else { profileContainer.style.display = "none"; }
     });
 
-    nameInput.addEventListener("input", () => {
-      const val = nameInput.value.trim().toLowerCase();
-      if (val === "") { profileContainer.style.display = "none"; iqamaInput.value = ""; return; }
-      const matches = driversDatabase.filter(d => String(d["Full Name"] || d["name"] || "").toLowerCase().includes(val));
-      populateDriverDropdown(nameDropdown, matches, 'name');
-      const exact = driversDatabase.find(d => String(d["Full Name"] || d["name"] || "").toLowerCase() === val);
-      if (exact) { iqamaInput.value = exact["Iqama Number"] || exact["iqama"] || ""; renderDriverProfile(exact); nameDropdown.style.display = "none"; }
-      else { profileContainer.style.display = "none"; }
+    // Clic en el cuadro: si hay un conductor seleccionado, limpia y muestra la lista completa
+    driverSearchInput.addEventListener("click", () => {
+      if (profileContainer.style.display === "block" && !isEditMode) {
+        clearDriverSelection();
+        populateDriverDropdown(driversDatabase);
+      }
+    });
+
+    toggleDriverBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (profileContainer.style.display === "block" && !isEditMode) {
+        clearDriverSelection();
+        populateDriverDropdown(driversDatabase);
+        return;
+      }
+      if (driverDropdown.style.display === "block") { driverDropdown.style.display = "none"; return; }
+      const val = driverSearchInput.value.trim().toLowerCase();
+      populateDriverDropdown(val === "" ? driversDatabase : filterDrivers(val));
     });
 
     function renderDriverProfile(driver) {
@@ -1483,7 +1475,7 @@
       document.getElementById("val-phone").innerHTML = driver["Phone Number"] || driver["phone number"] || "-";
       document.getElementById("val-driver-id").innerHTML = driver["Driver ID"] || driver["driver id"] || "-";
       document.getElementById("val-arrangement").innerHTML = driver["Arrangement"] || driver["arrangement"] || "-";
-      
+
       const licenseVal = driver["KSA Driving License Date"] || driver["ksa driving license date"];
       document.getElementById("val-license-date").innerHTML = (licenseVal && licenseVal !== "Not Yet") ? formatDateForDisplay(licenseVal) : "Not Yet";
 
@@ -1503,13 +1495,13 @@
 
       const d = currentActiveDriver;
       document.getElementById("val-phone").innerHTML = `<input type="text" id="edit-phone" value="${d["Phone Number"] || d["phone number"] || ''}">`;
-      
+
       const arrVal = d["Arrangement"] || d["arrangement"] || "";
       document.getElementById("val-arrangement").innerHTML = `<select id="edit-arrangement"><option value="Salary" ${arrVal==="Salary"?"selected":""}>Salary</option><option value="270 SAR per day" ${arrVal==="270 SAR per day"?"selected":""}>270 SAR per day</option></select>`;
-      
+
       const shiftVal = d["Shift"] || d["shift"] || "";
       document.getElementById("val-shift").innerHTML = `<select id="edit-shift"><option value="Night Shift" ${shiftVal==="Night Shift"?"selected":""}>Night Shift</option><option value="Day Shift" ${shiftVal==="Day Shift"?"selected":""}>Day Shift</option></select>`;
-      
+
       let plateOptions = `<option value="">-- Unassigned --</option>`;
       fleetDatabase.forEach(v => {
         const vPlate = v["Plate"] || v["plate"];
@@ -1517,7 +1509,7 @@
         plateOptions += `<option value="${vPlate}" ${sel}>${vPlate} (${v["Model"] || v["model"]})</option>`;
       });
       document.getElementById("val-car-plate").innerHTML = `<select id="edit-car-plate">${plateOptions}</select>`;
-      
+
       const statusVal = d["Status"] || d["status"] || "";
       document.getElementById("val-status").innerHTML = `<select id="edit-status"><option value="Available" ${statusVal==="Available"?"selected":""}>Available</option><option value="Not Available" ${statusVal==="Not Available"?"selected":""}>Not Available</option><option value="No Longer in the Project" ${statusVal==="No Longer in the Project"?"selected":""}>No Longer in the Project</option></select>`;
     }
@@ -1560,8 +1552,7 @@
           const index = driversDatabase.findIndex(driver => String(driver["Iqama Number"] || driver["iqama"]).trim() === String(updatedDriver["Iqama Number"]).trim());
           if (index !== -1) driversDatabase[index] = updatedDriver;
 
-          iqamaInput.value = updatedDriver["Iqama Number"];
-          nameInput.value = updatedDriver["Full Name"];
+          driverSearchInput.value = `${updatedDriver["Iqama Number"]} - ${updatedDriver["Full Name"]}`;
           renderDriverProfile(updatedDriver);
           alert("Driver updated successfully!");
         } else {
@@ -1584,7 +1575,7 @@
     cancelEditBtn.addEventListener("click", () => {
       if (currentActiveDriver) renderDriverProfile(currentActiveDriver);
     });
-
+    
     // --- FLEET MANAGEMENT LOGIC ---
     let currentActiveVehicle = null;
     let isFleetEditMode = false;
