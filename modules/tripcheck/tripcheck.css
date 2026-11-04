@@ -1,0 +1,330 @@
+/* Trip Check wizard, dialog controls, and export button. */
+/* Wizard / Step styles */
+    .wizard-step { display: none; }
+    .wizard-step.active-step { display: block; }
+    .wizard-step-title { font-size: 18px; font-weight: bold; color: var(--text-main); margin-bottom: 15px; border-bottom: 2px solid var(--primary); padding-bottom: 8px; }
+    .wizard-progress { font-size: 13px; font-weight: bold; color: var(--primary); margin-bottom: 15px; }
+    
+    .choice-boxes-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .choice-box {
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--text-main);
+      background: #fafafa;
+      transition: all 0.2s;
+    }
+    .choice-box:hover { border-color: var(--primary); background: #fdf2e9; }
+    .choice-box.selected { border-color: var(--primary); background: var(--primary); color: white; }
+
+#export-tripchecks-btn { background: #217346; color: white; }
+#open-add-tripcheck-modal { background: var(--success); width: auto; padding: 10px 16px; }
+
+/* Trip Check: list filtering, editing affordances and automatic scoring. */
+.tripcheck-filters { display: grid; grid-template-columns: minmax(200px, 250px) minmax(260px, 1fr); align-items: end; gap: 16px; margin-top: 18px; }
+.tripcheck-filter-field label, .tripcheck-filter-search > label { display: block; font-size: 13px; font-weight: bold; color: var(--text-main); margin-bottom: 7px; }
+.tripcheck-filter-field select { margin: 0; }
+.tripcheck-filter-search .input-with-btn { margin: 0; }
+.tripcheck-modal-content { max-width: 750px; }
+#tripcheck-modal-title { margin-bottom: 8px; }
+#view-tripcheck .tripcheck-record-row { cursor: pointer; }
+#view-tripcheck .tripcheck-record-row:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.tripcheck-edit-btn { padding: 7px 11px; border-radius: 7px; border: 1px solid var(--primary); color: var(--primary); background: #fff9f3; font-size: 13px; font-weight: 700; cursor: pointer; }
+.tripcheck-edit-btn:hover, .tripcheck-edit-btn:focus-visible { background: var(--primary); color: white; }
+#add-tripcheck-modal .choice-box { user-select: none; }
+#add-tripcheck-modal .choice-box:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+#add-tripcheck-modal .choice-box[data-choice="Defect"].selected { border-color: var(--danger); background: var(--danger); }
+.tripcheck-score-panel { padding: 18px; background: #f8f9fa; border: 1px solid var(--border-color); border-radius: 12px; margin: 15px 0 20px; }
+.tripcheck-score-topline { display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+#tc-score-percentage { color: var(--primary); font-size: 30px; }
+.tripcheck-score-track { display: flex; height: 18px; background: #e3e6eb; border-radius: 20px; overflow: hidden; }
+.tripcheck-score-fill { height: 100%; background: var(--success); width: 0%; flex-shrink: 0; transition: width .2s ease; }
+.tripcheck-score-fill.is-pass { background: var(--success); }
+.tripcheck-score-defect-fill { background: var(--danger); width: 0%; height: 100%; flex-shrink: 0; transition: width .2s ease; }
+.tripcheck-empty-table { text-align: center; color: var(--text-muted); padding: 20px; }
+#tc-score-breakdown { color: var(--text-muted); font-size: 13px; margin-top: 10px; }
+.tripcheck-status-field { font-weight: 700; background: #f3f4f6; color: #9a5318; cursor: not-allowed; }
+.tripcheck-status-field.is-pass { color: var(--success); background: #eef8ee; }
+.tripcheck-help-text { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-top: -8px; }
+.tripcheck-status-tag { display: inline-block; padding: 5px 9px; border-radius: 16px; font-size: 12px; font-weight: 700; background: #fff0e1; color: #955013; }
+.tripcheck-status-tag.is-pass { background: #e6f5e8; color: var(--success); }
+@media(max-width: 740px) { .tripcheck-filters { grid-template-columns: 1fr; } .tripcheck-modal-content { padding: 18px; } .tripcheck-score-topline { align-items: baseline; } }
+
+
+/* ============================================================================
+ * TRIP CHECK v1.4 | Uniform controls and responsive filtering
+ * All standard inputs, selectors and buttons are 46px high within this module.
+ * ========================================================================== */
+#view-tripcheck, #add-tripcheck-modal, #tripcheck-signature-modal {
+  --tc-control-height: 46px;
+}
+#view-tripcheck .button-group-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+#view-tripcheck .button-group-row > button,
+#view-tripcheck .tripcheck-date-controls > button,
+#view-tripcheck .tripcheck-filters input,
+#view-tripcheck .tripcheck-filters select,
+#add-tripcheck-modal .action-row button,
+#add-tripcheck-modal .form-group input:not([type="hidden"]),
+#add-tripcheck-modal .input-with-btn > input,
+#add-tripcheck-modal .tripcheck-signature-summary button,
+#tripcheck-signature-modal .tripcheck-signature-actions button {
+  box-sizing: border-box;
+  height: var(--tc-control-height);
+  min-height: var(--tc-control-height);
+  padding: 0 14px;
+  margin-top: 0;
+  margin-bottom: 0;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.2;
+}
+#view-tripcheck .button-group-row > button,
+#add-tripcheck-modal .action-row button,
+#add-tripcheck-modal .tripcheck-signature-summary button,
+#tripcheck-signature-modal .tripcheck-signature-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  white-space: nowrap;
+}
+#view-tripcheck .tripcheck-date-controls { display: flex; gap: 8px; }
+#view-tripcheck #tripcheck-date-filter { width: 100%; min-width: 0; }
+#view-tripcheck #tripcheck-clear-date-btn { flex: 0 0 auto; }
+#view-tripcheck .tripcheck-filters {
+  grid-template-columns: minmax(175px, 1fr) minmax(225px, 1.35fr) minmax(255px, 1.6fr);
+  gap: 14px;
+}
+#add-tripcheck-modal .choice-boxes-container { gap: 12px; }
+#add-tripcheck-modal .choice-box {
+  box-sizing: border-box;
+  height: var(--tc-control-height);
+  min-height: var(--tc-control-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  line-height: 1.2;
+  font-size: 14px;
+}
+#add-tripcheck-modal .dropdown-arrow-btn,
+#view-tripcheck .dropdown-arrow-btn {
+  box-sizing: border-box;
+  min-height: var(--tc-control-height);
+  height: var(--tc-control-height);
+  width: 44px;
+  right: 0;
+}
+#view-tripcheck .tripcheck-edit-btn {
+  box-sizing: border-box;
+  height: var(--tc-control-height);
+  min-height: var(--tc-control-height);
+}
+#view-tripcheck #export-tripchecks-pdf-zip-btn { background: #315778; color: white; }
+#view-tripcheck #export-tripchecks-pdf-zip-btn:disabled { opacity: .6; cursor: wait; }
+#add-tripcheck-modal .action-row > div { display: flex; flex-wrap: wrap; gap: 8px; }
+#add-tripcheck-modal .action-row { flex-wrap: wrap; }
+#add-tripcheck-modal #tc-status { height: var(--tc-control-height); }
+#add-tripcheck-modal .tripcheck-signature-summary {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 14px; margin-top: 18px; padding: 14px;
+  border: 1px solid var(--border-color); border-radius: 10px;
+}
+#add-tripcheck-modal .tripcheck-signature-summary p { margin: 5px 0 0; }
+#add-tripcheck-modal #tc-signature-status.is-signed { color: #1d7a36; font-weight: 700; }
+#tripcheck-signature-modal { z-index: 2300; }
+#tripcheck-signature-modal .tripcheck-signature-content { max-width: 780px; }
+#tripcheck-signature-modal .tripcheck-signature-canvas-wrap {
+  border: 2px dashed #9ba6af; border-radius: 10px;
+  background: #fff; overflow: hidden; margin-top: 15px;
+}
+#tripcheck-signature-modal canvas {
+  display: block; width: 100%; height: auto; touch-action: none; cursor: crosshair;
+}
+#tripcheck-signature-modal .tripcheck-signature-actions {
+  display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 9px; margin-top: 18px;
+}
+@media (max-width: 900px) {
+  #view-tripcheck .tripcheck-filters { grid-template-columns: 1fr 1fr; }
+  #view-tripcheck .tripcheck-filter-search { grid-column: 1 / -1; }
+}
+@media (max-width: 600px) {
+  #view-tripcheck .tripcheck-filters { grid-template-columns: 1fr; }
+  #view-tripcheck .tripcheck-filter-search { grid-column: auto; }
+  #view-tripcheck .tripcheck-date-controls { flex-wrap: wrap; }
+  #view-tripcheck #tripcheck-clear-date-btn { width: 100%; }
+  #add-tripcheck-modal .tripcheck-signature-summary { flex-direction: column; align-items: stretch; }
+  #add-tripcheck-modal .tripcheck-signature-summary button { width: 100%; }
+  #tripcheck-signature-modal .tripcheck-signature-actions > button { flex: 1 1 100%; }
+}
+
+
+/* ============================================================================
+ * TRIP CHECK | Readable text and responsive layout
+ * Keep the controls consistent without clipping longer labels or descriptions.
+ * These rules are scoped to the Trip Check module only.
+ * ========================================================================== */
+#view-tripcheck,
+#view-tripcheck .card,
+#view-tripcheck .card-header-flex > *,
+#view-tripcheck .tripcheck-filters > *,
+#add-tripcheck-modal .modal-content,
+#tripcheck-signature-modal .modal-content {
+  min-width: 0;
+}
+
+#view-tripcheck h2,
+#view-tripcheck p,
+#view-tripcheck label,
+#view-tripcheck .status-badge,
+#add-tripcheck-modal h2,
+#add-tripcheck-modal label,
+#add-tripcheck-modal p,
+#add-tripcheck-modal .wizard-step-title,
+#tripcheck-signature-modal h2,
+#tripcheck-signature-modal p {
+  overflow-wrap: anywhere;
+  line-height: 1.45;
+}
+
+#view-tripcheck .card-header-flex {
+  align-items: flex-start;
+}
+#view-tripcheck .card-header-flex > div:first-child {
+  flex: 1 1 260px;
+}
+#view-tripcheck .button-group-row {
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  align-items: stretch;
+}
+#view-tripcheck .button-group-row > button,
+#view-tripcheck .tripcheck-date-controls > button,
+#add-tripcheck-modal .action-row button,
+#add-tripcheck-modal .tripcheck-signature-summary button,
+#tripcheck-signature-modal .tripcheck-signature-actions button {
+  height: auto;
+  min-height: var(--tc-control-height);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+  line-height: 1.25;
+  padding: 10px 14px;
+}
+
+#view-tripcheck .tripcheck-filters {
+  align-items: start;
+}
+#view-tripcheck .tripcheck-filter-field,
+#view-tripcheck .tripcheck-filter-search,
+#view-tripcheck .tripcheck-filter-search .input-with-btn,
+#view-tripcheck .tripcheck-date-controls,
+#view-tripcheck #tripcheck-type-filter,
+#view-tripcheck #tripcheck-search-input {
+  min-width: 0;
+  max-width: 100%;
+}
+#view-tripcheck .tripcheck-date-controls {
+  align-items: stretch;
+}
+#view-tripcheck .tripcheck-date-controls > input {
+  flex: 1 1 150px;
+}
+#view-tripcheck #tripcheck-clear-date-btn {
+  flex: 0 1 auto;
+}
+
+/* Let long questions occupy two lines rather than collide with the choice boxes. */
+#add-tripcheck-modal .wizard-step-title {
+  max-width: 100%;
+}
+#add-tripcheck-modal .choice-boxes-container {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+}
+#add-tripcheck-modal .choice-box {
+  height: auto;
+  min-height: var(--tc-control-height);
+  padding: 10px 12px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  line-height: 1.35;
+}
+#add-tripcheck-modal .action-row {
+  align-items: stretch;
+  gap: 10px;
+}
+#add-tripcheck-modal .action-row > div {
+  min-width: 0;
+}
+#add-tripcheck-modal .action-row > div > button {
+  flex: 0 1 auto;
+}
+#add-tripcheck-modal .tripcheck-score-topline,
+#add-tripcheck-modal .tripcheck-signature-summary {
+  flex-wrap: wrap;
+}
+#add-tripcheck-modal #tc-score-percentage {
+  flex-shrink: 0;
+}
+#add-tripcheck-modal .tripcheck-signature-summary > div {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+/* Keep dense data readable; the table itself scrolls horizontally if required. */
+#view-tripcheck .tracker-table-container {
+  max-width: 100%;
+  overflow-x: auto;
+}
+#view-tripcheck #tripchecks-table {
+  min-width: 1180px;
+  white-space: normal;
+}
+#view-tripcheck #tripchecks-table th,
+#view-tripcheck #tripchecks-table td {
+  overflow-wrap: anywhere;
+  white-space: normal;
+  vertical-align: middle;
+  line-height: 1.4;
+}
+#view-tripcheck #tripchecks-table td:nth-child(12) {
+  min-width: 150px;
+  max-width: 270px;
+}
+
+@media (max-width: 740px) {
+  #view-tripcheck .button-group-row {
+    justify-content: flex-start;
+    width: 100%;
+  }
+  #view-tripcheck .card,
+  #add-tripcheck-modal .modal-content,
+  #tripcheck-signature-modal .modal-content {
+    padding: 16px;
+  }
+  #add-tripcheck-modal .action-row > div {
+    flex: 1 1 100%;
+  }
+}
+@media (max-width: 420px) {
+  #view-tripcheck .button-group-row > button {
+    flex: 1 1 100%;
+  }
+  #add-tripcheck-modal .choice-boxes-container {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #add-tripcheck-modal .action-row > div > button,
+  #add-tripcheck-modal .action-row > button {
+    flex: 1 1 100%;
+  }
+}
