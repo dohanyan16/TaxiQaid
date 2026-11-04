@@ -1650,7 +1650,7 @@
       fleetProfileContainer.style.display = "block";
     }
 
-    function enableFleetEditMode() {
+function enableFleetEditMode() {
       if (!currentActiveVehicle) return;
       isFleetEditMode = true;
       editFleetBtn.textContent = "💾 Save Vehicle Changes";
@@ -1660,16 +1660,16 @@
       const v = currentActiveVehicle;
       const plateStr = String(v["Plate"] || v["plate"] || "").trim().toLowerCase();
       
-      // Comprobar si el vehículo tiene conductores asignados
+      // Comprobar si el vehículo tiene un conductor asignado
       const assignedDrivers = driversDatabase.filter(d => 
         String(d["Car Plate"] || d["car plate"] || "").trim().toLowerCase() === plateStr
       );
       const hasDriver = assignedDrivers.length > 0;
-
-      // Estilo común para elementos deshabilitados/bloqueados
+      
+      // Estilo visual para campos bloqueados/deshabilitados
       const disabledAttr = 'disabled style="background: #e9ecef; cursor: not-allowed;"';
 
-      // 1. Bloquear absolutamente todos los campos informativos
+      // 1. Bloquear absolutamente todos los demás campos para que no se puedan modificar
       document.getElementById("f-val-brand").innerHTML = `<input type="text" id="edit-fleet-brand" value="${v["Brand"] || v["brand"] || ''}" ${disabledAttr}>`;
       document.getElementById("f-val-model").innerHTML = `<input type="text" id="edit-fleet-model" value="${v["Model"] || v["model"] || ''}" ${disabledAttr}>`;
       document.getElementById("f-val-vin").innerHTML = `<input type="text" id="edit-fleet-vin" value="${v["VIN"] || v["vin"] || ''}" ${disabledAttr}>`;
@@ -1679,17 +1679,17 @@
       
       document.getElementById("f-val-km").innerHTML = `<input type="number" id="edit-fleet-km" value="${v["Total KM"] || v["total km"] || 0}" ${disabledAttr}>`;
       
-      // 2. Control condicional de Availability
+      // 2. Lógica exclusiva para Availability
       const availVal = v["Availability"] || v["availability"] || "Unassigned";
 
       if (hasDriver) {
-        // SI TIENE DRIVER: Bloqueado fijado en "Assigned"
+        // SI TIENE DRIVER ASIGNADO: Bloqueado fijado en "Assigned"
         document.getElementById("f-val-availability").innerHTML = `
           <select id="edit-fleet-availability" ${disabledAttr}>
             <option value="Assigned" selected>Assigned</option>
           </select>`;
       } else {
-        // SI NO TIENE DRIVER: Habilitado únicamente con "Unassigned" y "Under Maintenance"
+        // SI NO TIENE DRIVER: Permite elegir solo entre "Unassigned" o "Under Maintenance"
         const isMaint = availVal === "Under Maintenance" || availVal === "Maintenance";
         document.getElementById("f-val-availability").innerHTML = `
           <select id="edit-fleet-availability">
@@ -1698,7 +1698,7 @@
           </select>`;
       }
 
-      // 3. Bloquear fechas
+      // 3. Bloquear también todas las fechas informativas
       document.getElementById("f-val-mantenimiento").innerHTML = `<input type="date" id="edit-fleet-maint" value="${v["Last Maintenance"] || v["last maintenance"] || ''}" ${disabledAttr}>`;
       document.getElementById("f-val-oil").innerHTML = `<input type="date" id="edit-fleet-oil" value="${v["Last Oil Change"] || v["last oil change"] || ''}" ${disabledAttr}>`;
       document.getElementById("f-val-ins-start").innerHTML = `<input type="date" id="edit-fleet-ins-start" value="${v["Insurance Start Date"] || v["insurance start date"] || ''}" ${disabledAttr}>`;
