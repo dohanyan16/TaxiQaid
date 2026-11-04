@@ -1552,7 +1552,15 @@
     cancelEditBtn.addEventListener("click", () => {
       if (currentActiveDriver) renderDriverProfile(currentActiveDriver);
     });
+function normalizePlate(p) {
+  return String(p || "").replace(/[\s\-_.]/g, "").toLowerCase();
+}
 
+function getAssignedDrivers(plate) {
+  const target = normalizePlate(plate);
+  if (!target) return [];
+  return driversDatabase.filter(d => normalizePlate(d["Car Plate"] || d["car plate"]) === target);
+}
 // --- FLEET MANAGEMENT LOGIC ---
     let currentActiveVehicle = null;
     let isFleetEditMode = false;
@@ -1582,8 +1590,9 @@
       fleetDropdown.style.display = "block";
     }
 
-    toggleFleetBtn.addEventListener("click", (e) => {
+    toggleFleetBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
+      if (driversDatabase.length === 0) await fetchDrivers();
       if (fleetDropdown.style.display === "block") { fleetDropdown.style.display = "none"; }
       else {
         const val = fleetPlateInput.value.trim().toLowerCase();
@@ -1592,6 +1601,8 @@
     });
 
     fleetPlateInput.addEventListener("input", () => {
+      fleetPlateInput.addEventListener("input", async () => {
+      if (driversDatabase.length === 0) await fetchDrivers();
       const val = fleetPlateInput.value.trim().toLowerCase();
       if (val === "") { fleetProfileContainer.style.display = "none"; fleetDropdown.style.display = "none"; return; }
       const matches = fleetDatabase.filter(v => String(v["Plate"] || v["plate"] || "").toLowerCase().includes(val));
@@ -1609,8 +1620,7 @@
       cancelFleetEditBtn.style.display = "none";
 
       const plateStr = String(vehicle["Plate"] || vehicle["plate"] || "");
-      const vehiclePlate = plateStr.trim().toLowerCase();
-      const assignedDrivers = driversDatabase.filter(d => String(d["Car Plate"] || d["car plate"] || "").trim().toLowerCase() === vehiclePlate);
+      const assignedDrivers = getAssignedDrivers(plateStr);
       
       let driversHtml = "";
       if (assignedDrivers.length === 0) {
@@ -1658,12 +1668,7 @@ function enableFleetEditMode() {
       cancelFleetEditBtn.style.display = "inline-block";
 
       const v = currentActiveVehicle;
-      const plateStr = String(v["Plate"] || v["plate"] || "").trim().toLowerCase();
-      
-      // Comprobar si el vehículo tiene un conductor asignado
-      const assignedDrivers = driversDatabase.filter(d => 
-        String(d["Car Plate"] || d["car plate"] || "").trim().toLowerCase() === plateStr
-      );
+      const assignedDrivers = getAssignedDrivers(v["Plate"] || v["plate"]);
       const hasDriver = assignedDrivers.length > 0;
       
       // Estilo visual para campos bloqueados/deshabilitados
