@@ -1,4 +1,4 @@
-# Taxi Qaid ERP — Project Guide (v1.2)
+# TaxiQaid — Project Guide (v1.2)
 
 ## 1. Architecture
 
@@ -73,3 +73,13 @@ Some legacy inline styles remain in the HTML to preserve exact appearance. You c
 No build system is required. The scripts remain classic scripts, so their **load order matters**. GitHub Pages can host these static files and subdirectories.
 
 The frontend login and `shared/write-guard.js` cannot protect Google Apps Script endpoints from direct calls. The original ZIP did not include backend Apps Script source files. See [SECURITY.md](SECURITY.md) before production use.
+
+## 8. Permanent data and update contracts
+
+Use the existing Sheet endpoints for Fleet, Drivers, Accidents, Pre-Trip and Post-Trip. `shared/data.js` provides uncached, validated Sheet reads and the Excel export refresh guard. A successful POST is followed by a read of saved data; a later read failure must be reported as a reload/synchronization warning, not a failed save.
+
+Fleet update requests contain `action: "update"`, `Plate` and `Availability`. Driver updates retain their existing identifier/transport and contain `Iqama Number`, `Phone Number`, `Arrangement`, `Shift`, `Car Plate` and `Status`. Apps Script handlers must update only supplied editable fields, preserve omitted columns, and never create a new Fleet/Driver row through these edit flows. Bulk creation and locked field changes remain manual Sheet operations. This repository contains no Apps Script implementation; these are the contracts required of the externally managed endpoints.
+
+Accident counts are derived in browser memory from all current Accident Tracker records and are omitted from Fleet writes. Post-Trip owns the server-side Fleet `Total KM` update. After an inspection save, the frontend reloads both inspection Sheets and, for Post-Trip, reloads Fleet and checks its persisted `Total KM` against the latest Post-Trip for the normalized plate. An older inspection edit is compared against the latest inspection, not its own older reading. No credentials or second Fleet write are introduced.
+
+Keep the KSA clock, Check ID rules, signed flag and PDF layout intact. Trip Check Refresh updates data and reapplies the current filters. Placeholder modules must remain without Sheet creation until separately approved.

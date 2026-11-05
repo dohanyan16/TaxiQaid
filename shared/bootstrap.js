@@ -1,5 +1,5 @@
 /**
- * TAXI QAID ERP | bootstrap.js
+ * TaxiQaid | bootstrap.js
  * Purpose: Insert self-contained feature HTML, then initialize classic scripts.
  *
  * This is a static website compatible with GitHub Pages (no npm/build system).
@@ -111,7 +111,7 @@ async function initializeApplication() {
     workspace.hidden = false;
     bootStatus.remove();
   } catch (error) {
-    console.error("Unable to initialize Taxi Qaid ERP:", error);
+    console.error("Unable to initialize TaxiQaid:", error);
     bootStatus.textContent =
       "Unable to load the application. Open it through an HTTP(S) server and reload the page.";
     bootStatus.setAttribute("role", "alert");

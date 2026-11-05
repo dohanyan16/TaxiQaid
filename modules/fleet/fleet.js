@@ -1,5 +1,5 @@
 /**
- * TAXI QAID ERP | fleet.js
+ * TaxiQaid | fleet.js
  * Purpose: Fleet lookup, assigned drivers, availability rules, and save.
  *
  * Loaded as a classic script to preserve original cross-file references.
@@ -276,18 +276,10 @@ fleetPlateInput.addEventListener("click", () => {
       const updatedVehicle = {
         action: "update",
         "Plate": v["Plate"] || v["plate"],
-        "Brand": document.getElementById("edit-fleet-brand").value.trim(),
-        "Model": document.getElementById("edit-fleet-model").value.trim(),
-        "VIN": document.getElementById("edit-fleet-vin").value.trim(),
-        "Fuel Type": document.getElementById("edit-fleet-fuel").value,
-        // Total KM is derived from Post-Trip, never written to the Fleet sheet.
-        "Availability": document.getElementById("edit-fleet-availability").value,
-        "Last Maintenance": document.getElementById("edit-fleet-maint").value,
-        "Last Oil Change": document.getElementById("edit-fleet-oil").value,
-        "Insurance Start Date": document.getElementById("edit-fleet-ins-start").value,
-        "Insurance Expiry Date": document.getElementById("edit-fleet-ins-exp").value,
-        "Operation Card Start Date": document.getElementById("edit-fleet-op-start").value,
-        "Operation Card Expiry Date": document.getElementById("edit-fleet-op-exp").value
+        // Never submit static fields, derived accidents or Total KM. The
+        // Post-Trip server owns Fleet Sheet odometer synchronization.
+        "Availability": getAssignedDrivers(v["Plate"] || v["plate"]).length
+          ? "Assigned" : document.getElementById("edit-fleet-availability").value
       };
 
       editFleetBtn.disabled = true;
@@ -297,17 +289,12 @@ fleetPlateInput.addEventListener("click", () => {
         const response = await postAuthorizedSheetUpdate(GOOGLE_SHEET_FLEET_URL, updatedVehicle);
         const resData = await response.json();
         if (resData.status === "success") {
-          const index = fleetDatabase.findIndex(veh => String(veh["Plate"] || veh["plate"]).trim().toLowerCase() === String(updatedVehicle["Plate"]).trim().toLowerCase());
-          if (index !== -1) {
-            updatedVehicle["Accidents"] = fleetDatabase[index]["Accidents"] || 0;
-            fleetDatabase[index] = { ...fleetDatabase[index], ...updatedVehicle };
-          }
-
-          updateAllFleetAccidentCounts();
-
+          const refreshed = await refreshFleetData();
+          const saved = refreshed && fleetDatabase.find(veh => normalizePlate(veh["Plate"] ?? veh["plate"]) === normalizePlate(updatedVehicle["Plate"]));
           fleetPlateInput.value = updatedVehicle["Plate"];
-          renderVehicleProfile(index !== -1 ? fleetDatabase[index] : updatedVehicle);
-          alert("Vehicle updated successfully!");
+          renderVehicleProfile(saved || v);
+          alert(saved ? "Vehicle saved to Google Sheets successfully!"
+            : "Vehicle saved, but Fleet could not fully reload. Do not save again; click Refresh before continuing.");
         } else {
           alert("Error: " + resData.message);
         }
@@ -334,19 +321,13 @@ fleetPlateInput.addEventListener("click", () => {
       const syncBadge = document.getElementById("fleet-sync-status");
       if (syncBadge) syncBadge.textContent = "Syncing fleet and latest Post-Trip odometers...";
       try {
-        const res = await fetch(GOOGLE_SHEET_FLEET_URL, { cache: "no-store" });
-        if (!res.ok) throw new Error(`Fleet HTTP ${res.status}`);
-        const vehicles = await res.json();
-        if (!Array.isArray(vehicles)) throw new Error("Invalid Fleet response.");
+        const vehicles = await readSheetRecords(GOOGLE_SHEET_FLEET_URL);
 
         let readings = new Map();
         let postTripError = null;
         try {
           const postUrl = TRIPCHECK_SHEET_ENDPOINTS["Post-Trip"];
-          const response = await fetch(postUrl, { cache: "no-store" });
-          if (!response.ok) throw new Error(`Post-Trip HTTP ${response.status}`);
-          const postTrips = await response.json();
-          if (!Array.isArray(postTrips)) throw new Error("Invalid Post-Trip response.");
+          const postTrips = await readSheetRecords(postUrl);
           readings = buildLatestPostTripReadings(postTrips);
         } catch (error) {
           postTripError = error;
@@ -354,7 +335,7 @@ fleetPlateInput.addEventListener("click", () => {
         }
 
         // Ignore outdated responses if another refresh started in the meantime.
-        if (requestId !== fleetRefreshSequence) return;
+        if (requestId !== fleetRefreshSequence) return false;
         fleetDatabase = vehicles;
         fleetPostTripReadings = readings;
         updateAllFleetAccidentCounts();
@@ -376,30 +357,51 @@ fleetPlateInput.addEventListener("click", () => {
             ? `Fleet synced (${fleetDatabase.length} vehicles). Post-Trip unavailable; displaying Fleet sheet KM.`
             : `Fleet synced (${fleetDatabase.length} vehicles). Latest Post-Trip KM loaded for ${readings.size} plate(s).`;
         }
+        return !postTripError;
       } catch (error) {
-        if (requestId !== fleetRefreshSequence) return;
+        if (requestId !== fleetRefreshSequence) return false;
         console.error("Error fetching fleet", error);
         if (syncBadge) syncBadge.textContent = "Failed to connect to Fleet Google Sheet.";
+        return false;
       }
     }
 
+    async function refreshFleetData() {
+      const [fleet, drivers, accidents] = await Promise.all([fetchFleet(), fetchDrivers(), fetchAccidents()]);
+      updateAllFleetAccidentCounts();
+      if (currentActiveVehicle && !isFleetEditMode) renderVehicleProfile(currentActiveVehicle);
+      if (!drivers || !accidents) {
+        document.getElementById("fleet-sync-status").textContent = "Fleet refresh incomplete: Drivers or Accident Tracker could not reload. Refresh before exporting.";
+      }
+      return fleet && drivers && accidents;
+    }
+
+    function isFleetPostTripSynced(plate) {
+      const normalized = normalizePlate(plate);
+      const vehicle = fleetDatabase.find(v => normalizePlate(v["Plate"] ?? v["plate"]) === normalized);
+      const latest = fleetPostTripReadings.get(normalized);
+      const sheetKm = vehicle && (vehicle["Total KM"] ?? vehicle["total km"]);
+      return Boolean(vehicle && latest && ["number", "string"].includes(typeof sheetKm) &&
+        String(sheetKm).trim() !== "" && Number(sheetKm) === latest.km);
+    }
 
 // Refresh the records when the user clicks this module's refresh button.
-    document.getElementById("refresh-fleet-btn").addEventListener("click", fetchFleet);
+    document.getElementById("refresh-fleet-btn").addEventListener("click", refreshFleetData);
 
 // Export the currently loaded fleet data.
-    document.getElementById("export-fleet-excel-btn").addEventListener("click", () => {
+    document.getElementById("export-fleet-excel-btn").addEventListener("click", event => exportLatestSheetData(event.currentTarget, refreshFleetData, () => {
       if (fleetDatabase.length === 0) { alert("No fleet data available to export."); return; }
       // Export the same latest odometer readings displayed in Fleet Management.
       const exportData = fleetDatabase.map(vehicle => {
         const row = { ...vehicle, "Total KM": getFleetOdometer(vehicle).value };
         // Lowercase sheet headers must not leave a second, stale mileage column.
         delete row["total km"];
+        delete row["accidents"];
         return row;
       });
       const worksheet = XLSX.utils.json_to_sheet(exportData);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Fleet Database");
       XLSX.writeFile(workbook, "Fleet_Database.xlsx");
-    });
+    }));
 

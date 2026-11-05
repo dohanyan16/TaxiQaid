@@ -7,12 +7,14 @@
 <p style="margin-top: 5px; color: var(--text-muted);">Create, review and edit pre-trip and post-trip inspections. Select a record to edit it. PDF export follows the active filters.</p>
 </div>
 <div class="button-group-row">
+<button class="btn-secondary" id="refresh-tripchecks-btn" type="button">🔄 Refresh</button>
 <button class="btn-primary" id="open-add-tripcheck-modal">➕ New Trip Check</button>
 <button class="btn-secondary" id="export-tripchecks-btn">📥 Export Excel</button>
 <button class="btn-secondary" id="export-tripchecks-pdf-zip-btn" type="button">📄 Export Filtered PDFs</button>
 </div>
 </div>
 <div class="status-badge" id="tripcheck-sync-status" role="status">Connecting to Google Sheets...</div>
+<div class="status-badge" id="tripcheck-save-status" role="status" hidden></div>
 <div class="tripcheck-filters">
 <div class="tripcheck-filter-field">
 <label for="tripcheck-type-filter">Inspection Type</label>

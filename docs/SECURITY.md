@@ -1,4 +1,4 @@
-# Taxi Qaid ERP — Security Requirements
+# TaxiQaid — Security Requirements
 
 ## Critical distinction: Login is not API authorization
 
@@ -25,7 +25,8 @@ Do not push company credentials, spreadsheet exports, passwords, or personal dat
 ## Current known gaps
 
 - Google Apps Script source code was not included with the supplied archive.
-- The Trip Check endpoint still contains a placeholder deployment ID.
+- The unused legacy Trip Check constant in `shared/config.js` is a placeholder; the active Pre/Post-Trip endpoints are defined in `modules/tripcheck/tripcheck.js`.
+- Fleet/Driver endpoints must preserve omitted columns on partial updates. Their implementations and the Post-Trip server-side Fleet odometer write are externally managed and cannot be verified from frontend source alone.
 - The original code is heavily based on `innerHTML` when showing sheet values.
 - Authorization is based on having a role, rather than explicit action-level permissions.
 - No live backend or browser integration test was possible against company accounts.

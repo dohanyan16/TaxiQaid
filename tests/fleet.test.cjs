@@ -11,7 +11,7 @@ const record = (date, time, km, plate = 'ABC 123') => ({
   'Car Plate': plate, Date: date, Time: time, 'Odometer (KM)': km
 });
 
-function setup() {
+function setup({ drivers = false } = {}) {
   const elements = new Map();
   function element() {
     return {
@@ -33,6 +33,7 @@ function setup() {
   let exported;
   const context = vm.createContext({
     document, console: { warn() {}, error() {} }, alert() {},
+    fetchDrivers: async () => true, fetchAccidents: async () => true,
     fetch: async (url, options) => {
       requests.push({ url, options });
       if (responses[url] instanceof Error) throw responses[url];
@@ -47,16 +48,17 @@ function setup() {
     }
   });
   const run = code => vm.runInContext(code, context);
-  run('const GOOGLE_SHEET_FLEET_URL = "fleet"; const TRIPCHECK_SHEET_ENDPOINTS = {"Post-Trip": "post"};');
+  run('const GOOGLE_SHEET_FLEET_URL = "fleet"; const GOOGLE_SHEET_DRIVERS_URL = "drivers"; const TRIPCHECK_SHEET_ENDPOINTS = {"Post-Trip": "post"};');
   for (const file of ['shared/state.js', 'shared/utils.js', 'shared/data.js']) {
     run(fs.readFileSync(path.join(root, file), 'utf8'));
   }
   run(source);
+  if (drivers) run(fs.readFileSync(path.join(root, 'modules/drivers/drivers.js'), 'utf8'));
   return {
     run, context, responses, requests,
     element: id => document.getElementById(id),
     readings(records) { context.records = records; return run('buildLatestPostTripReadings(records)'); },
-    exported: () => JSON.parse(JSON.stringify(exported))
+    exported: () => exported == null ? null : JSON.parse(JSON.stringify(exported))
   };
 }
 
@@ -160,7 +162,7 @@ test('Excel uses the displayed odometer without duplicate lowercase KM or mutati
   ];
   app.responses.post = [record('2026-11-05', '10:00', 100)];
   await app.run('fetchFleet()');
-  app.element('export-fleet-excel-btn').listeners.click();
+  await app.element('export-fleet-excel-btn').listeners.click({ currentTarget: app.element('export-fleet-excel-btn') });
   const rows = app.exported();
   assert.equal(rows[0]['Total KM'], 100);
   assert.equal(Object.hasOwn(rows[0], 'total km'), false);
@@ -187,12 +189,51 @@ test('availability saves omit Total KM and preserve sheet mileage, driver assign
   await app.run('saveEditedVehicle()');
   assert.equal(saved.url, 'fleet');
   assert.equal(saved.payload.Availability, 'Assigned');
+  assert.deepEqual(Object.keys(saved.payload).sort(), ['Availability', 'Plate', 'action']);
   assert.equal(Object.hasOwn(saved.payload, 'Total KM'), false);
   assert.equal(Object.hasOwn(saved.payload, 'total km'), false);
   assert.equal(app.run('fleetDatabase[0]["Total KM"]'), 50);
   assert.equal(app.run('fleetDatabase[0].Accidents'), 1);
   assert.equal(app.run('getAssignedDrivers("ABC_123")[0]["Full Name"]'), 'Fixture Driver');
   assert.equal(app.run('getFleetOdometer(fleetDatabase[0]).value'), 100);
+});
+
+test('derived accident counts normalize plates and reset to zero after the last accident is removed', async () => {
+  const app = setup();
+  app.responses.fleet = [{ Plate: 'ABC-123', Accidents: 99 }];
+  app.run('accidentsDatabase = [{"Car Plate": "abc_123"}, {"Car Plate": "ABC 123"}];');
+  await app.run('fetchFleet()');
+  assert.equal(app.run('fleetDatabase[0].Accidents'), 2);
+  app.run('accidentsDatabase = []; updateAllFleetAccidentCounts();');
+  assert.equal(app.run('fleetDatabase[0].Accidents'), 0);
+});
+
+test('exports reload manually edited Sheet rows and cancel instead of exporting stale snapshots', async () => {
+  const app = setup();
+  app.responses.fleet = [{ Plate: 'ABC 123', 'Total KM': 50 }];
+  await app.run('fetchFleet()');
+  app.responses.fleet.push({ Plate: 'BULK 456', 'Total KM': 75 });
+  await app.element('export-fleet-excel-btn').listeners.click({ currentTarget: app.element('export-fleet-excel-btn') });
+  assert.equal(app.exported().length, 2);
+  const failed = setup();
+  failed.responses.fleet = [{ Plate: 'ABC 123', 'Total KM': 50 }];
+  await failed.run('fetchFleet()');
+  failed.responses.fleet = new Error('Offline');
+  await failed.element('export-fleet-excel-btn').listeners.click({ currentTarget: failed.element('export-fleet-excel-btn') });
+  assert.equal(failed.exported(), null);
+  assert.equal(failed.element('export-fleet-excel-btn').disabled, false);
+});
+
+test('Fleet sync verification compares the actual Sheet cell with the latest Post-Trip, including older edits', async () => {
+  const app = setup();
+  app.responses.fleet = [{ Plate: 'ABC-123', 'Total KM': 50 }];
+  app.responses.post = [record('2026-11-05', '10:00', 100), record('2026-11-04', '12:00', 500)];
+  await app.run('fetchFleet()');
+  assert.equal(app.run('getFleetOdometer(fleetDatabase[0]).value'), 100);
+  assert.equal(app.run('isFleetPostTripSynced("abc_123")'), false);
+  app.responses.fleet[0]['Total KM'] = 100;
+  await app.run('fetchFleet()');
+  assert.equal(app.run('isFleetPostTripSynced("ABC 123")'), true);
 });
 
 test('Post-Trip failures fall back to Fleet KM with a warning; Fleet failures retain prior data', async () => {
@@ -227,4 +268,47 @@ test('an older in-flight refresh cannot overwrite a newer refresh', async () => 
   await oldRefresh;
   assert.equal(app.run('fleetDatabase[0]["Total KM"]'), 50);
   assert.equal(app.run('getFleetOdometer(fleetDatabase[0]).value'), 200);
+});
+
+test('Driver saves whitelist editable fields and reload locked values from the Sheet', async () => {
+  const app = setup({ drivers: true });
+  app.responses.drivers = [{ 'Iqama Number': '100', 'Full Name': 'Original', Nationality: 'Original', 'Phone Number': 'old' }];
+  await app.run('fetchDrivers();');
+  app.run('renderDriverProfile(driversDatabase[0]); enableEditMode();');
+  app.element('edit-phone').value = 'new';
+  app.element('edit-arrangement').value = 'Salary';
+  app.element('edit-shift').value = 'Day Shift';
+  app.element('edit-car-plate').value = 'ABC 123';
+  app.element('edit-status').value = 'Available';
+  // A bulk Sheet update made while the web form was open must survive the save.
+  app.responses.drivers[0]['Full Name'] = 'Changed directly in Sheet';
+  app.responses.drivers[0].Nationality = 'Changed directly in Sheet';
+  let saved;
+  app.context.postAuthorizedSheetUpdate = async (url, payload) => {
+    saved = { url, payload };
+    Object.assign(app.responses.drivers[0], payload);
+    return { json: async () => ({ status: 'success' }) };
+  };
+  await app.run('saveEditedDriver();');
+  assert.equal(saved.url, 'drivers');
+  assert.deepEqual(Object.keys(saved.payload).sort(), ['Arrangement', 'Car Plate', 'Iqama Number', 'Phone Number', 'Shift', 'Status']);
+  assert.equal(app.run('currentActiveDriver["Full Name"]'), 'Changed directly in Sheet');
+  assert.equal(app.run('currentActiveDriver.Nationality'), 'Changed directly in Sheet');
+  assert.equal(app.run('currentActiveDriver["Phone Number"]'), 'new');
+});
+
+test('a slow Driver read cannot replace a newer saved Sheet snapshot', async () => {
+  const app = setup({ drivers: true });
+  let releaseOld;
+  const old = new Promise(resolve => { releaseOld = resolve; });
+  let calls = 0;
+  app.context.fetch = async () => {
+    if (calls++ === 0) return old;
+    return { ok: true, json: async () => [{ 'Iqama Number': '100', 'Phone Number': 'new' }] };
+  };
+  const first = app.run('fetchDrivers()');
+  await app.run('fetchDrivers()');
+  releaseOld({ ok: true, json: async () => [{ 'Iqama Number': '100', 'Phone Number': 'old' }] });
+  assert.equal(await first, false);
+  assert.equal(app.run('driversDatabase[0]["Phone Number"]'), 'new');
 });

@@ -1,4 +1,13 @@
-# Taxi Qaid ERP — Change History
+# TaxiQaid — Change History
+
+## Current — Sheet-backed workflows
+
+- Renamed application titles, login branding, metadata and documentation to TaxiQaid.
+- Preserved the previous Fleet/Post-Trip date/time normalization, edit-mode refresh and Excel fixes.
+- Limited Fleet/Driver updates to editable fields and reloaded saved Sheet data; Excel exports refresh before downloading.
+- Kept Fleet accident counts derived from Accident Tracker, including deletion of the last accident.
+- Added Trip Check Refresh with filter preservation and a saved-inspection warning when the server-owned Fleet mileage synchronization cannot be verified.
+- Preserved KSA timestamps, Check IDs, signatures and custom PDF layout; no placeholder Sheets or Apps Script deployments were created.
 
 ## v1.2 — Feature folders
 

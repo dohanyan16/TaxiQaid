@@ -1,5 +1,5 @@
 /**
- * TAXI QAID ERP | Maintenance Tracker
+ * TaxiQaid | Maintenance Tracker
  * Status: Not implemented in the original application.
  *
  * Future features: maintenance schedules, service history, reminders,

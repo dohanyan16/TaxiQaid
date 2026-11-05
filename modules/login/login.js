@@ -1,5 +1,5 @@
 /**
- * TAXI QAID ERP | auth.js
+ * TaxiQaid | auth.js
  * Purpose: Supabase login, access-role lookup, and logout.
  *
  * Loaded as a classic script to preserve original cross-file references.
