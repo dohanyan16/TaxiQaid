@@ -1,5 +1,5 @@
 /**
- * TAXI QAID ERP | utils.js
+ * TaxiQaid | utils.js
  * Purpose: Date, time, and formatting utilities.
  *
  * Loaded as a classic script to preserve original cross-file references.

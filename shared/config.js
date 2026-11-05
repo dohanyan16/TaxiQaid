@@ -1,5 +1,5 @@
 /**
- * TAXI QAID ERP | config.js
+ * TaxiQaid | config.js
  * Purpose: Public configuration: Supabase client and Apps Script endpoints.
  *
  * Loaded as a classic script to preserve original cross-file references.

@@ -1,5 +1,5 @@
 /**
- * TAXI QAID ERP | write-guard.js
+ * TaxiQaid | write-guard.js
  *
  * Client-side safeguard: verify the current Supabase user and a matching
  * authorized role before submitting any change to Google Apps Script.
@@ -31,9 +31,11 @@ async function requireAuthorizedUser() {
 async function postAuthorizedSheetUpdate(url, payload) {
   await requireAuthorizedUser();
   // Preserve the original text/plain request format expected by Apps Script.
-  return fetch(url, {
+  const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "text/plain" },
     body: JSON.stringify(payload)
   });
+  if (!response.ok) throw new Error(`Google Sheets returned HTTP ${response.status}.`);
+  return response;
 }

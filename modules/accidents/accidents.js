@@ -1,5 +1,5 @@
 /**
- * TAXI QAID ERP | accidents.js
+ * TaxiQaid | accidents.js
  * Purpose: Accident recording, updating, deletion, and table.
  *
  * Loaded as a classic script to preserve original cross-file references.
@@ -13,6 +13,7 @@
     const addAccidentForm = document.getElementById("add-accident-form");
     const saveAccidentBtn = document.getElementById("save-accident-btn");
     const deleteAccidentBtn = document.getElementById("delete-accident-btn");
+    let accidentRefreshSequence = 0;
 
     function setupAccidentModalSelects() {
       const plateSelect = document.getElementById("add-acc-plate");
@@ -133,9 +134,10 @@
         const res = await postAuthorizedSheetUpdate(GOOGLE_SHEET_ACCIDENTS_URL, accData);
         const resData = await res.json();
         if (resData.status === "success") {
-          await fetchAccidents();
+          const refreshed = await fetchAccidents();
           addAccidentModal.style.display = "none";
-          alert("Accident record saved successfully!");
+          alert(refreshed ? "Accident record saved successfully!"
+            : "Accident record saved, but Accident Tracker could not reload. Do not save again; click Refresh before continuing.");
         } else {
           alert("Error: " + resData.message);
         }
@@ -254,9 +256,10 @@
         const res = await postAuthorizedSheetUpdate(GOOGLE_SHEET_ACCIDENTS_URL, { action: "delete", "Accident ID": accidentId });
         const resData = await res.json();
         if (resData.status === "success") {
-          await fetchAccidents();
+          const refreshed = await fetchAccidents();
           addAccidentModal.style.display = "none";
-          alert("Accident record deleted successfully!");
+          alert(refreshed ? "Accident record deleted successfully!"
+            : "Accident record deleted, but Accident Tracker could not reload. Click Refresh before continuing.");
         } else {
           alert("Error: " + resData.message);
         }
@@ -270,20 +273,26 @@
 
 // Load records and update the synchronization badge for this module.
     async function fetchAccidents() {
+      const requestId = ++accidentRefreshSequence;
       try {
         const syncBadge = document.getElementById("accident-sync-status");
         if (syncBadge) syncBadge.textContent = "🔄 Syncing accident records...";
         
-        const res = await fetch(GOOGLE_SHEET_ACCIDENTS_URL);
-        accidentsDatabase = await res.json();
+        const records = await readSheetRecords(GOOGLE_SHEET_ACCIDENTS_URL);
+        if (requestId !== accidentRefreshSequence) return false;
+        accidentsDatabase = records;
         updateAllFleetAccidentCounts();
+        if (currentActiveVehicle && !isFleetEditMode) renderVehicleProfile(currentActiveVehicle);
         applyAccidentFilters();
         
         if (syncBadge) syncBadge.textContent = `✅ Synced ${accidentsDatabase.length} accident record(s).`;
+        return true;
       } catch (e) {
+        if (requestId !== accidentRefreshSequence) return false;
         console.error("Error fetching accidents", e);
         const syncBadge = document.getElementById("accident-sync-status");
         if (syncBadge) syncBadge.textContent = "❌ Failed to connect to Accidents Google Sheet.";
+        return false;
       }
     }
 
@@ -324,12 +333,12 @@
       document.getElementById(id).addEventListener("change", applyAccidentFilters);
     });
 
-    document.getElementById("export-accidents-date-btn").addEventListener("click", () => {
+    document.getElementById("export-accidents-date-btn").addEventListener("click", event => exportLatestSheetData(event.currentTarget, fetchAccidents, () => {
       const data = getFilteredAccidents();
       if (data.length === 0) { alert("No accident data available for the selected period."); return; }
       const worksheet = XLSX.utils.json_to_sheet(data);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Accidents");
       XLSX.writeFile(workbook, "Accidents_Period.xlsx");
-    });
+    }));
 

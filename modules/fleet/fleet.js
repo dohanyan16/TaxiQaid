@@ -1,5 +1,5 @@
 /**
- * TAXI QAID ERP | fleet.js
+ * TaxiQaid | fleet.js
  * Purpose: Fleet lookup, assigned drivers, availability rules, and save.
  *
  * Loaded as a classic script to preserve original cross-file references.
@@ -13,26 +13,69 @@
     let fleetPostTripReadings = new Map();
     let fleetRefreshSequence = 0;
 
+    function isFleetInspectionDate(date) {
+      const value = new Date(`${date}T00:00:00Z`);
+      return /^\d{4}-\d{2}-\d{2}$/.test(date) && Number.isFinite(value.getTime()) &&
+        value.toISOString().slice(0, 10) === date;
+    }
+
+    function normalizeFleetInspectionDateTime(dateValue, timeValue) {
+      // Sheets may return formatted cells or serialized Date objects. Convert
+      // zoned timestamps explicitly to Riyadh, never the browser's timezone.
+      function ksaParts(value) {
+        if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/i.test(value) ||
+            !isFleetInspectionDate(value.slice(0, 10))) return null;
+        const timestamp = new Date(value);
+        if (!Number.isFinite(timestamp.getTime())) return null;
+        return Object.fromEntries(new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Asia/Riyadh", year: "numeric", month: "2-digit", day: "2-digit",
+          hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"
+        }).formatToParts(timestamp).map(part => [part.type, part.value]));
+      }
+
+      let date = String(dateValue ?? "").trim();
+      let time = String(timeValue ?? "").trim();
+      if (date.includes("T")) {
+        const parts = ksaParts(date);
+        if (!parts) return null;
+        date = `${parts.year}-${parts.month}-${parts.day}`;
+      } else {
+        // Match the day/month/year convention used by Trip Check's legacy records.
+        const legacy = date.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+        if (legacy) date = `${legacy[3]}-${legacy[2].padStart(2, "0")}-${legacy[1].padStart(2, "0")}`;
+      }
+      if (time.includes("T")) {
+        const parts = ksaParts(time);
+        if (!parts) return null;
+        time = `${parts.hour}:${parts.minute}:${parts.second}`;
+      }
+      const clock = time.match(/^(\d{1,2}):([0-5]\d)(?::([0-5]\d))?\s*(AM|PM)?$/i);
+      if (!isFleetInspectionDate(date) || !clock) return null;
+      let hour = Number(clock[1]);
+      if (clock[4]) {
+        if (hour < 1 || hour > 12) return null;
+        hour = hour % 12 + (clock[4].toUpperCase() === "PM" ? 12 : 0);
+      } else if (hour > 23) return null;
+      time = `${String(hour).padStart(2, "0")}:${clock[2]}:${clock[3] || "00"}`;
+      return { date, time, sortKey: `${date}T${time}` };
+    }
+
     function buildLatestPostTripReadings(records) {
       const latest = new Map();
       for (const record of records) {
         const plate = normalizePlate(record["Car Plate"] ?? record["car plate"]);
-        const date = String(record["Date"] ?? record["date"] ?? "").trim();
-        const time = String(record["Time"] ?? record["time"] ?? "").trim();
+        const inspection = normalizeFleetInspectionDateTime(
+          record["Date"] ?? record["date"], record["Time"] ?? record["time"]);
         const kmRaw = record["Odometer (KM)"] ?? record["odometer (km)"];
         const km = Number(kmRaw);
-        const clock = time.match(/^([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/);
-        if (!plate || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !clock ||
-            kmRaw == null || String(kmRaw).trim() === "" || !Number.isFinite(km) || km < 0) continue;
-        const dateValue = new Date(`${date}T00:00:00Z`);
-        if (Number.isNaN(dateValue.getTime()) || dateValue.toISOString().slice(0, 10) !== date) continue;
+        if (!plate || !inspection || !["number", "string"].includes(typeof kmRaw) ||
+            String(kmRaw).trim() === "" || !Number.isFinite(km) || km < 0) continue;
 
         // Date and time are stored as KSA local values by the Trip Check server.
         // A corrected older inspection must not supersede a newer inspection.
-        const sortKey = `${date}T${clock[1]}:${clock[2]}:${clock[3] || "00"}`;
         const previous = latest.get(plate);
-        if (!previous || sortKey >= previous.sortKey) {
-          latest.set(plate, { km, date, time: sortKey.slice(11), sortKey });
+        if (!previous || inspection.sortKey >= previous.sortKey) {
+          latest.set(plate, { km, ...inspection });
         }
       }
       return latest;
@@ -233,18 +276,10 @@ fleetPlateInput.addEventListener("click", () => {
       const updatedVehicle = {
         action: "update",
         "Plate": v["Plate"] || v["plate"],
-        "Brand": document.getElementById("edit-fleet-brand").value.trim(),
-        "Model": document.getElementById("edit-fleet-model").value.trim(),
-        "VIN": document.getElementById("edit-fleet-vin").value.trim(),
-        "Fuel Type": document.getElementById("edit-fleet-fuel").value,
-        // Total KM is derived from Post-Trip, never written to the Fleet sheet.
-        "Availability": document.getElementById("edit-fleet-availability").value,
-        "Last Maintenance": document.getElementById("edit-fleet-maint").value,
-        "Last Oil Change": document.getElementById("edit-fleet-oil").value,
-        "Insurance Start Date": document.getElementById("edit-fleet-ins-start").value,
-        "Insurance Expiry Date": document.getElementById("edit-fleet-ins-exp").value,
-        "Operation Card Start Date": document.getElementById("edit-fleet-op-start").value,
-        "Operation Card Expiry Date": document.getElementById("edit-fleet-op-exp").value
+        // Never submit static fields, derived accidents or Total KM. The
+        // Post-Trip server owns Fleet Sheet odometer synchronization.
+        "Availability": getAssignedDrivers(v["Plate"] || v["plate"]).length
+          ? "Assigned" : document.getElementById("edit-fleet-availability").value
       };
 
       editFleetBtn.disabled = true;
@@ -254,17 +289,12 @@ fleetPlateInput.addEventListener("click", () => {
         const response = await postAuthorizedSheetUpdate(GOOGLE_SHEET_FLEET_URL, updatedVehicle);
         const resData = await response.json();
         if (resData.status === "success") {
-          const index = fleetDatabase.findIndex(veh => String(veh["Plate"] || veh["plate"]).trim().toLowerCase() === String(updatedVehicle["Plate"]).trim().toLowerCase());
-          if (index !== -1) {
-            updatedVehicle["Accidents"] = fleetDatabase[index]["Accidents"] || 0;
-            fleetDatabase[index] = { ...fleetDatabase[index], ...updatedVehicle };
-          }
-
-          updateAllFleetAccidentCounts();
-
+          const refreshed = await refreshFleetData();
+          const saved = refreshed && fleetDatabase.find(veh => normalizePlate(veh["Plate"] ?? veh["plate"]) === normalizePlate(updatedVehicle["Plate"]));
           fleetPlateInput.value = updatedVehicle["Plate"];
-          renderVehicleProfile(index !== -1 ? fleetDatabase[index] : updatedVehicle);
-          alert("Vehicle updated successfully!");
+          renderVehicleProfile(saved || v);
+          alert(saved ? "Vehicle saved to Google Sheets successfully!"
+            : "Vehicle saved, but Fleet could not fully reload. Do not save again; click Refresh before continuing.");
         } else {
           alert("Error: " + resData.message);
         }
@@ -291,19 +321,13 @@ fleetPlateInput.addEventListener("click", () => {
       const syncBadge = document.getElementById("fleet-sync-status");
       if (syncBadge) syncBadge.textContent = "Syncing fleet and latest Post-Trip odometers...";
       try {
-        const res = await fetch(GOOGLE_SHEET_FLEET_URL, { cache: "no-store" });
-        if (!res.ok) throw new Error(`Fleet HTTP ${res.status}`);
-        const vehicles = await res.json();
-        if (!Array.isArray(vehicles)) throw new Error("Invalid Fleet response.");
+        const vehicles = await readSheetRecords(GOOGLE_SHEET_FLEET_URL);
 
         let readings = new Map();
         let postTripError = null;
         try {
           const postUrl = TRIPCHECK_SHEET_ENDPOINTS["Post-Trip"];
-          const response = await fetch(postUrl, { cache: "no-store" });
-          if (!response.ok) throw new Error(`Post-Trip HTTP ${response.status}`);
-          const postTrips = await response.json();
-          if (!Array.isArray(postTrips)) throw new Error("Invalid Post-Trip response.");
+          const postTrips = await readSheetRecords(postUrl);
           readings = buildLatestPostTripReadings(postTrips);
         } catch (error) {
           postTripError = error;
@@ -311,44 +335,73 @@ fleetPlateInput.addEventListener("click", () => {
         }
 
         // Ignore outdated responses if another refresh started in the meantime.
-        if (requestId !== fleetRefreshSequence) return;
+        if (requestId !== fleetRefreshSequence) return false;
         fleetDatabase = vehicles;
         fleetPostTripReadings = readings;
         updateAllFleetAccidentCounts();
 
         // Keep the selected vehicle open and update its odometer on refresh.
-        if (currentActiveVehicle && !isFleetEditMode) {
+        if (currentActiveVehicle) {
           const plate = normalizePlate(currentActiveVehicle["Plate"] ?? currentActiveVehicle["plate"]);
           const selected = fleetDatabase.find(v => normalizePlate(v["Plate"] ?? v["plate"]) === plate);
-          if (selected) renderVehicleProfile(selected);
+          if (selected) {
+            if (isFleetEditMode) {
+              currentActiveVehicle = selected;
+              // Refresh the locked mileage without discarding availability edits.
+              document.getElementById("edit-fleet-km").value = getFleetOdometer(selected).value;
+            } else renderVehicleProfile(selected);
+          }
         }
         if (syncBadge) {
           syncBadge.textContent = postTripError
             ? `Fleet synced (${fleetDatabase.length} vehicles). Post-Trip unavailable; displaying Fleet sheet KM.`
             : `Fleet synced (${fleetDatabase.length} vehicles). Latest Post-Trip KM loaded for ${readings.size} plate(s).`;
         }
+        return !postTripError;
       } catch (error) {
-        if (requestId !== fleetRefreshSequence) return;
+        if (requestId !== fleetRefreshSequence) return false;
         console.error("Error fetching fleet", error);
         if (syncBadge) syncBadge.textContent = "Failed to connect to Fleet Google Sheet.";
+        return false;
       }
     }
 
+    async function refreshFleetData() {
+      const [fleet, drivers, accidents] = await Promise.all([fetchFleet(), fetchDrivers(), fetchAccidents()]);
+      updateAllFleetAccidentCounts();
+      if (currentActiveVehicle && !isFleetEditMode) renderVehicleProfile(currentActiveVehicle);
+      if (!drivers || !accidents) {
+        document.getElementById("fleet-sync-status").textContent = "Fleet refresh incomplete: Drivers or Accident Tracker could not reload. Refresh before exporting.";
+      }
+      return fleet && drivers && accidents;
+    }
+
+    function isFleetPostTripSynced(plate) {
+      const normalized = normalizePlate(plate);
+      const vehicle = fleetDatabase.find(v => normalizePlate(v["Plate"] ?? v["plate"]) === normalized);
+      const latest = fleetPostTripReadings.get(normalized);
+      const sheetKm = vehicle && (vehicle["Total KM"] ?? vehicle["total km"]);
+      return Boolean(vehicle && latest && ["number", "string"].includes(typeof sheetKm) &&
+        String(sheetKm).trim() !== "" && Number(sheetKm) === latest.km);
+    }
 
 // Refresh the records when the user clicks this module's refresh button.
-    document.getElementById("refresh-fleet-btn").addEventListener("click", fetchFleet);
+    document.getElementById("refresh-fleet-btn").addEventListener("click", refreshFleetData);
 
 // Export the currently loaded fleet data.
-    document.getElementById("export-fleet-excel-btn").addEventListener("click", () => {
+    document.getElementById("export-fleet-excel-btn").addEventListener("click", event => exportLatestSheetData(event.currentTarget, refreshFleetData, () => {
       if (fleetDatabase.length === 0) { alert("No fleet data available to export."); return; }
       // Export the same latest odometer readings displayed in Fleet Management.
-      const exportData = fleetDatabase.map(vehicle => ({
-        ...vehicle,
-        "Total KM": getFleetOdometer(vehicle).value
-      }));
+      const exportData = fleetDatabase.map(vehicle => {
+        const row = { ...vehicle, "Total KM": getFleetOdometer(vehicle).value };
+        // Lowercase sheet headers must not leave a second, stale mileage column.
+        delete row["total km"];
+        delete row["accidents"];
+        return row;
+      });
       const worksheet = XLSX.utils.json_to_sheet(exportData);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Fleet Database");
       XLSX.writeFile(workbook, "Fleet_Database.xlsx");
-    });
+    }));
 

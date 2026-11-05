@@ -1,5 +1,5 @@
 /**
- * TAXI QAID ERP | Trip Check
+ * TaxiQaid | Trip Check
  *
  * Module responsibilities:
  * - Maintain the 27-step Pre-Trip / Post-Trip inspection workflow.
@@ -314,6 +314,29 @@ async function submitTripCheckToSheet(record, isUpdate) {
   return result.record;
 }
 
+/** A successful inspection stays saved even if a subsequent read/sync fails. */
+async function reportSavedTripCheck(record) {
+  const warnings = [];
+  let overview = false;
+  try { overview = await fetchTripChecks(); } catch (error) { console.warn(error); }
+  if (!overview) warnings.push("the Overview could not reload");
+  if (record["Check Type"] === "Post-Trip") {
+    let synced = false;
+    try {
+      synced = await fetchFleet() && isFleetPostTripSynced(record["Car Plate"]);
+    } catch (error) { console.warn(error); }
+    if (!synced) warnings.push("Fleet synchronization failed or could not be verified; the Fleet Sheet Total KM may be out of date");
+  }
+  const message = warnings.length
+    ? `Inspection saved to Google Sheets. Warning: ${warnings.join("; ")}. Do not submit it again. Click Refresh to retry loading; if Fleet remains out of date, contact the Post-Trip integration owner.`
+    : "Inspection saved to Google Sheets successfully.";
+  const status = document.getElementById("tripcheck-save-status");
+  status.hidden = false;
+  status.setAttribute("role", warnings.length ? "alert" : "status");
+  status.textContent = message;
+  alert(message);
+}
+
 /**
  * Generate the human-readable ID preview.
  * Apps Script also generates and validates this ID on the server.
@@ -392,12 +415,9 @@ addTripCheckForm.addEventListener("submit", async event => {
     if (checkId && !original) throw new Error("The inspection to edit could not be found.");
     const data = collectTripCheckForm(original || null);
     // The Apps Script generates the canonical ID and checks for duplicate plate/day IDs.
-    await submitTripCheckToSheet(data, Boolean(checkId));
+    const saved = await submitTripCheckToSheet(data, Boolean(checkId));
     tripCheckModal.style.display = "none";
-    const refreshed = await fetchTripChecks();
-    alert(refreshed
-      ? "Trip check saved to Google Sheets successfully."
-      : "Trip check was saved, but the Overview could not reload. Do not submit it again; reload the page later.");
+    await reportSavedTripCheck({ ...data, ...saved });
   } catch (error) {
     console.error("Could not save the Trip Check in Google Sheets:", error);
     alert(`Unable to save the inspection: ${error.message}`);
@@ -606,12 +626,9 @@ tripCheckEditForm.addEventListener("submit", async event => {
   tripCheckEditSave.disabled = true;
   tripCheckEditSave.textContent = "Saving...";
   try {
-    await submitTripCheckToSheet(updated, true);
+    const saved = await submitTripCheckToSheet(updated, true);
     closeTripCheckEditor();
-    const refreshed = await fetchTripChecks();
-    alert(refreshed
-      ? "Inspection updated successfully."
-      : "Inspection saved, but the Overview could not reload. Reload the page before editing again.");
+    await reportSavedTripCheck({ ...updated, ...saved });
   } catch (error) {
     console.error("Unable to update Trip Check:", error);
     alert(`Unable to update the inspection: ${error.message}`);
@@ -674,27 +691,34 @@ function renderTripChecksTable(items) {
 }
 
 /** Load both worksheets and combine the records for filtering and PDF export. */
+let tripCheckRefreshSequence = 0;
 async function fetchTripChecks() {
+  const requestId = ++tripCheckRefreshSequence;
   const badge = document.getElementById("tripcheck-sync-status");
   badge.textContent = "Loading inspections from Google Sheets...";
   try {
     const groups = await Promise.all(Object.entries(TRIPCHECK_SHEET_ENDPOINTS).map(async ([type, url]) => {
-      const response = await fetch(url, { cache: "no-store" });
-      if (!response.ok) throw new Error(`${type}: HTTP ${response.status}`);
-      const data = await response.json();
-      if (!Array.isArray(data)) throw new Error(`${type}: ${data?.message || "invalid response"}`);
+      const data = await readSheetRecords(url);
       return data.map(record => ({ ...record, "Check Type": type }));
     }));
+    if (requestId !== tripCheckRefreshSequence) return false;
     tripChecksDatabase = groups.flat();
     applyTripCheckFilters();
     badge.textContent = `Google Sheets connected — ${tripChecksDatabase.length} inspection(s) loaded.`;
     return true;
   } catch (error) {
+    if (requestId !== tripCheckRefreshSequence) return false;
     console.error("Unable to load Trip Check Google Sheets:", error);
     badge.textContent = `Unable to load Google Sheets: ${error.message}`;
     return false;
   }
 }
+
+document.getElementById("refresh-tripchecks-btn").addEventListener("click", async event => {
+  const button = event.currentTarget;
+  button.disabled = true;
+  try { await fetchTripChecks(); } finally { button.disabled = false; }
+});
 
 const TC_KEYS = ["Check ID", "Car Plate", "Driver Iqama", "Driver Name"];
 function getFilteredTripChecks() {
@@ -723,14 +747,14 @@ setupSearchDropdown({
   label: record => `${getField(record, "Check ID")} - ${getField(record, "Car Plate")} - ${getField(record, "Driver Name")}`
 });
 
-document.getElementById("export-tripchecks-btn").addEventListener("click", () => {
+document.getElementById("export-tripchecks-btn").addEventListener("click", event => exportLatestSheetData(event.currentTarget, fetchTripChecks, () => {
   const selected = getFilteredTripChecks();
   if (!selected.length) { alert("No trip check records to export for the selected filters."); return; }
   const sheet = XLSX.utils.json_to_sheet(selected);
   const book = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(book, sheet, "Trip Checks");
-  XLSX.writeFile(book, "Taxi_Qaid_Trip_Checks.xlsx");
-});
+  XLSX.writeFile(book, "TaxiQaid_Trip_Checks.xlsx");
+}));
 
 
 /** Accept ISO, dd/mm/yyyy, mm/dd/yyyy and dates previously stored locally. */
@@ -740,7 +764,7 @@ function normalizeTripCheckDate(value) {
   const match = raw.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
   if (!match) return "";
   const [, first, second, year] = match;
-  // Taxi Qaid uses day/month/year formatting for displayed records.
+  // TaxiQaid uses day/month/year formatting for displayed records.
   return `${year}-${second.padStart(2, "0")}-${first.padStart(2, "0")}`;
 }
 
@@ -879,7 +903,7 @@ function createTripCheckPdf(record, logo) {
   }
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
-  doc.text("TAXI QAID", 49, 17);
+  doc.text("TaxiQaid", 49, 17);
   doc.setFontSize(12);
   doc.text("PRE / POST TRIP CHECKLIST", 49, 24);
   doc.setFont("helvetica", "normal");
@@ -998,7 +1022,7 @@ document.getElementById("export-tripchecks-pdf-zip-btn").addEventListener("click
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `Taxi_Qaid_Trip_Check_Filtered_PDFs_${getKSACurrentDateTime().date}.zip`;
+    link.download = `TaxiQaid_Trip_Check_Filtered_PDFs_${getKSACurrentDateTime().date}.zip`;
     document.body.appendChild(link);
     link.click();
     link.remove();

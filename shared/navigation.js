@@ -1,5 +1,5 @@
 /**
- * TAXI QAID ERP | Shared sidebar navigation.
+ * TaxiQaid | Shared sidebar navigation.
  * One shared sidebar is used across all modules, including planned pages.
  */
 const menuItems = document.querySelectorAll(".sidebar-menu li[data-view]");
@@ -27,7 +27,7 @@ function activateModule(item) {
   if (group) group.open = true;
   if (targetView === "drivers" && driversDatabase.length === 0) fetchDrivers();
   // Always refresh Fleet when opened so recent Post-Trip mileage is reflected.
-  if (targetView === "fleet") fetchFleet();
+  if (targetView === "fleet") refreshFleetData();
   if (targetView === "accidents" && accidentsDatabase.length === 0) fetchAccidents();
   if (targetView === "tripcheck" && tripChecksDatabase.length === 0) fetchTripChecks();
 }

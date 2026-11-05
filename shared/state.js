@@ -1,5 +1,5 @@
 /**
- * TAXI QAID ERP | state.js
+ * TaxiQaid | state.js
  * Purpose: Shared runtime state, reset when the page reloads.
  *
  * Loaded as a classic script to preserve original cross-file references.

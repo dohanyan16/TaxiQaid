@@ -1,5 +1,5 @@
 /**
- * TAXI QAID ERP | drivers.js
+ * TaxiQaid | drivers.js
  * Purpose: Driver lookup, profile rendering, edit form, and save.
  *
  * Loaded as a classic script to preserve original cross-file references.
@@ -9,6 +9,7 @@
         // --- DRIVERS MANAGEMENT LOGIC ---
     let currentActiveDriver = null;
     let isEditMode = false;
+    let driverRefreshSequence = 0;
     const profileContainer = document.getElementById("driver-profile-container");
     const editDriverBtn = document.getElementById("edit-driver-btn");
     const cancelEditBtn = document.getElementById("cancel-edit-btn");
@@ -147,19 +148,9 @@
 
       const updatedDriver = {
         "Iqama Number": d["Iqama Number"] || d["iqama"],
-        "Full Name": d["Full Name"] || d["name"],
-        "Nationality": d["Nationality"] || d["nationality"],
-        "Passport Number": d["Passport Number"] || d["passport number"],
-        "TID": d["TID"] || d["tid"],
-        "Passport Expiry Date": d["Passport Expiry Date"] || d["passport expiry date"],
-        "Iqama Issue Date": d["Iqama Issue Date"] || d["iqama issue date"],
-        "Date of Birth": d["Date of Birth"] || d["date of birth"],
-        "Iqama Expiry Date": d["Iqama Expiry Date"] || d["iqama expiry date"],
-        "Employment Start Date": d["Employment Start Date"] || d["employment start date"],
+        // Send only editable fields. Identity/static data belongs to the Sheet.
         "Phone Number": document.getElementById("edit-phone").value.trim(),
-        "Driver ID": d["Driver ID"] || d["driver id"],
         "Arrangement": document.getElementById("edit-arrangement").value,
-        "KSA Driving License Date": d["KSA Driving License Date"] || d["ksa driving license date"],
         "Shift": document.getElementById("edit-shift").value,
         "Car Plate": selectedPlate,
         "Status": document.getElementById("edit-status").value
@@ -172,12 +163,11 @@
         const response = await postAuthorizedSheetUpdate(GOOGLE_SHEET_DRIVERS_URL, updatedDriver);
         const resData = await response.json();
         if (resData.status === "success") {
-          const index = driversDatabase.findIndex(driver => String(driver["Iqama Number"] || driver["iqama"]).trim() === String(updatedDriver["Iqama Number"]).trim());
-          if (index !== -1) driversDatabase[index] = updatedDriver;
-
-          driverSearchInput.value = `${updatedDriver["Iqama Number"]} - ${updatedDriver["Full Name"]}`;
-          renderDriverProfile(updatedDriver);
-          alert("Driver updated successfully!");
+          const refreshed = await fetchDrivers();
+          const saved = refreshed && driversDatabase.find(driver => String(driver["Iqama Number"] || driver["iqama"]).trim() === String(updatedDriver["Iqama Number"]).trim());
+          renderDriverProfile(saved || d);
+          alert(saved ? "Driver saved to Google Sheets successfully!"
+            : "Driver saved, but the saved record could not reload. Do not save again; click Refresh before continuing.");
         } else {
           alert("Error: " + (resData.message || "Unknown error"));
           editDriverBtn.textContent = "💾 Save Changes";
@@ -201,18 +191,27 @@
 
 // Load records and update the synchronization badge for this module.
     async function fetchDrivers() {
+      const requestId = ++driverRefreshSequence;
       try {
         const syncBadge = document.getElementById("sync-status");
         if (syncBadge) syncBadge.textContent = "🔄 Syncing drivers database...";
         
-        const res = await fetch(GOOGLE_SHEET_DRIVERS_URL);
-        driversDatabase = await res.json();
+        const records = await readSheetRecords(GOOGLE_SHEET_DRIVERS_URL);
+        if (requestId !== driverRefreshSequence) return false;
+        driversDatabase = records;
+        if (currentActiveDriver && !isEditMode) {
+          const selected = driversDatabase.find(d => String(d["Iqama Number"] || d["iqama"]) === String(currentActiveDriver["Iqama Number"] || currentActiveDriver["iqama"]));
+          if (selected) renderDriverProfile(selected);
+        }
         
         if (syncBadge) syncBadge.textContent = `✅ Synced ${driversDatabase.length} driver(s) successfully.`;
+        return true;
       } catch (e) {
+        if (requestId !== driverRefreshSequence) return false;
         console.error("Error fetching drivers", e);
         const syncBadge = document.getElementById("sync-status");
         if (syncBadge) syncBadge.textContent = "❌ Failed to connect to Drivers Google Sheet.";
+        return false;
       }
     }
 
@@ -221,10 +220,10 @@
     document.getElementById("refresh-db-btn").addEventListener("click", fetchDrivers);
 
 // Export the currently loaded drivers data.
-    document.getElementById("export-excel-btn").addEventListener("click", () => {
+    document.getElementById("export-excel-btn").addEventListener("click", event => exportLatestSheetData(event.currentTarget, fetchDrivers, () => {
       if (driversDatabase.length === 0) { alert("No driver data available to export."); return; }
       const worksheet = XLSX.utils.json_to_sheet(driversDatabase);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Drivers Database");
       XLSX.writeFile(workbook, "Drivers_Database.xlsx");
-    });
+    }));
