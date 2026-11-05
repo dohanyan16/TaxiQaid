@@ -13,26 +13,69 @@
     let fleetPostTripReadings = new Map();
     let fleetRefreshSequence = 0;
 
+    function isFleetInspectionDate(date) {
+      const value = new Date(`${date}T00:00:00Z`);
+      return /^\d{4}-\d{2}-\d{2}$/.test(date) && Number.isFinite(value.getTime()) &&
+        value.toISOString().slice(0, 10) === date;
+    }
+
+    function normalizeFleetInspectionDateTime(dateValue, timeValue) {
+      // Sheets may return formatted cells or serialized Date objects. Convert
+      // zoned timestamps explicitly to Riyadh, never the browser's timezone.
+      function ksaParts(value) {
+        if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/i.test(value) ||
+            !isFleetInspectionDate(value.slice(0, 10))) return null;
+        const timestamp = new Date(value);
+        if (!Number.isFinite(timestamp.getTime())) return null;
+        return Object.fromEntries(new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Asia/Riyadh", year: "numeric", month: "2-digit", day: "2-digit",
+          hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"
+        }).formatToParts(timestamp).map(part => [part.type, part.value]));
+      }
+
+      let date = String(dateValue ?? "").trim();
+      let time = String(timeValue ?? "").trim();
+      if (date.includes("T")) {
+        const parts = ksaParts(date);
+        if (!parts) return null;
+        date = `${parts.year}-${parts.month}-${parts.day}`;
+      } else {
+        // Match the day/month/year convention used by Trip Check's legacy records.
+        const legacy = date.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+        if (legacy) date = `${legacy[3]}-${legacy[2].padStart(2, "0")}-${legacy[1].padStart(2, "0")}`;
+      }
+      if (time.includes("T")) {
+        const parts = ksaParts(time);
+        if (!parts) return null;
+        time = `${parts.hour}:${parts.minute}:${parts.second}`;
+      }
+      const clock = time.match(/^(\d{1,2}):([0-5]\d)(?::([0-5]\d))?\s*(AM|PM)?$/i);
+      if (!isFleetInspectionDate(date) || !clock) return null;
+      let hour = Number(clock[1]);
+      if (clock[4]) {
+        if (hour < 1 || hour > 12) return null;
+        hour = hour % 12 + (clock[4].toUpperCase() === "PM" ? 12 : 0);
+      } else if (hour > 23) return null;
+      time = `${String(hour).padStart(2, "0")}:${clock[2]}:${clock[3] || "00"}`;
+      return { date, time, sortKey: `${date}T${time}` };
+    }
+
     function buildLatestPostTripReadings(records) {
       const latest = new Map();
       for (const record of records) {
         const plate = normalizePlate(record["Car Plate"] ?? record["car plate"]);
-        const date = String(record["Date"] ?? record["date"] ?? "").trim();
-        const time = String(record["Time"] ?? record["time"] ?? "").trim();
+        const inspection = normalizeFleetInspectionDateTime(
+          record["Date"] ?? record["date"], record["Time"] ?? record["time"]);
         const kmRaw = record["Odometer (KM)"] ?? record["odometer (km)"];
         const km = Number(kmRaw);
-        const clock = time.match(/^([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/);
-        if (!plate || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !clock ||
-            kmRaw == null || String(kmRaw).trim() === "" || !Number.isFinite(km) || km < 0) continue;
-        const dateValue = new Date(`${date}T00:00:00Z`);
-        if (Number.isNaN(dateValue.getTime()) || dateValue.toISOString().slice(0, 10) !== date) continue;
+        if (!plate || !inspection || !["number", "string"].includes(typeof kmRaw) ||
+            String(kmRaw).trim() === "" || !Number.isFinite(km) || km < 0) continue;
 
         // Date and time are stored as KSA local values by the Trip Check server.
         // A corrected older inspection must not supersede a newer inspection.
-        const sortKey = `${date}T${clock[1]}:${clock[2]}:${clock[3] || "00"}`;
         const previous = latest.get(plate);
-        if (!previous || sortKey >= previous.sortKey) {
-          latest.set(plate, { km, date, time: sortKey.slice(11), sortKey });
+        if (!previous || inspection.sortKey >= previous.sortKey) {
+          latest.set(plate, { km, ...inspection });
         }
       }
       return latest;
@@ -317,10 +360,16 @@ fleetPlateInput.addEventListener("click", () => {
         updateAllFleetAccidentCounts();
 
         // Keep the selected vehicle open and update its odometer on refresh.
-        if (currentActiveVehicle && !isFleetEditMode) {
+        if (currentActiveVehicle) {
           const plate = normalizePlate(currentActiveVehicle["Plate"] ?? currentActiveVehicle["plate"]);
           const selected = fleetDatabase.find(v => normalizePlate(v["Plate"] ?? v["plate"]) === plate);
-          if (selected) renderVehicleProfile(selected);
+          if (selected) {
+            if (isFleetEditMode) {
+              currentActiveVehicle = selected;
+              // Refresh the locked mileage without discarding availability edits.
+              document.getElementById("edit-fleet-km").value = getFleetOdometer(selected).value;
+            } else renderVehicleProfile(selected);
+          }
         }
         if (syncBadge) {
           syncBadge.textContent = postTripError
@@ -342,10 +391,12 @@ fleetPlateInput.addEventListener("click", () => {
     document.getElementById("export-fleet-excel-btn").addEventListener("click", () => {
       if (fleetDatabase.length === 0) { alert("No fleet data available to export."); return; }
       // Export the same latest odometer readings displayed in Fleet Management.
-      const exportData = fleetDatabase.map(vehicle => ({
-        ...vehicle,
-        "Total KM": getFleetOdometer(vehicle).value
-      }));
+      const exportData = fleetDatabase.map(vehicle => {
+        const row = { ...vehicle, "Total KM": getFleetOdometer(vehicle).value };
+        // Lowercase sheet headers must not leave a second, stale mileage column.
+        delete row["total km"];
+        return row;
+      });
       const worksheet = XLSX.utils.json_to_sheet(exportData);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Fleet Database");
