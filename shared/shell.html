@@ -1,0 +1,65 @@
+<!-- Shared application layout: sidebar, header, and the module view outlet. -->
+<div id="erp-app" style="display: none;">
+    <aside class="sidebar" id="sidebar">
+      <button id="sidebar-toggle" class="btn-collapse" title="Toggle Sidebar">◀</button>
+      <!-- One shared sidebar for every module. Groups can be expanded or collapsed. -->
+      <nav class="sidebar-nav" aria-label="Main navigation">
+        <ul class="sidebar-menu">
+          <li class="active" data-view="dashboard"><a href="#" title="Dashboard"><span class="nav-icon" aria-hidden="true">▦</span><span class="nav-text">Dashboard</span></a></li>
+        </ul>
+        <details class="sidebar-group" open>
+          <summary><span class="group-icon" aria-hidden="true">▣</span><span class="nav-text">Fleet &amp; Operations</span></summary>
+          <ul class="sidebar-menu">
+            <li data-view="fleet"><a href="#" title="Fleet Management"><span class="nav-icon" aria-hidden="true">🚕</span><span class="nav-text">Fleet Management</span></a></li>
+            <li data-view="breakdowns"><a href="#" title="Breakdowns Tracker"><span class="nav-icon" aria-hidden="true">⚠</span><span class="nav-text">Breakdowns Tracker</span></a></li>
+            <li data-view="maintenance"><a href="#" title="Maintenance Tracker"><span class="nav-icon" aria-hidden="true">⚙</span><span class="nav-text">Maintenance Tracker</span></a></li>
+            <li data-view="fuel"><a href="#" title="Fuel Tracker"><span class="nav-icon" aria-hidden="true">⛽</span><span class="nav-text">Fuel Tracker</span></a></li>
+          </ul>
+        </details>
+        <details class="sidebar-group" open>
+          <summary><span class="group-icon" aria-hidden="true">✓</span><span class="nav-text">Safety &amp; Compliance</span></summary>
+          <ul class="sidebar-menu">
+            <li data-view="tripcheck"><a href="#" title="Trip Check"><span class="nav-icon" aria-hidden="true">☑</span><span class="nav-text">Trip Check</span></a></li>
+            <li data-view="accidents"><a href="#" title="Accident Tracker"><span class="nav-icon" aria-hidden="true">△</span><span class="nav-text">Accident Tracker</span></a></li>
+            <li data-view="ncr"><a href="#" title="NCR Tracker"><span class="nav-icon" aria-hidden="true">!</span><span class="nav-text">NCR Tracker</span></a></li>
+            <li data-view="penalties"><a href="#" title="Penalties"><span class="nav-icon" aria-hidden="true">§</span><span class="nav-text">Penalties</span></a></li>
+          </ul>
+        </details>
+        <details class="sidebar-group" open>
+          <summary><span class="group-icon" aria-hidden="true">♙</span><span class="nav-text">Drivers &amp; Planning</span></summary>
+          <ul class="sidebar-menu">
+            <li data-view="drivers"><a href="#" title="Drivers Management"><span class="nav-icon" aria-hidden="true">♙</span><span class="nav-text">Drivers Management</span></a></li>
+            <li data-view="training"><a href="#" title="Training Tracker"><span class="nav-icon" aria-hidden="true">✎</span><span class="nav-text">Training Tracker</span></a></li>
+            <li data-view="driver-deductions"><a href="#" title="Drivers Deduction"><span class="nav-icon" aria-hidden="true">−</span><span class="nav-text">Drivers Deduction</span></a></li>
+            <li data-view="driver-appeals"><a href="#" title="Driver Appeals"><span class="nav-icon" aria-hidden="true">✉</span><span class="nav-text">Driver Appeals</span></a></li>
+            <li data-view="driver-weekly-schedule"><a href="#" title="Driver Weekly Schedule"><span class="nav-icon" aria-hidden="true">▤</span><span class="nav-text">Driver Weekly Schedule</span></a></li>
+            <li data-view="roster"><a href="#" title="Roster"><span class="nav-icon" aria-hidden="true">▥</span><span class="nav-text">Roster</span></a></li>
+          </ul>
+        </details>
+        <details class="sidebar-group" open>
+          <summary><span class="group-icon" aria-hidden="true">✉</span><span class="nav-text">Customer &amp; Support</span></summary>
+          <ul class="sidebar-menu">
+            <li data-view="customer-care"><a href="#" title="Customer Care Tracker"><span class="nav-icon" aria-hidden="true">♡</span><span class="nav-text">Customer Care Tracker</span></a></li>
+            <li data-view="helpdesk"><a href="#" title="Helpdesk"><span class="nav-icon" aria-hidden="true">?</span><span class="nav-text">Helpdesk</span></a></li>
+          </ul>
+        </details>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="logout-button" class="btn-logout"><span class="nav-text">Sign Out</span></button>
+      </div>
+    </aside>
+
+    <div class="right-wrapper">
+      <header class="header-bar">
+        <div class="header-left-group">
+          <img src="assets/TaxiQaidLogo.jpg" alt="TaxiQaid Logo" class="header-logo">
+          <h1 id="page-title">Dashboard</h1>
+        </div>
+      </header>
+
+      <main class="main-content" id="module-views"></main>
+
+    </div>
+  </div>
+
+  <!-- TRIP CHECK STEP-BY-STEP WIZARD -->

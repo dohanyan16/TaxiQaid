@@ -1,0 +1,19 @@
+/* Fleet-only driver tags, export button, and edit controls. */
+.driver-tag-box {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 5px;
+    }
+
+    .driver-tag {
+      background: #ffffff;
+      border: 1px solid var(--primary);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+#export-fleet-excel-btn { background: #217346; color: white; }
+#edit-fleet-btn { max-width: 200px; }
+#cancel-fleet-edit-btn { max-width: 120px; }
