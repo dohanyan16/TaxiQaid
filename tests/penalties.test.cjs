@@ -9,13 +9,15 @@ test('the read-only overview uses exactly the nine approved columns', () => {
   assert.deepEqual(p.COLUMNS,['ID','Details','Date','Time','Car Plate','Driver Iqama','Driver Name','Amount','Charged To']);
 });
 
-test('Driver Name and Iqama filters work independently or together without changing records', () => {
+test('one query searches ID, name, Iqama and normalized plate without changing records', () => {
   const records=Object.freeze([record(),record({'Driver Iqama':'00002','Driver Name':'Different Synthetic Driver'})]);
   const before=JSON.stringify(records);
-  assert.deepEqual(p.filterRecords(records,{driverName:'SYNTHETIC'}),records);
-  assert.deepEqual(p.filterRecords(records,{driverIqama:'00001'}),[records[0]]);
-  assert.deepEqual(p.filterRecords(records,{driverName:'different',driverIqama:'00002'}),[records[1]]);
-  assert.deepEqual(p.filterRecords(records,{driverName:'different',driverIqama:'00001'}),[]);
+  assert.deepEqual(p.filterRecords(records,{query:'SYNTHETIC'}),records);
+  assert.deepEqual(p.filterRecords(records,{query:'00001'}),[records[0]]);
+  assert.deepEqual(p.filterRecords(records,{query:'different'}),[records[1]]);
+  assert.deepEqual(p.filterRecords(records,{query:'missing'}),[]);
+  assert.deepEqual(p.filterRecords(records,{query:'testonlyplate'}),records);
+  assert.deepEqual(p.filterRecords(records,{query:'test-only-reference',startDate:'2026-01-10',endDate:'2026-01-10'}),records);
   assert.equal(JSON.stringify(records),before);
 });
 

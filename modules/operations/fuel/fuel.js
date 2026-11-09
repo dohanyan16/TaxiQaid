@@ -3,6 +3,7 @@ const TAXIQAID_DEPOT_FUEL_PRICE_SAR_PER_LITER = 2.18;
 
 /** Fuel Tracker: unsaved form previews only; no transport or record storage. */
 (() => {
+  setupSearchDropdown({input:'fuel-search-input',config:'fuel'});
   const modal = document.getElementById('fuel-modal');
   const form = document.getElementById('fuel-form');
   const fueledIn = document.getElementById('fuel-fueled-in');

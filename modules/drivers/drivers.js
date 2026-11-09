@@ -21,64 +21,15 @@
       return `${d["Iqama Number"] || d["iqama"] || ""} - ${d["Full Name"] || d["name"] || ""}`;
     }
 
-    function filterDrivers(val) {
-      return driversDatabase.filter(d => driverLabel(d).toLowerCase().includes(val));
-    }
-
-    function populateDriverDropdown(items) {
-      driverDropdown.innerHTML = "";
-      if (items.length === 0) { driverDropdown.style.display = "none"; return; }
-      items.forEach(driver => {
-        const div = document.createElement("div");
-        div.className = "custom-dropdown-item";
-        div.textContent = driverLabel(driver);
-        div.addEventListener("click", () => {
-          driverSearchInput.value = driverLabel(driver);
-          renderDriverProfile(driver);
-          driverDropdown.style.display = "none";
-        });
-        driverDropdown.appendChild(div);
-      });
-      driverDropdown.style.display = "block";
-    }
-
     function clearDriverSelection() {
-      driverSearchInput.value = "";
-      profileContainer.style.display = "none";
+      driverSearchInput.value = '';
+      profileContainer.style.display = 'none';
       currentActiveDriver = null;
     }
-
-    driverSearchInput.addEventListener("input", () => {
-      const val = driverSearchInput.value.trim().toLowerCase();
-      if (val === "") { profileContainer.style.display = "none"; driverDropdown.style.display = "none"; return; }
-      populateDriverDropdown(filterDrivers(val));
-      const exact = driversDatabase.find(d =>
-        String(d["Iqama Number"] || d["iqama"] || "").toLowerCase() === val ||
-        String(d["Full Name"] || d["name"] || "").toLowerCase() === val ||
-        driverLabel(d).toLowerCase() === val
-      );
-      if (exact) { renderDriverProfile(exact); driverDropdown.style.display = "none"; }
-      else { profileContainer.style.display = "none"; }
-    });
-
-    // Clicking an already selected driver clears the selection and opens the full list.
-    driverSearchInput.addEventListener("click", () => {
-      if (profileContainer.style.display === "block" && !isEditMode) {
-        clearDriverSelection();
-        populateDriverDropdown(driversDatabase);
-      }
-    });
-
-    toggleDriverBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (profileContainer.style.display === "block" && !isEditMode) {
-        clearDriverSelection();
-        populateDriverDropdown(driversDatabase);
-        return;
-      }
-      if (driverDropdown.style.display === "block") { driverDropdown.style.display = "none"; return; }
-      const val = driverSearchInput.value.trim().toLowerCase();
-      populateDriverDropdown(val === "" ? driversDatabase : filterDrivers(val));
+    const driverSearch = setupSearchDropdown({
+      input:'driver-search-input', btn:'toggle-driver-btn', dd:'driver-dropdown', config:'drivers',
+      getData:()=>driversDatabase, apply:()=>{profileContainer.style.display='none';currentActiveDriver=null;},
+      onSelect:renderDriverProfile
     });
 
     function renderDriverProfile(driver) {
@@ -117,8 +68,8 @@
     function enableEditMode() {
       if (!currentActiveDriver) return;
       isEditMode = true;
-      editDriverBtn.textContent = "💾 Save Changes";
-      editDriverBtn.style.background = "var(--success)";
+      editDriverBtn.textContent = "Save Changes";
+      editDriverBtn.style.background = "var(--primary)";
       cancelEditBtn.style.display = "inline-block";
 
       const d = currentActiveDriver;

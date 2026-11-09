@@ -6,9 +6,9 @@
   padding: 12px;
   border: 1px solid var(--border-color);
   border-radius: var(--control-radius);
-  background: #f1f3f5;
+  background: var(--readonly-bg);
   color: var(--text-main);
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
-#fuel-modal .form-group .preview-note { margin-top: 0; font-size: 13px; }
+#fuel-modal .form-group .preview-note { margin-top: 0; font-size: var(--font-small); }

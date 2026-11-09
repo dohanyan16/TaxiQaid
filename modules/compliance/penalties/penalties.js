@@ -1,5 +1,6 @@
 /** Read-only rendering and filtering for future authorized Penalties source records. */
 const TaxiQaidPenalties = (() => {
+  const search = typeof module !== 'undefined' && module.exports ? require('../../../shared/search.js') : TaxiQaidSearch;
   const COLUMNS = Object.freeze(['ID', 'Details', 'Date', 'Time', 'Car Plate', 'Driver Iqama', 'Driver Name', 'Amount', 'Charged To']);
   const EMPTY_MESSAGE = 'No penalties available — database integration pending.';
   const sourceText = value => value === null || value === undefined || value === '' ? 'Unavailable' : String(value);
@@ -31,16 +32,13 @@ const TaxiQaidPenalties = (() => {
     return sourceText(value);
   }
 
-  function filterRecords(records, {driverName = '', driverIqama = '', startDate = '', endDate = ''} = {}) {
+  function filterRecords(records, {query = '', startDate = '', endDate = ''} = {}) {
     for (const [label, value] of [['Start Date', startDate], ['End Date', endDate]]) {
       if (value && !isIsoDate(value)) throw new RangeError(`${label} must be a valid date (YYYY-MM-DD).`);
     }
     if (startDate && endDate && startDate > endDate) throw new RangeError('Start Date must be on or before End Date.');
-    const name = String(driverName).trim().toLowerCase();
-    const iqama = String(driverIqama).trim().toLowerCase();
     return records.filter(record => {
-      if (name && !String(record['Driver Name'] ?? '').toLowerCase().includes(name)) return false;
-      if (iqama && !String(record['Driver Iqama'] ?? '').toLowerCase().includes(iqama)) return false;
+      if (!search.matches(record,search.CONFIG.penalties.fields,query)) return false;
       if (startDate || endDate) {
         const date = record.Date;
         if (!isIsoDate(date) || (startDate && date < startDate) || (endDate && date > endDate)) return false;
@@ -72,7 +70,7 @@ const TaxiQaidPenalties = (() => {
     const records = Object.freeze([]);
     const tbody = document.getElementById('penalties-table-body');
     const modal = document.getElementById('penalty-details-modal');
-    const inputs = ['penalties-driver-name', 'penalties-driver-iqama', 'penalties-start-date', 'penalties-end-date']
+    const inputs = ['penalties-search-input', 'penalties-start-date', 'penalties-end-date']
       .map(id => document.getElementById(id));
     const status = document.getElementById('penalties-filter-status');
     const detailsIds = ['id', 'description', 'date', 'time', 'plate', 'iqama', 'name', 'amount', 'charged-to'];
@@ -86,8 +84,8 @@ const TaxiQaidPenalties = (() => {
       tbody.replaceChildren();
       let filtered = [];
       try {
-        filtered = filterRecords(records, {driverName: inputs[0].value, driverIqama: inputs[1].value, startDate: inputs[2].value, endDate: inputs[3].value});
-        status.textContent = 'Filters include both Start Date and End Date. Driver Name and Iqama can be used together.';
+        filtered = filterRecords(records, {query: inputs[0].value, startDate: inputs[1].value, endDate: inputs[2].value}).filter(record=>recordSearch.matches(record));
+        status.textContent = 'Search matches ID, Car Plate, Iqama or Name. Date ranges include both boundary dates.';
       } catch (error) { status.textContent = error.message; }
       if (!filtered.length) {
         const row = document.createElement('tr'), cell = document.createElement('td'), text = document.createElement('span');
@@ -95,8 +93,9 @@ const TaxiQaidPenalties = (() => {
         cell.appendChild(text); row.appendChild(cell); tbody.appendChild(row);
       } else filtered.forEach(record => tbody.appendChild(buildReadOnlyRow(record, openDetails)));
     }
-    inputs.forEach(input => { input.addEventListener('input', applyFilters); input.addEventListener('change', applyFilters); });
-    document.getElementById('clear-penalties-filters').addEventListener('click', () => { inputs.forEach(input => { input.value = ''; }); applyFilters(); });
+    const recordSearch = setupSearchDropdown({input:'penalties-search-input', config:'penalties', getData:()=>records, apply:applyFilters});
+    inputs.slice(1).forEach(input => { input.addEventListener('input', applyFilters); input.addEventListener('change', applyFilters); });
+    document.getElementById('clear-penalties-filters').addEventListener('click', () => { inputs.slice(1).forEach(input => { input.value = ''; }); recordSearch.clear(); });
     document.getElementById('close-penalty-details').addEventListener('click', () => closePreviewModal(modal));
     ['refresh-penalties-btn', 'export-penalties-btn'].forEach(id => document.getElementById(id).addEventListener('click', showIntegrationPending));
     applyFilters();

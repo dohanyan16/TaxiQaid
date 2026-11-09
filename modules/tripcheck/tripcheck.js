@@ -391,7 +391,7 @@ function updateTripCheckEditScore() {
 }
 
 function closeTripCheckEditor() {
-  tripCheckEditModal.style.display = "none";
+  closePreviewModal(tripCheckEditModal);
   tripCheckEditModal.setAttribute("aria-hidden", "true");
   tripCheckEditingId = null;
   tripCheckEditingType = null;
@@ -440,7 +440,7 @@ function openTripCheckEditor(record) {
     tripCheckEditQuestions.appendChild(item);
   });
   updateTripCheckEditScore();
-  tripCheckEditModal.style.display = "flex";
+  openPreviewModal(tripCheckEditModal);
   tripCheckEditModal.setAttribute("aria-hidden", "false");
   tripCheckEditModal.querySelector(".modal-content").scrollTop = 0;
   document.getElementById("tripcheck-edit-close").focus();
@@ -553,7 +553,7 @@ function getFilteredTripChecks() {
     const rawDate = String(getTripCheckField(record, "Date"));
     const normalizedDate = normalizeTripCheckDate(rawDate);
     const matchesDate = !date || normalizedDate === date;
-    return matchesType && matchesDate && (!query || matchText(record, TC_KEYS, query));
+    return matchesType && matchesDate && (!query || tripcheckSearch.matches(record));
   });
 }
 function applyTripCheckFilters() { renderTripChecksTable(getFilteredTripChecks()); }
@@ -564,9 +564,9 @@ document.getElementById("tripcheck-clear-date-btn").addEventListener("click", ()
   document.getElementById("tripcheck-date-filter").value = "";
   applyTripCheckFilters();
 });
-setupSearchDropdown({
+const tripcheckSearch = setupSearchDropdown({
   input: "tripcheck-search-input", btn: "toggle-tripcheck-btn", dd: "tripcheck-dropdown",
-  getData: () => tripChecksDatabase, keys: TC_KEYS, apply: applyTripCheckFilters,
+  getData: () => tripChecksDatabase, config: "tripcheck", keys: TC_KEYS, apply: applyTripCheckFilters,
   label: record => `${getField(record, "Check ID")} - ${getField(record, "Car Plate")} - ${getField(record, "Driver Name")}`
 });
 
@@ -857,7 +857,7 @@ document.getElementById("export-tripchecks-pdf-zip-btn").addEventListener("click
     alert(`PDF export failed: ${error.message}`);
   } finally {
     button.disabled = false;
-    button.textContent = "📄 Export Filtered PDFs";
+    button.textContent = "Export Filtered PDFs";
   }
 });
 

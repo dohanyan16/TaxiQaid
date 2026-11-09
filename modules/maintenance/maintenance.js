@@ -24,3 +24,6 @@ document.querySelectorAll('[data-open]').forEach(button => button.addEventListen
 document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => closePreviewModal(button.closest('.modal-overlay'))));
 document.querySelectorAll('[data-pending]').forEach(button => button.addEventListener('click', showIntegrationPending));
 document.querySelectorAll('#request-modal form, #acceptance-modal form, #breakdown-modal form').forEach(form => form.addEventListener('submit', event => { event.preventDefault(); showIntegrationPending(); }));
+
+setupSearchDropdown({input:'requests-search-input',config:'requests'});
+setupSearchDropdown({input:'overview-search-input',config:'overview'});

@@ -26,4 +26,4 @@
       object-fit: contain;
       margin: 0 auto 25px;
     }
-#error-message { color: var(--danger); font-size: 14px; margin: 15px 0 0; }
+#error-message { color: var(--danger); font-size: var(--font-body); margin: 15px 0 0; }

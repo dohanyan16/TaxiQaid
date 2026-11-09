@@ -1,6 +1,8 @@
 /** NCR frontend previews. No driver/NCR records, persistence or network requests. */
 (() => {
   const policy = TaxiQaidNcrPolicy;
+  setupSearchDropdown({input:'ncr-score-search',config:'scores'});
+  setupSearchDropdown({input:'ncr-filter-driver',config:'ncr'});
   const tabs = [...document.querySelectorAll('#view-ncr [role=tab]')];
   function selectTab(tab) {
     tabs.forEach(item => {

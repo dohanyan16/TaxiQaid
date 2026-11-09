@@ -54,11 +54,11 @@
     najmSelect.addEventListener("change", (e) => {
       if (e.target.value === "Yes") {
         najmStatusSelect.disabled = false;
-        najmStatusSelect.style.background = "#ffffff";
+        najmStatusSelect.style.background = "var(--card-bg)";
         najmStatusSelect.innerHTML = '<option value="Pending">Pending</option><option value="Approved">Approved</option><option value="Rejected">Rejected</option>';
       } else {
         najmStatusSelect.disabled = true;
-        najmStatusSelect.style.background = "#e9ecef";
+        najmStatusSelect.style.background = "var(--readonly-bg)";
         najmStatusSelect.innerHTML = '<option value="N/A">N/A</option>';
       }
     });
@@ -68,11 +68,11 @@
     invSelect.addEventListener("change", (e) => {
       if (e.target.value === "Yes") {
         invStatusSelect.disabled = false;
-        invStatusSelect.style.background = "#ffffff";
+        invStatusSelect.style.background = "var(--card-bg)";
         invStatusSelect.innerHTML = '<option value="Under Investigation">Under Investigation</option><option value="Closed">Closed</option>';
       } else {
         invStatusSelect.disabled = true;
-        invStatusSelect.style.background = "#e9ecef";
+        invStatusSelect.style.background = "var(--readonly-bg)";
         invStatusSelect.innerHTML = '<option value="N/A">N/A</option>';
       }
     });
@@ -150,12 +150,12 @@
           document.getElementById("add-acc-najm").value = najmVal;
           if (najmVal === "Yes") {
             najmStatusSelect.disabled = false;
-            najmStatusSelect.style.background = "#ffffff";
+            najmStatusSelect.style.background = "var(--card-bg)";
             najmStatusSelect.innerHTML = '<option value="Pending">Pending</option><option value="Approved">Approved</option><option value="Rejected">Rejected</option>';
             najmStatusSelect.value = acc["Najm Report Status"] || acc["najm report status"] || "Pending";
           } else {
             najmStatusSelect.disabled = true;
-            najmStatusSelect.style.background = "#e9ecef";
+            najmStatusSelect.style.background = "var(--readonly-bg)";
             najmStatusSelect.innerHTML = '<option value="N/A">N/A</option>';
           }
 
@@ -165,12 +165,12 @@
           document.getElementById("add-acc-investigation").value = invVal;
           if (invVal === "Yes") {
             invStatusSelect.disabled = false;
-            invStatusSelect.style.background = "#ffffff";
+            invStatusSelect.style.background = "var(--card-bg)";
             invStatusSelect.innerHTML = '<option value="Under Investigation">Under Investigation</option><option value="Closed">Closed</option>';
             invStatusSelect.value = acc["Investigation Status"] || acc["investigation status"] || "Under Investigation";
           } else {
             invStatusSelect.disabled = true;
-            invStatusSelect.style.background = "#e9ecef";
+            invStatusSelect.style.background = "var(--readonly-bg)";
             invStatusSelect.innerHTML = '<option value="N/A">N/A</option>';
           }
 
@@ -206,7 +206,7 @@
       const start = sd ? sd : "";
       const end = ed ? ed : "";
       return accidentsDatabase.filter(o => {
-        if (q && !matchText(o, ACC_KEYS, q)) return false;
+        if (q && !accidentSearch.matches(o)) return false;
         if (start || end) {
           const dt = toDateInput(getField(o, "Date"));
           if (start && dt < start) return false;
@@ -217,9 +217,9 @@
     }
     function applyAccidentFilters() { renderAccidentsTable(getFilteredAccidents()); }
 
-    setupSearchDropdown({
+    const accidentSearch = setupSearchDropdown({
       input: "accident-search-input", btn: "toggle-accident-btn", dd: "accident-dropdown",
-      getData: () => accidentsDatabase, keys: ACC_KEYS, apply: applyAccidentFilters,
+      getData: () => accidentsDatabase, config: "accidents", keys: ACC_KEYS, apply: applyAccidentFilters,
       label: o => `${getField(o, "Accident ID")} - ${getField(o, "Car Plate")} - ${getField(o, "Driver Name")}`
     });
 

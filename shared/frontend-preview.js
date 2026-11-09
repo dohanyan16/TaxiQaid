@@ -9,11 +9,17 @@ function showIntegrationPending() {
     const text = document.createElement('span');
     text.textContent = 'Database integration pending — no records were saved, deleted, exported or sent.';
     const close = document.createElement('button');
-    close.type = 'button'; close.textContent = 'Dismiss';
+    close.type = 'button'; close.className='btn-secondary'; close.textContent = 'Dismiss';
     close.addEventListener('click', () => notice.remove());
     notice.append(text, close);
     document.body.appendChild(notice);
   }
+  placeIntegrationNotice(notice);
+}
+function placeIntegrationNotice(notice) {
+  const activeModal=[...document.querySelectorAll('.modal-overlay')].find(modal=>modal.style.display==='flex');
+  if(activeModal) activeModal.querySelector('.modal-content').appendChild(notice);
+  else document.querySelector('.right-wrapper').insertBefore(notice,document.querySelector('.main-content'));
 }
 const previewReturnFocus = new WeakMap();
 const previewParentModal = new WeakMap();
@@ -31,6 +37,8 @@ function closePreviewModal(modal) {
   modal.setAttribute('aria-hidden', 'true');
   const parent = previewParentModal.get(modal);
   if (parent) { parent.style.display = 'flex'; parent.setAttribute('aria-hidden', 'false'); previewParentModal.delete(modal); }
+  const notice=document.getElementById('integration-notice');
+  if(notice && modal.contains(notice)) placeIntegrationNotice(notice);
   previewReturnFocus.get(modal)?.focus();
 }
 // Applied after all feature scripts initialize, including existing dialogs.
@@ -55,5 +63,30 @@ function initializeFrontendPreview() {
     const control = label.parentElement.querySelector('input, select, textarea');
     if (control?.id) label.htmlFor = control.id;
   });
+  initializeSelectDescriptions();
   fetchFleet(); fetchDrivers(); fetchTripChecks();
+}
+
+/** Keep full native-select values readable without replacing specialized controls. */
+function initializeSelectDescriptions() {
+  const selects=[...document.querySelectorAll('select')];
+  const canvas=document.createElement('canvas');
+  const context=canvas.getContext('2d');
+  function describe(select) {
+    const text=select.selectedOptions[0]?.textContent || '';
+    select.title=text;
+    let hint=select.nextElementSibling;
+    if(!hint?.classList.contains('selected-option-text')) {
+      hint=document.createElement('p');hint.className='selected-option-text';hint.id=`${select.id}-selected-text`;hint.hidden=true;select.after(hint);
+      select.setAttribute('aria-describedby',[select.getAttribute('aria-describedby'),hint.id].filter(Boolean).join(' '));
+    }
+    context.font=getComputedStyle(select).font;
+    hint.textContent=text;
+    hint.hidden=!(select.getClientRects().length && context.measureText(text).width>select.clientWidth-52);
+  }
+  const observer=new ResizeObserver(entries=>entries.forEach(entry=>describe(entry.target)));
+  const observed=new WeakSet();
+  function watch(select) {if(observed.has(select))return;observed.add(select);select.addEventListener('change',()=>describe(select));observer.observe(select);describe(select);}
+  selects.forEach(watch);
+  new MutationObserver(mutations=>mutations.forEach(mutation=>mutation.addedNodes.forEach(node=>{if(node.nodeType!==1)return;if(node.matches('select'))watch(node);node.querySelectorAll('select').forEach(watch);}))).observe(document.getElementById('workspace'),{childList:true,subtree:true});
 }

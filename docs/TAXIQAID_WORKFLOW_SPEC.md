@@ -77,7 +77,7 @@ Maintenance Status follows the same read-only contract as Accident Tracker. The 
 
 ## Maintenance Requests
 
-Maintenance Requests and Maintenance Overview are separate keyboard-accessible tabs within the Maintenance module. Requests will receive Accident/Breakdown submissions and will remain visible after acceptance. Controls: Refresh and Export Excel. Filters: Car Plate, Start Date, End Date and Status. Status choices: **Pending**, **In Progress**, **Done** (plus All statuses in the filter).
+Maintenance Requests and Maintenance Overview are separate keyboard-accessible tabs within the Maintenance module. Requests will receive Accident/Breakdown submissions and will remain visible after acceptance. Controls: Refresh and Export Excel. Filters: one shared Search Records field (Original Source ID, Car Plate, Car Model, Sent By), Start Date, End Date and Status. Status choices: **Pending**, **In Progress**, **Done** (plus All statuses in the filter).
 
 Table columns: **ID, Date, Time, Car Plate, Car Model, Sent By, Status**. ID is always the originating ACD or BDW ID. Original Description is available only in details, not as a main column.
 
@@ -98,7 +98,7 @@ The empty request-detail preview is explicitly accessible without fabricated row
 
 ## Maintenance Work Orders
 
-Maintenance Overview contains detailed work orders, never replacement source records. Controls: Refresh and Export Excel. Filters: Car Plate, Start Date, End Date and Status, using dates only.
+Maintenance Overview contains detailed work orders, never replacement source records. Controls: Refresh and Export Excel. Filters: one shared Search Records field (Maintenance ID, Original Source ID, Car Plate, Maintenance Engineer Iqama), Start Date, End Date and Status, using dates only.
 
 Overview columns, in order: Maintenance ID, Date, Time, Created By, Maintenance Description, Maintenance Engineer Iqama, Maintenance Location, Status, Breakdown Type, Description Fault, Action Taken, Action Taken Description, Remarks.
 
@@ -157,7 +157,7 @@ Trip Check retains the 27-step Pre-Trip/Post-Trip wizard, 24 inspection question
 
 ## Fuel Tracker
 
-Fuel Tracker is a frontend-only interface with Add Fuel Record, Refresh and Export Excel controls. Filters prepare Car Plate lookup and Driver Iqama / Driver Name search. The overview remains empty; filters never load operational data. Refresh and Export only display the integration-pending notice, and Save never persists data or claims success.
+Fuel Tracker is a frontend-only interface with Add Fuel Record, Refresh and Export Excel controls. One shared Search Records field covers Fuel Record ID, Car Plate, Driver Iqama and Driver Name. The overview remains empty; filters never load operational data. Refresh and Export only display the integration-pending notice, and Save never persists data or claims success.
 
 Overview columns, in order: **Date, Time, Car Plate, Car Model, Driver Iqama, Driver Name, Driver Arrangement, Fueled In, Outside Depot Location, Fuel Received (L), Fuel Pricing (SAR/L), Total Amount (SAR)**.
 
@@ -195,7 +195,7 @@ Every driver registered in Drivers Management starts with **100 points**, includ
 
 There is **no lower bound**. Two active -50 penalties produce 0; adding -10 produces -10; three active -50 penalties produce -50. A negative balance must not prevent additional NCRs. Display signed negative balances clearly, using the prepared `.ncr-score-negative` styling without changing the number. Starting Points is immutable policy, not a stored running balance.
 
-Driver Scores filters: Driver Iqama, Driver Name and Current Points (exact, inclusive minimum, inclusive maximum). Points inputs accept negative values and have no 0–100 restriction; invalid ranges surface an error. Columns, in order: Driver Iqama, Driver Name, Driver Phone Number, Starting Points, Total NCRs, Active NCRs, Expired NCRs, Active Points Deducted, Current Points.
+Driver Scores filters: one shared Search Records field covering Driver Iqama and Driver Name, plus Current Points (exact, inclusive minimum, inclusive maximum). Points inputs accept negative values and have no 0–100 restriction; invalid ranges surface an error. Columns, in order: Driver Iqama, Driver Name, Driver Phone Number, Starting Points, Total NCRs, Active NCRs, Expired NCRs, Active Points Deducted, Current Points.
 
 - Total NCRs counts preserved historical records, including expired NCRs.
 - Active Points Deducted is the positive sum currently affecting the score.
@@ -244,7 +244,7 @@ A future-dated NCR does not deduct before its NCR Date. Until then, the pure sta
 
 ### NCR records and form
 
-Tracker filters: Start Date, End Date, Driver Iqama / Driver Name, TBT Status (All Statuses, Pending, Conducted) and Non-Compliance Status (All Statuses, Active, Expired). Date filters have no time-of-day inputs. Controls: Add New NCR, Refresh and Export Excel.
+Tracker filters: one shared Search Records field covering NCR ID, Driver Iqama and Driver Name, Start Date, End Date, TBT Status (All Statuses, Pending, Conducted) and Non-Compliance Status (All Statuses, Active, Expired). Date filters have no time-of-day inputs. Controls: Add New NCR, Refresh and Export Excel.
 
 Exactly 16 overview columns: NCR ID, Driver Iqama, Driver Name, Driver Phone Number, Category, NCR Score, NCR Description, NCR Date, TBT Status, TBT Conducted Date, Action Taken, Action Taken Date, Non-Compliance Expiry Date, Non-Compliance Status, Individual Statement, Remarks.
 
@@ -282,9 +282,9 @@ The page describes: “Review vehicle and driver penalties and export filtered p
 
 ### Filters and overview
 
-Four searchable/date filters are prepared: **Driver Name**, **Driver Iqama**, **Start Date**, **End Date**. Name and Iqama may be used independently or together; the pure frontend filter uses case-insensitive text matching and combines active filters with AND. Driver Iqama is the unique future driver reference; names will be linked to Drivers Management, not invented selector records. Leading zeros in Iqama values must be preserved by the future source adapter.
+Three controls are prepared: one **Search Records** field covering **Penalty ID, Driver Iqama, Driver Name and Car Plate**, plus **Start Date** and **End Date**. The shared predicate matches any configured text identifier, normalizes plates and combines the query with the independent date filters. Driver Iqama is the unique future driver reference; names will be linked to Drivers Management, not invented selector records. Leading zeros in Iqama values must be preserved by the future source adapter.
 
-Date filtering applies only to the source **Date** field, includes both boundary dates and does not restrict time of day. One-sided date ranges are supported. Invalid or reversed filter ranges show a validation message without clearing the user's selections. Name, Iqama and date selections survive sidebar navigation and pending Refresh/Export clicks until changed or explicitly cleared. No browser clock is used to infer penalty dates.
+Date filtering applies only to the source **Date** field, includes both boundary dates and does not restrict time of day. One-sided date ranges are supported. Invalid or reversed filter ranges show a validation message without clearing the user's selections. The combined search and date selections survive sidebar navigation and pending Refresh/Export clicks until changed or explicitly cleared. No browser clock is used to infer penalty dates.
 
 The responsive, horizontally scrolling overview has exactly nine columns in this order:
 
@@ -315,7 +315,7 @@ Future rows support click, Enter and Space to open **Penalty Details**, containi
 
 ### Future Refresh and Export by Period
 
-Refresh will eventually read only the latest authorized source records and preserve filters. Export by Period must use the same inclusive Start/End Date and Driver Name/Iqama filters as the overview, include all nine columns and leave the source unchanged. Amounts must remain **numeric Excel cells**, rather than strings containing SAR; apply a suitable currency number format. Dates/times must retain consistent approved formats and precision. The display formatter is not an export serializer. Actual source reads, authorization, imports/corrections and Excel generation remain pending and require the future integration phase.
+Refresh will eventually read only the latest authorized source records and preserve filters. Export by Period must use the same inclusive Start/End Date and combined record search as the overview, include all nine columns and leave the source unchanged. Amounts must remain **numeric Excel cells**, rather than strings containing SAR; apply a suitable currency number format. Dates/times must retain consistent approved formats and precision. The display formatter is not an export serializer. Actual source reads, authorization, imports/corrections and Excel generation remain pending and require the future integration phase.
 
 Pure `TaxiQaidPenalties` helpers prepare source-value formatting, inclusive filtering and safe read-only row construction. They do not connect an external source, import records, allocate IDs or store operational data. Synthetic fixtures used for unit/DOM regression tests are confined to tests and never ship as production records.
 
@@ -336,6 +336,10 @@ Pure `TaxiQaidPenalties` helpers prepare source-value formatting, inclusive filt
 
 These are planned capabilities, not schema proposals or migrations.
 
+## Shared interface standards
+
+Follow [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) for the centralized orange/neutral tokens, typography, 46px minimum controls, monochrome SVG navigation, responsive cards/tables/modals and unified multi-field search. Each conventional view uses one combined record search and keeps independent business filters. No scoring rules, identifiers, transaction pricing or source relationships changed during visual standardization. Trip Check retains its specialized workflow and custom PDF source.
+
 ## Verification and review
 
-Run `node --test tests/fleet.test.cjs tests/ncr-policy.test.cjs tests/penalties.test.cjs` for compatibility and scoring/expiry regression tests. Run `node tests/workflow.browser.cjs` against a local HTTP server for frontend regression checks. Browser tests use mocked authentication and role responses, never a live user account or real operational records. Penalties rendering tests inject temporary synthetic DOM fixtures locally and remove them; the deployed module has no sample records. They cover all sidebar modules, date-only filters, shared location equality, forms, maintenance tabs/acceptance, mobile overflow, Fuel conditional fields/validation/approved Depot tariff/live totals/detail editing, both NCR views/retained filters/23 categories/automatic KSA preview rollover/TBT independence, read-only Penalties/filter retention/long-text safety/detail keyboard access, pending controls and the absence of legacy requests, operational writes, downloads and uncaught errors. Live Supabase login/session behavior still requires review with an existing authorized account; no account credentials were supplied to this task.
+Run `node --test tests/*.test.cjs` for compatibility and scoring/expiry regression tests. Run `node tests/workflow.browser.cjs` and `node tests/ui.browser.cjs` against a local HTTP server for workflow, shared-search and responsive visual regression checks. Browser tests use mocked authentication and role responses, never a live user account or real operational records. Penalties rendering tests inject temporary synthetic DOM fixtures locally and remove them; the deployed module has no sample records. They cover all sidebar modules, date-only filters, shared location equality, forms, maintenance tabs/acceptance, mobile overflow, Fuel conditional fields/validation/approved Depot tariff/live totals/detail editing, both NCR views/retained filters/23 categories/automatic KSA preview rollover/TBT independence, read-only Penalties/combined search and date retention/long-text safety/detail keyboard access, pending controls and the absence of legacy requests, operational writes, downloads and uncaught errors. Live Supabase login/session behavior still requires review with an existing authorized account; no account credentials were supplied to this task.

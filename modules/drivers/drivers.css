@@ -1,4 +1,1 @@
-/* Driver database export and profile edit controls. */
-#export-excel-btn { background: #217346; color: white; }
-#edit-driver-btn { max-width: 200px; }
-#cancel-edit-btn { max-width: 120px; }
+/* Driver record controls use the shared TaxiQaid design system. */

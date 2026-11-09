@@ -1,51 +1,51 @@
 <!-- Shared application layout: sidebar, header, and the module view outlet. -->
 <div id="erp-app" style="display: none;">
     <aside class="sidebar" id="sidebar">
-      <button id="sidebar-toggle" class="btn-collapse" title="Toggle Sidebar">◀</button>
+      <button id="sidebar-toggle" class="btn-collapse" title="Toggle Sidebar" aria-label="Collapse sidebar" aria-expanded="true">‹</button>
       <!-- One shared sidebar for every module. Groups can be expanded or collapsed. -->
       <nav class="sidebar-nav" aria-label="Main navigation">
         <ul class="sidebar-menu">
-          <li class="active" data-view="dashboard"><a href="#" title="Dashboard"><span class="nav-icon" aria-hidden="true">▦</span><span class="nav-text">Dashboard</span></a></li>
+          <li class="active" data-view="dashboard"><a href="#" title="Dashboard"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span><span class="nav-text">Dashboard</span></a></li>
         </ul>
         <details class="sidebar-group" open>
-          <summary><span class="group-icon" aria-hidden="true">▣</span><span class="nav-text">Fleet &amp; Operations</span></summary>
+          <summary aria-label="Fleet &amp; Operations" title="Fleet &amp; Operations"><span class="group-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 16V9l3-5h10l3 5v7M3 10h18M6 16v4M18 16v4M4 16h16"/><circle cx="7" cy="13" r="1"/><circle cx="17" cy="13" r="1"/></svg></span><span class="nav-text">Fleet &amp; Operations</span></summary>
           <ul class="sidebar-menu">
-            <li data-view="fleet"><a href="#" title="Fleet Management"><span class="nav-icon" aria-hidden="true">🚕</span><span class="nav-text">Fleet Management</span></a></li>
-            <li data-view="breakdowns"><a href="#" title="Breakdown Tracker"><span class="nav-icon" aria-hidden="true">⚠</span><span class="nav-text">Breakdown Tracker</span></a></li>
-            <li data-view="maintenance"><a href="#" title="Maintenance Tracker"><span class="nav-icon" aria-hidden="true">⚙</span><span class="nav-text">Maintenance Tracker</span></a></li>
-            <li data-view="fuel"><a href="#" title="Fuel Tracker"><span class="nav-icon" aria-hidden="true">⛽</span><span class="nav-text">Fuel Tracker</span></a></li>
+            <li data-view="fleet"><a href="#" title="Fleet Management"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 16V9l3-5h10l3 5v7M3 10h18M6 16v4M18 16v4M4 16h16"/><circle cx="7" cy="13" r="1"/><circle cx="17" cy="13" r="1"/></svg></span><span class="nav-text">Fleet Management</span></a></li>
+            <li data-view="breakdowns"><a href="#" title="Breakdown Tracker"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3 2 21h20L12 3ZM12 9v5M12 17v1"/></svg></span><span class="nav-text">Breakdown Tracker</span></a></li>
+            <li data-view="maintenance"><a href="#" title="Maintenance Tracker"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m4 20 8-8M14 3a6 6 0 0 0 7 7l-6 6-5-5 6-6V3Z"/></svg></span><span class="nav-text">Maintenance Tracker</span></a></li>
+            <li data-view="fuel"><a href="#" title="Fuel Tracker"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 21V4h10v17M2 21h14M7 7h4v5H7zM14 12h3v5a2 2 0 0 0 4 0V9l-3-3"/></svg></span><span class="nav-text">Fuel Tracker</span></a></li>
           </ul>
         </details>
         <details class="sidebar-group" open>
-          <summary><span class="group-icon" aria-hidden="true">✓</span><span class="nav-text">Safety &amp; Compliance</span></summary>
+          <summary aria-label="Safety &amp; Compliance" title="Safety &amp; Compliance"><span class="group-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2M8 11l2 2 5-5M9 17h6"/></svg></span><span class="nav-text">Safety &amp; Compliance</span></summary>
           <ul class="sidebar-menu">
-            <li data-view="tripcheck"><a href="#" title="Trip Check"><span class="nav-icon" aria-hidden="true">☑</span><span class="nav-text">Trip Check</span></a></li>
-            <li data-view="accidents"><a href="#" title="Accident Tracker"><span class="nav-icon" aria-hidden="true">△</span><span class="nav-text">Accident Tracker</span></a></li>
-            <li data-view="ncr"><a href="#" title="NCR Tracker"><span class="nav-icon" aria-hidden="true">!</span><span class="nav-text">NCR Tracker</span></a></li>
-            <li data-view="penalties"><a href="#" title="Penalties Tracker"><span class="nav-icon" aria-hidden="true">§</span><span class="nav-text">Penalties Tracker</span></a></li>
+            <li data-view="tripcheck"><a href="#" title="Trip Check"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2M8 11l2 2 5-5M9 17h6"/></svg></span><span class="nav-text">Trip Check</span></a></li>
+            <li data-view="accidents"><a href="#" title="Accident Tracker"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12 2 10 10-10 10L2 12 10-10ZM12 7v6M12 16v1"/></svg></span><span class="nav-text">Accident Tracker</span></a></li>
+            <li data-view="ncr"><a href="#" title="NCR Tracker"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 3h14v18H5zM9 7h6M9 11h6M9 15h2M14 15v3"/></svg></span><span class="nav-text">NCR Tracker</span></a></li>
+            <li data-view="penalties"><a href="#" title="Penalties Tracker"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 3h14v18l-3-2-4 2-4-2-3 2V3ZM9 7h6M9 11h6M9 15h4"/></svg></span><span class="nav-text">Penalties Tracker</span></a></li>
           </ul>
         </details>
         <details class="sidebar-group" open>
-          <summary><span class="group-icon" aria-hidden="true">♙</span><span class="nav-text">Drivers &amp; Planning</span></summary>
+          <summary aria-label="Drivers &amp; Planning" title="Drivers &amp; Planning"><span class="group-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="7" r="4"/><path d="M4 21v-3a8 8 0 0 1 16 0v3"/></svg></span><span class="nav-text">Drivers &amp; Planning</span></summary>
           <ul class="sidebar-menu">
-            <li data-view="drivers"><a href="#" title="Drivers Management"><span class="nav-icon" aria-hidden="true">♙</span><span class="nav-text">Drivers Management</span></a></li>
-            <li data-view="training"><a href="#" title="Training Tracker"><span class="nav-icon" aria-hidden="true">✎</span><span class="nav-text">Training Tracker</span></a></li>
-            <li data-view="driver-deductions"><a href="#" title="Drivers Deduction"><span class="nav-icon" aria-hidden="true">−</span><span class="nav-text">Drivers Deduction</span></a></li>
-            <li data-view="driver-appeals"><a href="#" title="Driver Appeals"><span class="nav-icon" aria-hidden="true">✉</span><span class="nav-text">Driver Appeals</span></a></li>
-            <li data-view="driver-weekly-schedule"><a href="#" title="Driver Weekly Schedule"><span class="nav-icon" aria-hidden="true">▤</span><span class="nav-text">Driver Weekly Schedule</span></a></li>
-            <li data-view="roster"><a href="#" title="Roster"><span class="nav-icon" aria-hidden="true">▥</span><span class="nav-text">Roster</span></a></li>
+            <li data-view="drivers"><a href="#" title="Drivers Management"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="7" r="4"/><path d="M4 21v-3a8 8 0 0 1 16 0v3"/></svg></span><span class="nav-text">Drivers Management</span></a></li>
+            <li data-view="training"><a href="#" title="Training Tracker"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m2 9 10-6 10 6-10 6L2 9ZM6 12v6l6 3 6-3v-6M22 9v9"/></svg></span><span class="nav-text">Training Tracker</span></a></li>
+            <li data-view="driver-deductions"><a href="#" title="Drivers Deduction"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 4h16v16H4zM8 12h8"/></svg></span><span class="nav-text">Drivers Deduction</span></a></li>
+            <li data-view="driver-appeals"><a href="#" title="Driver Appeals"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 4h18v14H9l-6 4V4ZM7 9h10M7 13h7"/></svg></span><span class="nav-text">Driver Appeals</span></a></li>
+            <li data-view="driver-weekly-schedule"><a href="#" title="Driver Weekly Schedule"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 2v6M17 2v6M3 11h18M7 15h3M14 15h3"/></svg></span><span class="nav-text">Driver Weekly Schedule</span></a></li>
+            <li data-view="roster"><a href="#" title="Roster"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 3h16v18H4zM8 7h8M8 12h8M8 17h8"/></svg></span><span class="nav-text">Roster</span></a></li>
           </ul>
         </details>
         <details class="sidebar-group" open>
-          <summary><span class="group-icon" aria-hidden="true">✉</span><span class="nav-text">Customer &amp; Support</span></summary>
+          <summary aria-label="Customer &amp; Support" title="Customer &amp; Support"><span class="group-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M9 9a3 3 0 1 1 4 3v3M12 18h.01"/></svg></span><span class="nav-text">Customer &amp; Support</span></summary>
           <ul class="sidebar-menu">
-            <li data-view="customer-care"><a href="#" title="Customer Care Tracker"><span class="nav-icon" aria-hidden="true">♡</span><span class="nav-text">Customer Care Tracker</span></a></li>
-            <li data-view="helpdesk"><a href="#" title="Helpdesk"><span class="nav-icon" aria-hidden="true">?</span><span class="nav-text">Helpdesk</span></a></li>
+            <li data-view="customer-care"><a href="#" title="Customer Care Tracker"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 13v-1a9 9 0 0 1 18 0v1M3 12h4v7H3zM17 12h4v7h-4zM17 21h-5"/></svg></span><span class="nav-text">Customer Care Tracker</span></a></li>
+            <li data-view="helpdesk"><a href="#" title="Helpdesk"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M9 9a3 3 0 1 1 4 3v3M12 18h.01"/></svg></span><span class="nav-text">Helpdesk</span></a></li>
           </ul>
         </details>
       </nav>
       <div class="sidebar-footer">
-        <button id="logout-button" class="btn-logout"><span class="nav-text">Sign Out</span></button>
+        <button id="logout-button" class="btn-logout" aria-label="Sign Out"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 3H4v18h5M14 8l5 4-5 4M8 12h11"/></svg></span><span class="nav-text">Sign Out</span></button>
       </div>
     </aside>
 

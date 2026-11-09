@@ -3,37 +3,37 @@
 <div class="card">
 <div class="card-header-flex">
 <div>
-<h2>Accident Tracker Lookup</h2>
-<p style="margin-top: 5px; color: var(--text-muted);">Interface preview. Search by Accident ID, Car Plate, Driver Iqama or Driver Name.</p>
+<h2>Accident Tracker</h2>
+<p>Interface preview. Search by Accident ID, Car Plate, Driver Iqama or Driver Name.</p>
 </div>
 <div class="button-group-row">
-<button class="btn-primary" id="open-add-accident-modal">➕ Add New Accident</button>
-<button class="btn-secondary" id="refresh-accidents-btn">🔄 Refresh</button>
-<button class="btn-secondary" id="export-accidents-date-btn" style="background: #217346; color: white;">📥 Export Period Excel</button>
+<button class="btn-primary" id="open-add-accident-modal">Add New Accident</button>
+<button class="btn-secondary" id="refresh-accidents-btn">Refresh</button>
+<button class="btn-secondary" id="export-accidents-date-btn">Export Period Excel</button>
 </div>
 </div>
 <div class="status-badge" id="accident-sync-status">No records available — database not connected</div>
-<div class="search-row" style="grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+<div class="search-row">
 <div>
-<label style="font-size: 13px; font-weight: bold; color: var(--text-main);">Start Date</label>
-<div style="display: flex; gap: 10px;">
-<input id="filter-start-date" style="margin-bottom: 0;" type="date"/>
+<label>Start Date</label>
+<div style="display: flex">
+<input id="filter-start-date" type="date"/>
 
 </div>
 </div>
 <div>
-<label style="font-size: 13px; font-weight: bold; color: var(--text-main);">End Date</label>
-<div style="display: flex; gap: 10px;">
-<input id="filter-end-date" style="margin-bottom: 0;" type="date"/>
+<label>End Date</label>
+<div style="display: flex">
+<input id="filter-end-date" type="date"/>
 
 </div>
 </div>
 </div>
-<div class="search-row" style="margin-top: 15px;">
+<div class="search-row">
 <div class="search-wrapper">
-<label style="font-size: 13px; font-weight: bold; color: var(--text-main);">Search Accident (Plate, Driver Iqama/Name, Accident ID)</label>
+<label>Search Records</label>
 <div class="input-with-btn">
-<input autocomplete="off" id="accident-search-input" placeholder="Type plate, driver or accident ID..." type="text"/>
+<input autocomplete="off" id="accident-search-input" type="text" placeholder="Search by Accident ID, Car Plate, Iqama or Name..."/>
 <button class="dropdown-arrow-btn" id="toggle-accident-btn" type="button">▼</button>
 </div>
 <div class="custom-dropdown" id="accident-dropdown"></div>
@@ -43,9 +43,9 @@
 <div class="card">
 <div class="card-header-flex">
 <h2>Accidents Overview</h2>
-<span id="accident-count-badge" style="font-size: 14px; font-weight: bold; color: var(--text-muted);">0 records found</span>
+<span id="accident-count-badge">0 records found</span>
 </div>
-<div class="tracker-table-container" style="margin-top: 15px;">
+<div class="tracker-table-container">
 <table class="tracker-table" id="accidents-table">
 <thead>
 <tr>
@@ -82,35 +82,35 @@
 </section>
 <!-- Accident record modal belongs to this feature. -->
 <div class="modal-overlay" id="add-accident-modal">
-<div class="modal-content" style="max-width: 800px;">
+<div class="modal-content">
 <h2 id="modal-accident-title">Report New Accident</h2><p class="preview-note">Interface preview — database integration pending. No records will be saved or sent.</p>
-<form id="add-accident-form" style="margin-top: 20px;">
+<form id="add-accident-form">
 <div class="form-group"><label for="add-acc-id">Accident ID</label><input id="add-acc-id" readonly placeholder="Generated later: ACD-00001"/></div>
-<div class="modal-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 15px;">
+<div class="modal-grid" style="display: grid">
 <div class="form-group"><label for="acc-reporting-date">Reporting Date</label><input id="acc-reporting-date" readonly placeholder="Future server date — Asia/Riyadh"/></div>
 <div class="form-group"><label for="acc-reporting-time">Reporting Time</label><input id="acc-reporting-time" readonly placeholder="Future server time — Asia/Riyadh"/></div>
 <div class="form-group"><label for="acc-reported-by">Reported By</label><input id="acc-reported-by" readonly placeholder="Future authenticated user"/></div>
-<div class="form-group"><label>Accident Date</label><input id="add-acc-date" required="" type="date"/></div>
-<div class="form-group"><label>Accident Time</label><input id="add-acc-time" required="" type="time"/></div>
-<div class="form-group"><label>Car Plate</label><select id="add-acc-plate" required=""><option value="">-- Select Plate --</option></select></div>
-<div class="form-group"><label>Car Model</label><input id="add-acc-model" readonly="" style="background: #e9ecef;" type="text"/></div>
-<div class="form-group"><label>Driver Iqama</label><select id="add-acc-iqama" required=""><option value="">-- Select Iqama --</option></select></div>
-<div class="form-group"><label>Driver Name</label><input id="add-acc-driver-name" readonly="" style="background: #e9ecef;" type="text"/></div>
+<div class="form-group"><label for="add-acc-date">Accident Date</label><input id="add-acc-date" required="" type="date"/></div>
+<div class="form-group"><label for="add-acc-time">Accident Time</label><input id="add-acc-time" required="" type="time"/></div>
+<div class="form-group"><label for="add-acc-plate">Car Plate</label><select id="add-acc-plate" required=""><option value="">-- Select Plate --</option></select></div>
+<div class="form-group"><label for="add-acc-model">Car Model</label><input id="add-acc-model" readonly="" type="text"/></div>
+<div class="form-group"><label for="add-acc-iqama">Driver Iqama</label><select id="add-acc-iqama" required=""><option value="">-- Select Iqama --</option></select></div>
+<div class="form-group"><label for="add-acc-driver-name">Driver Name</label><input id="add-acc-driver-name" readonly="" type="text"/></div>
 <div class="form-group">
-<label>Accident Location</label>
+<label for="add-acc-location">Accident Location</label>
 <select id="add-acc-location" required=""><option value="">-- Select Location --</option></select>
 </div>
 <div class="form-group"><label for="add-acc-maintenance-status">Maintenance Status</label><input id="add-acc-maintenance-status" readonly value="Not Requested"/></div>
-<div class="form-group"><label>Severity</label><select id="add-acc-severity" required=""><option value="Very Minor">Very Minor</option><option value="Minor">Minor</option><option value="Major">Major</option><option value="Critical">Critical</option></select></div>
-<div class="form-group"><label>Injured</label><select id="add-acc-injured" required=""><option value="No">No</option><option value="Yes">Yes</option></select></div>
-<div class="form-group"><label>Send to Maintenance</label><select id="add-acc-maintenance" required><option value="No">No</option><option value="Yes">Yes</option></select></div>
-<div class="form-group"><label>Najm</label><select id="add-acc-najm" required=""><option value="No">No</option><option value="Yes">Yes</option></select></div>
-<div class="form-group"><label>Najm Report Status</label><select disabled="" id="add-acc-najm-status" style="background: #e9ecef;"><option value="N/A">N/A</option></select></div>
-<div class="form-group"><label>Mistake Percentage (0 - 100)</label><input id="add-acc-mistake" max="100" min="0" required="" type="number" value="0"/></div>
-<div class="form-group"><label>Investigation Conducted</label><select id="add-acc-investigation" required=""><option value="No">No</option><option value="Yes">Yes</option></select></div>
-<div class="form-group"><label>Investigation Status</label><select disabled="" id="add-acc-inv-status" style="background: #e9ecef;"><option value="N/A">N/A</option></select></div>
+<div class="form-group"><label for="add-acc-severity">Severity</label><select id="add-acc-severity" required=""><option value="Very Minor">Very Minor</option><option value="Minor">Minor</option><option value="Major">Major</option><option value="Critical">Critical</option></select></div>
+<div class="form-group"><label for="add-acc-injured">Injured</label><select id="add-acc-injured" required=""><option value="No">No</option><option value="Yes">Yes</option></select></div>
+<div class="form-group"><label for="add-acc-maintenance">Send to Maintenance</label><select id="add-acc-maintenance" required><option value="No">No</option><option value="Yes">Yes</option></select></div>
+<div class="form-group"><label for="add-acc-najm">Najm</label><select id="add-acc-najm" required=""><option value="No">No</option><option value="Yes">Yes</option></select></div>
+<div class="form-group"><label for="add-acc-najm-status">Najm Report Status</label><select disabled="" id="add-acc-najm-status"><option value="N/A">N/A</option></select></div>
+<div class="form-group"><label for="add-acc-mistake">Mistake Percentage (0 - 100)</label><input id="add-acc-mistake" max="100" min="0" required="" type="number" value="0"/></div>
+<div class="form-group"><label for="add-acc-investigation">Investigation Conducted</label><select id="add-acc-investigation" required=""><option value="No">No</option><option value="Yes">Yes</option></select></div>
+<div class="form-group"><label for="add-acc-inv-status">Investigation Status</label><select disabled="" id="add-acc-inv-status"><option value="N/A">N/A</option></select></div>
 <div class="form-group">
-<label>Accident Type</label>
+<label for="add-acc-type">Accident Type</label>
 <select id="add-acc-type" required="">
 <option value="">-- Select Accident Type --</option>
 <option value="Collision">Collision</option>
@@ -120,7 +120,7 @@
 </select>
 </div>
 <div class="form-group">
-<label>Root Causes</label>
+<label for="add-acc-root-causes">Root Causes</label>
 <select id="add-acc-root-causes" required="">
 <option value="">-- Select Root Cause --</option>
 <option value="Animal crossed the road">Animal crossed the road</option>
@@ -138,14 +138,14 @@
 </select>
 </div>
 </div>
-<div class="form-group" style="margin-top: 10px;"><label>Accident Description</label><textarea id="add-acc-description" required="" rows="2"></textarea></div>
-<div class="form-group"><label>Damage Description</label><textarea id="add-acc-damage" required="" rows="2"></textarea></div>
-<div class="action-row" style="margin-top: 20px;">
-<div style="display: flex; gap: 12px;">
-<button class="btn-primary" id="save-accident-btn" style="background: var(--success); width: auto; padding: 12px 20px;" type="submit">Save Accident Record</button>
-<button class="btn-secondary" id="delete-accident-btn" style="background: var(--danger); color: white;" type="button">🗑️ Delete Accident</button>
+<div class="form-group"><label for="add-acc-description">Accident Description</label><textarea id="add-acc-description" required="" rows="2"></textarea></div>
+<div class="form-group"><label for="add-acc-damage">Damage Description</label><textarea id="add-acc-damage" required="" rows="2"></textarea></div>
+<div class="action-row">
+<div style="display: flex">
+<button class="btn-primary" id="save-accident-btn" type="submit">Save Accident Record</button>
+<button class="btn-secondary btn-danger" id="delete-accident-btn" type="button">Delete Accident</button>
 </div>
-<button class="btn-secondary" id="close-add-accident-modal" style="width: auto;" type="button">Cancel</button>
+<button class="btn-secondary" id="close-add-accident-modal" type="button">Cancel</button>
 </div>
 </form>
 </div>

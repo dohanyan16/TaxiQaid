@@ -4,13 +4,13 @@
 <div class="card-header-flex">
 <div>
 <h2>Trip Check Manager</h2>
-<p style="margin-top: 5px; color: var(--text-muted);">Create, review and edit pre-trip and post-trip inspections. Select a record to edit it. PDF export follows the active filters.</p>
+<p style="margin-top: 5px">Create, review and edit pre-trip and post-trip inspections. Select a record to edit it. PDF export follows the active filters.</p>
 </div>
 <div class="button-group-row">
-<button class="btn-secondary" id="refresh-tripchecks-btn" type="button">🔄 Refresh</button>
-<button class="btn-primary" id="open-add-tripcheck-modal">➕ New Trip Check</button>
-<button class="btn-secondary" id="export-tripchecks-btn">📥 Export Excel</button>
-<button class="btn-secondary" id="export-tripchecks-pdf-zip-btn" type="button">📄 Export Filtered PDFs</button>
+<button class="btn-secondary" id="refresh-tripchecks-btn" type="button">Refresh</button>
+<button class="btn-primary" id="open-add-tripcheck-modal">New Trip Check</button>
+<button class="btn-secondary" id="export-tripchecks-btn">Export Excel</button>
+<button class="btn-secondary" id="export-tripchecks-pdf-zip-btn" type="button">Export Filtered PDFs</button>
 </div>
 </div>
 <div class="status-badge" id="tripcheck-sync-status" role="status">No records available — database not connected</div>
@@ -44,9 +44,9 @@
 <div class="card">
 <div class="card-header-flex">
 <h2>Trip Checks Overview</h2>
-<span id="tripcheck-count-badge" style="font-size: 14px; font-weight: bold; color: var(--text-muted);">0 records found</span>
+<span id="tripcheck-count-badge">0 records found</span>
 </div>
-<div class="tracker-table-container" style="margin-top: 15px;">
+<div class="tracker-table-container" style="margin-top: 15px">
 <table class="tracker-table" id="tripchecks-table">
 <thead>
 <tr>
@@ -110,11 +110,11 @@
 <input id="tc-iqama" required="" type="hidden"/>
 </div>
 <div class="form-group">
-<label>Selected Driver Name</label>
-<input id="tc-driver-name" readonly="" style="background: #e9ecef;" type="text"/>
+<label for="tc-driver-name">Selected Driver Name</label>
+<input id="tc-driver-name" readonly="" type="text"/>
 </div>
 <div class="form-group">
-<label>Odometer (KM)</label>
+<label for="tc-odometer">Odometer (KM)</label>
 <input id="tc-odometer" min="0" placeholder="e.g. 45000" required="" type="number"/>
 </div>
 </div>
@@ -351,7 +351,7 @@
 <p class="tripcheck-help-text">Pass requires every inspection item to be OK. Any defect results in Pending review. All 24 items must be answered before saving.</p>
 </div>
 <div class="form-group">
-<label>Remarks / Notes</label>
+<label for="tc-remarks">Remarks / Notes</label>
 <textarea id="tc-remarks" placeholder="Optional notes or observations..." rows="3"></textarea>
 </div>
 <div class="tripcheck-signature-summary">
@@ -364,13 +364,13 @@
 <p class="tripcheck-help-text">The drawn signature is discarded after confirmation. Only the Signed field is stored. The PDF will not contain the signature image.</p>
 </div>
 <!-- WIZARD NAVIGATION BUTTONS -->
-<div class="action-row" style="margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-<div style="display: flex; gap: 10px;">
-<button class="btn-secondary" id="wizard-prev-btn" style="display: none;" type="button">⬅️ Previous</button>
-<button class="btn-primary" id="wizard-next-btn" style="width: auto; padding: 10px 20px;" type="button">Next ➡️</button>
-<button class="btn-primary" id="save-tripcheck-btn" style="background: var(--success); width: auto; padding: 10px 20px; display: none;" type="submit">💾 Save Inspection</button>
+<div class="action-row" style="margin-top: 25px; border-top: 1px solid var(--border-color); padding-top: 15px">
+<div style="display: flex; gap: 10px">
+<button class="btn-secondary" id="wizard-prev-btn" style="display: none" type="button">Previous</button>
+<button class="btn-primary" id="wizard-next-btn" type="button">Next </button>
+<button class="btn-primary" id="save-tripcheck-btn" style="display: none" type="submit">Save Inspection</button>
 </div>
-<button class="btn-secondary" id="close-add-tripcheck-modal" style="width: auto;" type="button">Cancel</button>
+<button class="btn-secondary" id="close-add-tripcheck-modal" type="button">Cancel</button>
 </div>
 </form>
 </div>

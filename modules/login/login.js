@@ -19,7 +19,10 @@
 
     sidebarToggle.addEventListener("click", () => {
       sidebar.classList.toggle("collapsed");
-      sidebarToggle.textContent = sidebar.classList.contains("collapsed") ? "▶" : "◀";
+      const collapsed = sidebar.classList.contains("collapsed");
+      sidebarToggle.textContent = collapsed ? "›" : "‹";
+      sidebarToggle.setAttribute("aria-label", collapsed ? "Expand sidebar" : "Collapse sidebar");
+      sidebarToggle.setAttribute("aria-expanded", String(!collapsed));
     });
 
     loginForm.addEventListener("submit", async function(e) {

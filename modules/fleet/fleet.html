@@ -3,27 +3,27 @@
 <div class="card">
 <div class="card-header-flex">
 <div>
-<h2>Fleet Lookup</h2>
-<p style="margin-top: 5px; color: var(--text-muted);">Search by vehicle license plate or click the dropdown arrow.</p>
+<h2>Fleet Management</h2>
+<p>Find vehicles by Car Plate, VIN or Model.</p>
 </div>
 <div class="button-group-row">
-<button class="btn-secondary" id="refresh-fleet-btn">🔄 Refresh</button>
-<button class="btn-secondary" id="export-fleet-excel-btn">📥 Export Excel</button>
+<button class="btn-secondary" id="refresh-fleet-btn">Refresh</button>
+<button class="btn-secondary" id="export-fleet-excel-btn">Export Excel</button>
 </div>
 </div>
 <div class="status-badge" id="fleet-sync-status">No records available — database not connected</div>
 <div class="search-row">
 <div class="search-wrapper">
-<label style="font-size: 13px; font-weight: bold; color: var(--text-main);">Search by Plate</label>
+<label>Search Records</label>
 <div class="input-with-btn">
-<input autocomplete="off" id="fleet-plate-input" placeholder="Type vehicle plate..." type="text"/>
+<input autocomplete="off" id="fleet-plate-input" type="text" placeholder="Search by Car Plate, VIN or Model..."/>
 <button class="dropdown-arrow-btn" id="toggle-fleet-btn" type="button">▼</button>
 </div>
 <div class="custom-dropdown" id="fleet-dropdown"></div>
 </div>
 </div>
 </div>
-<div id="fleet-profile-container" style="display: none;">
+<div id="fleet-profile-container" style="display: none">
 <div class="profile-card">
 <h2 id="profile-vehicle-name">Vehicle Profile</h2>
 <div class="profile-grid">
@@ -48,7 +48,7 @@
 </div>
 <div class="action-row">
 <button class="btn-primary" id="edit-fleet-btn">Edit Vehicle Details</button>
-<button class="btn-secondary" id="cancel-fleet-edit-btn" style="display: none;">Cancel</button>
+<button class="btn-secondary" id="cancel-fleet-edit-btn" style="display: none">Cancel</button>
 </div>
 </div>
 </div>

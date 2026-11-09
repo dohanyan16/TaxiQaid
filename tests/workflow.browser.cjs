@@ -87,10 +87,10 @@ const path = require('node:path');
    'Date','Time','Car Plate','Car Model','Driver Iqama','Driver Name','Driver Arrangement',
    'Fueled In','Outside Depot Location','Fuel Received (L)','Fuel Pricing (SAR/L)','Total Amount (SAR)'
   ]);
-  await page.locator('#fuel-filter-driver').fill('No connected driver');
+  await page.locator('#fuel-search-input').fill('No connected driver');
   assert.equal(await page.locator('#fuel-table tbody tr').count(),1);
   assert.match(await page.locator('#fuel-table tbody').innerText(),/No records available/);
-  await page.locator('#fuel-filter-driver').fill('');
+  await page.locator('#fuel-search-input').fill('');
   await page.screenshot({animations:'disabled',path:path.join(screenshotDir,'fuel-tracker.png')});
   await page.locator('#open-fuel-modal').click();
   const fuelFields=['fuel-date','fuel-time','fuel-plate','fuel-model','fuel-iqama','fuel-driver-name',
@@ -164,7 +164,7 @@ const path = require('node:path');
   assert.equal(await page.locator('#ncr-scores-panel').isVisible(),true);
   assert.deepEqual(await page.locator('#ncr-scores-table th').allTextContents(),[
    'Driver Iqama','Driver Name','Driver Phone Number','Starting Points','Total NCRs','Active NCRs','Expired NCRs','Active Points Deducted','Current Points']);
-  await page.locator('#ncr-score-iqama').fill('Unsaved filter');
+  await page.locator('#ncr-score-search').fill('Unsaved filter');
   await page.locator('#ncr-points-exact').fill('-10');
   await page.locator('#ncr-points-min').fill('-50');
   await page.locator('#ncr-points-max').fill('0');
@@ -191,7 +191,7 @@ const path = require('node:path');
   assert.equal(await page.locator('#ncr-points-exact').inputValue(),'-10');
   assert.equal(await page.locator('#ncr-points-min').inputValue(),'-50');
   assert.equal(await page.locator('#ncr-points-max').inputValue(),'0');
-  assert.equal(await page.locator('#ncr-score-iqama').inputValue(),'Unsaved filter');
+  assert.equal(await page.locator('#ncr-score-search').inputValue(),'Unsaved filter');
   await page.locator('#ncr-scores-tab').press('ArrowRight');
   assert.equal(await page.locator('#ncr-filter-status').inputValue(),'Expired');
   assert.equal(await page.locator('#ncr-filter-tbt').inputValue(),'Conducted');
@@ -247,26 +247,24 @@ const path = require('node:path');
   assert.deepEqual(await page.locator('#penalties-main-actions button').allTextContents(),['Refresh','Export by Period']);
   assert.deepEqual(await page.locator('#penalties-table th').allTextContents(),['ID','Details','Date','Time','Car Plate','Driver Iqama','Driver Name','Amount','Charged To']);
   assert.equal(await page.locator('#view-penalties input[type=time]').count(),0);
-  for(const id of ['penalties-driver-name','penalties-driver-iqama','penalties-start-date','penalties-end-date']) assert.equal(await page.locator('#'+id).isVisible(),true);
+  for(const id of ['penalties-search-input','penalties-start-date','penalties-end-date']) assert.equal(await page.locator('#'+id).isVisible(),true);
   assert.equal(await page.locator('#penalties-table-body').innerText(),'No penalties available — database integration pending.');
   assert.equal(await page.locator('#view-penalties button, #penalty-details-modal button').allTextContents().then(labels=>labels.some(label=>/Add|New|Edit|Delete|Save/.test(label))),false);
-  await page.locator('#penalties-driver-name').fill('Unsaved name filter');
-  await page.locator('#penalties-driver-iqama').fill('Unsaved Iqama filter');
+  await page.locator('#penalties-search-input').fill('Unsaved combined filter');
   await page.locator('#penalties-start-date').fill('2026-01-10');await page.locator('#penalties-end-date').fill('2026-01-11');
   for(const id of ['refresh-penalties-btn','export-penalties-btn']) {
    await page.locator('#'+id).click();assert.match(await page.locator('#integration-notice').innerText(),/Database integration pending/);
   }
   await page.locator('#integration-notice button').click();
   await nav('dashboard');await nav('penalties');
-  assert.equal(await page.locator('#penalties-driver-name').inputValue(),'Unsaved name filter');
-  assert.equal(await page.locator('#penalties-driver-iqama').inputValue(),'Unsaved Iqama filter');
+  assert.equal(await page.locator('#penalties-search-input').inputValue(),'Unsaved combined filter');
   assert.equal(await page.locator('#penalties-start-date').inputValue(),'2026-01-10');
   assert.equal(await page.locator('#penalties-end-date').inputValue(),'2026-01-11');
   await page.screenshot({animations:'disabled',path:path.join(screenshotDir,'penalties-tracker.png')});
   await page.locator('#penalties-end-date').fill('2026-01-09');
   assert.match(await page.locator('#penalties-filter-status').innerText(),/on or before/);
   await page.locator('#clear-penalties-filters').click();
-  for(const id of ['penalties-driver-name','penalties-driver-iqama','penalties-start-date','penalties-end-date']) assert.equal(await page.locator('#'+id).inputValue(),'');
+  for(const id of ['penalties-search-input','penalties-start-date','penalties-end-date']) assert.equal(await page.locator('#'+id).inputValue(),'');
   // Synthetic renderer fixtures are injected only by this test, then removed.
   // No application fixture, import connection or source record store is created.
   await page.evaluate(()=>{

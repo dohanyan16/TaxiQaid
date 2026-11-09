@@ -32,6 +32,7 @@ function setup({ drivers = false } = {}) {
   const responses = { fleet: [], post: [] };
   let exported;
   const context = vm.createContext({
+    setupSearchDropdown: () => ({}),
     document, console: { warn() {}, error() {} }, alert() {},
     fetchDrivers: async () => true, fetchAccidents: async () => true,
     fetch: async (url, options) => {

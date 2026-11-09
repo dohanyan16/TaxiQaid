@@ -3,27 +3,27 @@
 <div class="card">
 <div class="card-header-flex">
 <div>
-<h2>Driver Lookup</h2>
-<p style="margin-top: 5px; color: var(--text-muted);">Type Iqama or Full Name to search records.</p>
+<h2>Drivers Management</h2>
+<p>Find drivers by Iqama, Name or Phone Number.</p>
 </div>
 <div class="button-group-row">
-<button class="btn-secondary" id="refresh-db-btn">🔄 Refresh</button>
-<button class="btn-secondary" id="export-excel-btn">📥 Export Excel</button>
+<button class="btn-secondary" id="refresh-db-btn">Refresh</button>
+<button class="btn-secondary" id="export-excel-btn">Export Excel</button>
 </div>
 </div>
 <div class="status-badge" id="sync-status">No records available — database not connected</div>
 <div class="search-row">
 <div class="search-wrapper">
-<label style="font-size: 13px; font-weight: bold; color: var(--text-main);">Search Driver (Iqama or Full Name)</label>
+<label>Search Records</label>
 <div class="input-with-btn">
-<input autocomplete="off" id="driver-search-input" placeholder="Type Iqama number or full name..." type="text"/>
+<input autocomplete="off" id="driver-search-input" type="text" placeholder="Search by Iqama, Name or Phone..."/>
 <button class="dropdown-arrow-btn" id="toggle-driver-btn" type="button">▼</button>
 </div>
 <div class="custom-dropdown" id="driver-dropdown"></div>
 </div>
 </div>
 </div>
-<div id="driver-profile-container" style="display: none;">
+<div id="driver-profile-container" style="display: none">
 <div class="profile-card">
 <h2 id="profile-driver-name">Driver Profile</h2>
 <div class="profile-grid">
@@ -47,7 +47,7 @@
 </div>
 <div class="action-row">
 <button class="btn-primary" id="edit-driver-btn">Edit Driver Details</button>
-<button class="btn-secondary" id="cancel-edit-btn" style="display: none;">Cancel</button>
+<button class="btn-secondary" id="cancel-edit-btn" style="display: none">Cancel</button>
 </div>
 </div>
 </div>

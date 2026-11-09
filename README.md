@@ -49,8 +49,12 @@ Operational databases are disconnected. Legacy spreadsheet and Apps Script endpo
 
 See [the workflow specification](docs/TAXIQAID_WORKFLOW_SPEC.md) for all field definitions, status options, future source/request/work-order relationships, identifier formats and KSA timestamp rules. No database schemas or migrations are included. Database integration remains a separate future phase. PR #2 is the single review unit for the Accident, Breakdown, Maintenance and Fuel interfaces; merge/publication follows the current repository owner’s authorization.
 
+## Shared interface standards
+
+[The design system](docs/DESIGN_SYSTEM.md) documents the common orange palette, typography, controls, SVG navigation, responsive layouts and unified record search. Date, status and NCR point filters remain independent. Trip Check retains its dedicated inspection experience and PDF implementation.
+
 ## Validation
 
-Run `node --test tests/fleet.test.cjs tests/ncr-policy.test.cjs tests/penalties.test.cjs` for the retained pure compatibility tests. With Playwright and Chromium available and a local HTTP server running, run `node tests/workflow.browser.cjs`. Set `TAXIQAID_URL`, `TAXIQAID_CHROMIUM` or `TAXIQAID_SCREENSHOTS` to override defaults. Browser checks use mocked authentication and never live credentials or operational data. Screenshots are written to `docs/screenshots/` by default.
+Run `node --test tests/*.test.cjs` for the retained pure compatibility tests. With Playwright and Chromium available and a local HTTP server running, run `node tests/workflow.browser.cjs` and `node tests/ui.browser.cjs`. Set `TAXIQAID_URL`, `TAXIQAID_CHROMIUM` or `TAXIQAID_SCREENSHOTS` to override defaults. Browser checks use mocked authentication and never live credentials or operational data. Screenshots are written to `docs/screenshots/` by default.
 
 The former spreadsheet persistence tests were replaced because spreadsheet reads/writes are intentionally retired. Live authentication must be verified separately with an existing authorized account.

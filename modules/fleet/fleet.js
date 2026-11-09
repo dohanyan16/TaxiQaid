@@ -114,62 +114,16 @@
     const editFleetBtn = document.getElementById("edit-fleet-btn");
     const cancelFleetEditBtn = document.getElementById("cancel-fleet-edit-btn");
 
-    function populateFleetDropdown(items) {
-      fleetDropdown.innerHTML = "";
-      if (items.length === 0) { fleetDropdown.style.display = "none"; return; }
-      items.forEach(v => {
-        const plate = String(v["Plate"] || v["plate"] || "");
-        const mod = String(v["Model"] || v["model"] || "");
-        const div = document.createElement("div");
-        div.className = "custom-dropdown-item";
-        div.textContent = `${plate} - ${mod}`;
-        div.addEventListener("click", () => {
-          fleetPlateInput.value = plate;
-          renderVehicleProfile(v);
-          fleetDropdown.style.display = "none";
-        });
-        fleetDropdown.appendChild(div);
-      });
-      fleetDropdown.style.display = "block";
-    }
-
-    toggleFleetBtn.addEventListener("click", async (e) => {
-      e.stopPropagation();
-      if (fleetProfileContainer.style.display === "block" && !isFleetEditMode) {
-      clearFleetSelection();
-      populateFleetDropdown(fleetDatabase);
-      return;
-      }
-      if (driversDatabase.length === 0) await fetchDrivers();
-      if (fleetDropdown.style.display === "block") { fleetDropdown.style.display = "none"; }
-      else {
-        const val = fleetPlateInput.value.trim().toLowerCase();
-        populateFleetDropdown(val === "" ? fleetDatabase : fleetDatabase.filter(v => String(v["Plate"] || v["plate"] || "").toLowerCase().includes(val)));
-      }
-    });
-
-    fleetPlateInput.addEventListener("input", async () => {
-      if (driversDatabase.length === 0) await fetchDrivers();
-      const val = fleetPlateInput.value.trim().toLowerCase();
-      if (val === "") { fleetProfileContainer.style.display = "none"; fleetDropdown.style.display = "none"; return; }
-      const matches = fleetDatabase.filter(v => String(v["Plate"] || v["plate"] || "").toLowerCase().includes(val));
-      populateFleetDropdown(matches);
-      const exact = fleetDatabase.find(v => String(v["Plate"] || v["plate"] || "").toLowerCase() === val);
-      if (exact) { renderVehicleProfile(exact); fleetDropdown.style.display = "none"; }
-      else { fleetProfileContainer.style.display = "none"; }
-    });
     function clearFleetSelection() {
-  fleetPlateInput.value = "";
-  fleetProfileContainer.style.display = "none";
-  currentActiveVehicle = null;
-}
-
-fleetPlateInput.addEventListener("click", () => {
-  if (fleetProfileContainer.style.display === "block" && !isFleetEditMode) {
-    clearFleetSelection();
-    populateFleetDropdown(fleetDatabase);
-  }
-});
+      fleetPlateInput.value = '';
+      fleetProfileContainer.style.display = 'none';
+      currentActiveVehicle = null;
+    }
+    const fleetSearch = setupSearchDropdown({
+      input:'fleet-plate-input', btn:'toggle-fleet-btn', dd:'fleet-dropdown', config:'fleet',
+      getData:()=>fleetDatabase, apply:()=>{fleetProfileContainer.style.display='none';currentActiveVehicle=null;},
+      onSelect:renderVehicleProfile
+    });
 
     function renderVehicleProfile(vehicle) {
       currentActiveVehicle = vehicle;
@@ -222,8 +176,8 @@ fleetPlateInput.addEventListener("click", () => {
     function enableFleetEditMode() {
       if (!currentActiveVehicle) return;
       isFleetEditMode = true;
-      editFleetBtn.textContent = "💾 Save Vehicle Changes";
-      editFleetBtn.style.background = "var(--success)";
+      editFleetBtn.textContent = "Save Vehicle Changes";
+      editFleetBtn.style.background = "var(--primary)";
       cancelFleetEditBtn.style.display = "inline-block";
 
       const v = currentActiveVehicle;
@@ -231,7 +185,7 @@ fleetPlateInput.addEventListener("click", () => {
       const hasDriver = assignedDrivers.length > 0;
 
       // Visual styling for fields that users cannot edit.
-      const disabledAttr = 'disabled style="background: #e9ecef; cursor: not-allowed;"';
+      const disabledAttr = 'disabled style="background: var(--readonly-bg); cursor: not-allowed;"';
 
       // 1. Lock all fields that must not be modified here.
       document.getElementById("f-val-brand").innerHTML = `<input type="text" id="edit-fleet-brand" value="${v["Brand"] || v["brand"] || ''}" ${disabledAttr}>`;
