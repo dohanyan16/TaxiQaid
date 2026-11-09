@@ -13,7 +13,7 @@
 <button class="btn-secondary" id="export-tripchecks-pdf-zip-btn" type="button">📄 Export Filtered PDFs</button>
 </div>
 </div>
-<div class="status-badge" id="tripcheck-sync-status" role="status">Connecting to Google Sheets...</div>
+<div class="status-badge" id="tripcheck-sync-status" role="status">No records available — database not connected</div>
 <div class="status-badge" id="tripcheck-save-status" role="status" hidden></div>
 <div class="tripcheck-filters">
 <div class="tripcheck-filter-field">
@@ -74,6 +74,7 @@
 <!-- Trip Check modal belongs to this feature. -->
 <div class="modal-overlay" id="add-tripcheck-modal">
 <div class="modal-content tripcheck-modal-content">
+<p class="preview-note">Interface preview — database integration pending. You can review all inspection sections; no inspection will be saved.</p>
 <h2 id="tripcheck-modal-title">New Trip Check</h2>
 <div class="wizard-progress" id="wizard-progress-indicator">Step 1 of 27</div>
 <form id="add-tripcheck-form">

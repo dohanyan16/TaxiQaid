@@ -143,42 +143,8 @@
     }
 
     async function saveEditedDriver() {
-      const d = currentActiveDriver;
-      const selectedPlate = document.getElementById("edit-car-plate").value;
-
-      const updatedDriver = {
-        "Iqama Number": d["Iqama Number"] || d["iqama"],
-        // Send only editable fields. Identity/static data belongs to the Sheet.
-        "Phone Number": document.getElementById("edit-phone").value.trim(),
-        "Arrangement": document.getElementById("edit-arrangement").value,
-        "Shift": document.getElementById("edit-shift").value,
-        "Car Plate": selectedPlate,
-        "Status": document.getElementById("edit-status").value
-      };
-
-      editDriverBtn.disabled = true;
-      editDriverBtn.textContent = "Saving...";
-
-      try {
-        const response = await postAuthorizedSheetUpdate(GOOGLE_SHEET_DRIVERS_URL, updatedDriver);
-        const resData = await response.json();
-        if (resData.status === "success") {
-          const refreshed = await fetchDrivers();
-          const saved = refreshed && driversDatabase.find(driver => String(driver["Iqama Number"] || driver["iqama"]).trim() === String(updatedDriver["Iqama Number"]).trim());
-          renderDriverProfile(saved || d);
-          alert(saved ? "Driver saved to Google Sheets successfully!"
-            : "Driver saved, but the saved record could not reload. Do not save again; click Refresh before continuing.");
-        } else {
-          alert("Error: " + (resData.message || "Unknown error"));
-          editDriverBtn.textContent = "💾 Save Changes";
-        }
-      } catch (err) {
-        alert("Could not update Google Sheets.");
-        editDriverBtn.textContent = "💾 Save Changes";
-      } finally {
-        editDriverBtn.disabled = false;
-      }
-    }
+  showIntegrationPending();
+}
 
     editDriverBtn.addEventListener("click", () => {
       if (!isEditMode) enableEditMode();
@@ -191,29 +157,11 @@
 
 // Load records and update the synchronization badge for this module.
     async function fetchDrivers() {
-      const requestId = ++driverRefreshSequence;
-      try {
-        const syncBadge = document.getElementById("sync-status");
-        if (syncBadge) syncBadge.textContent = "🔄 Syncing drivers database...";
-        
-        const records = await readSheetRecords(GOOGLE_SHEET_DRIVERS_URL);
-        if (requestId !== driverRefreshSequence) return false;
-        driversDatabase = records;
-        if (currentActiveDriver && !isEditMode) {
-          const selected = driversDatabase.find(d => String(d["Iqama Number"] || d["iqama"]) === String(currentActiveDriver["Iqama Number"] || currentActiveDriver["iqama"]));
-          if (selected) renderDriverProfile(selected);
-        }
-        
-        if (syncBadge) syncBadge.textContent = `✅ Synced ${driversDatabase.length} driver(s) successfully.`;
-        return true;
-      } catch (e) {
-        if (requestId !== driverRefreshSequence) return false;
-        console.error("Error fetching drivers", e);
-        const syncBadge = document.getElementById("sync-status");
-        if (syncBadge) syncBadge.textContent = "❌ Failed to connect to Drivers Google Sheet.";
-        return false;
-      }
-    }
+  driversDatabase = [];
+  document.getElementById("sync-status").textContent = "No records available — database not connected";
+
+  return false;
+}
 
 
 // Refresh the records when the user clicks this module's refresh button.

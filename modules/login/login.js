@@ -44,10 +44,6 @@
 
         loginScreen.style.display = "none";
         erpApp.style.display = "flex";
-        await fetchDrivers();
-        await fetchFleet();
-        await fetchAccidents();
-        await fetchTripChecks();
       } catch (error) {
         errorMessage.textContent = "Unable to sign in. Check your credentials.";
         errorMessage.hidden = false;

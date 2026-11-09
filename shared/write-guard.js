@@ -1,14 +1,4 @@
-/**
- * TaxiQaid | write-guard.js
- *
- * Client-side safeguard: verify the current Supabase user and a matching
- * authorized role before submitting any change to Google Apps Script.
- *
- * CRITICAL: This is not server-side authorization. A visitor can bypass
- * browser JavaScript and send requests straight to a published Apps Script URL.
- * Every Apps Script doPost() handler must independently verify authorization.
- * See docs/SECURITY.md before publishing a production deployment.
- */
+/** TaxiQaid: legacy transport is disabled; existing authorization is preserved. */
 
 async function requireAuthorizedUser() {
   const { data: userData, error: userError } = await supabaseClient.auth.getUser();
@@ -29,13 +19,5 @@ async function requireAuthorizedUser() {
 }
 
 async function postAuthorizedSheetUpdate(url, payload) {
-  await requireAuthorizedUser();
-  // Preserve the original text/plain request format expected by Apps Script.
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain" },
-    body: JSON.stringify(payload)
-  });
-  if (!response.ok) throw new Error(`Google Sheets returned HTTP ${response.status}.`);
-  return response;
+  throw new Error("Database integration pending");
 }

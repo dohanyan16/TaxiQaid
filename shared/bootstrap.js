@@ -36,6 +36,8 @@ const SCRIPT_ORDER = [
   "shared/write-guard.js",
   "shared/data.js",
   "shared/search.js",
+  "shared/workflow-options.js",
+  "shared/frontend-preview.js",
   "modules/login/login.js",
   "shared/navigation.js",
   "modules/dashboard/dashboard.js",
@@ -107,6 +109,7 @@ async function initializeApplication() {
 
     // Load classic scripts one by one to preserve cross-file global bindings.
     for (const path of SCRIPT_ORDER) await addScript(path);
+    initializeFrontendPreview();
 
     workspace.hidden = false;
     bootStatus.remove();

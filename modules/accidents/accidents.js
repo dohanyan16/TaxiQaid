@@ -77,77 +77,19 @@
       }
     });
 
-    openAddAccidentModalBtn.addEventListener("click", async () => {
-      await Promise.all([fetchFleet(), fetchDrivers()]);
-      setupAccidentModalSelects();
+    TAXIQAID_LOCATIONS.forEach(location => document.getElementById("add-acc-location").add(new Option(location, location)));
+    openAddAccidentModalBtn.addEventListener("click", () => {
       addAccidentForm.reset();
-      document.getElementById("add-acc-id").value = "";
-      document.getElementById("modal-accident-title").textContent = "Report New Accident";
-      deleteAccidentBtn.style.display = "none";
-      
-      const now = getKSACurrentDateTime();
-      document.getElementById("add-acc-date").value = now.date;
-      document.getElementById("add-acc-time").value = now.time;
-      addAccidentModal.style.display = "flex";
+      setupAccidentModalSelects();
+      najmSelect.dispatchEvent(new Event("change"));
+      invSelect.dispatchEvent(new Event("change"));
+      openPreviewModal(addAccidentModal);
     });
-
-    closeAddAccidentModalBtn.addEventListener("click", () => {
-      addAccidentModal.style.display = "none";
-    });
-
-    addAccidentForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      saveAccidentBtn.disabled = true;
-      saveAccidentBtn.textContent = "Saving...";
-
-      const accidentId = document.getElementById("add-acc-id").value;
-      const ksaNow = getKSACurrentDateTime();
-
-      const accData = {
-        action: accidentId ? "update" : "create",
-        "Accident ID": accidentId || undefined,
-        "Date": document.getElementById("add-acc-date").value,
-        "Time": document.getElementById("add-acc-time").value,
-        "Reporting Date": ksaNow.date,
-        "Reporting Time": ksaNow.time,
-        "Reported By": loggedInUserName,
-        "Car Plate": document.getElementById("add-acc-plate").value,
-        "Car Model": document.getElementById("add-acc-model").value,
-        "Driver Iqama": document.getElementById("add-acc-iqama").value,
-        "Driver Name": document.getElementById("add-acc-driver-name").value,
-        "Accident Location": document.getElementById("add-acc-location").value,
-        "Severity": document.getElementById("add-acc-severity").value,
-        "Injured": document.getElementById("add-acc-injured").value,
-        "Send to Maintenance": document.getElementById("add-acc-maintenance").value,
-        "Najm": document.getElementById("add-acc-najm").value,
-        "Najm Report Status": document.getElementById("add-acc-najm-status").value,
-        "Mistake Percentage": parseInt(document.getElementById("add-acc-mistake").value, 10) || 0,
-        "Investigation Conducted": document.getElementById("add-acc-investigation").value,
-        "Investigation Status": document.getElementById("add-acc-inv-status").value,
-        "Accident Type": document.getElementById("add-acc-type").value,
-        "Root Causes": document.getElementById("add-acc-root-causes").value,
-        "Accident Description": document.getElementById("add-acc-description").value.trim(),
-        "Damage Description": document.getElementById("add-acc-damage").value.trim()
-      };
-
-      try {
-        const res = await postAuthorizedSheetUpdate(GOOGLE_SHEET_ACCIDENTS_URL, accData);
-        const resData = await res.json();
-        if (resData.status === "success") {
-          const refreshed = await fetchAccidents();
-          addAccidentModal.style.display = "none";
-          alert(refreshed ? "Accident record saved successfully!"
-            : "Accident record saved, but Accident Tracker could not reload. Do not save again; click Refresh before continuing.");
-        } else {
-          alert("Error: " + resData.message);
-        }
-      } catch (err) {
-        alert("Failed to communicate with Google Sheets.");
-      } finally {
-        saveAccidentBtn.disabled = false;
-        saveAccidentBtn.textContent = "Save Accident Record";
-      }
-    });
+    closeAddAccidentModalBtn.addEventListener("click", () => closePreviewModal(addAccidentModal));
+    addAccidentForm.addEventListener("submit", event => { event.preventDefault(); showIntegrationPending(); });
+    saveAccidentBtn.type = "button";
+    saveAccidentBtn.addEventListener("click", showIntegrationPending);
+    deleteAccidentBtn.addEventListener("click", showIntegrationPending);
 
     function renderAccidentsTable(items) {
       const tbody = document.getElementById("accidents-table-body");
@@ -155,7 +97,7 @@
       document.getElementById("accident-count-badge").textContent = `${items.length} records found`;
 
       if (items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="23" style="text-align: center; color: var(--text-muted); padding: 20px;">No accident records found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="24" style="text-align: center; color: var(--text-muted); padding: 20px;"><span class="table-empty">No records available — database not connected</span></td></tr>`;
         return;
       }
 
@@ -175,6 +117,7 @@
           <td>${acc["Accident Location"] || acc["accident location"] || "-"}</td>
           <td>${acc["Severity"] || acc["severity"] || "-"}</td>
           <td>${String(acc["Send to Maintenance"] || acc["send to maintenance"] || "").trim() === "Yes" ? "Yes" : String(acc["Send to Maintenance"] || acc["send to maintenance"] || "").trim() === "No" ? "No" : "-"}</td>
+          <td>${acc["Maintenance Status"] || "Not Requested"}</td>
           <td>${acc["Injured"] || acc["injured"] || "-"}</td>
           <td>${acc["Najm"] || acc["najm"] || "-"}</td>
           <td>${acc["Najm Report Status"] || acc["najm report status"] || "-"}</td>
@@ -244,58 +187,11 @@
       });
     }
 
-    deleteAccidentBtn.addEventListener("click", async () => {
-      const accidentId = document.getElementById("add-acc-id").value;
-      if (!accidentId) return;
-      if (!confirm(`Are you sure you want to delete accident record #${accidentId}?`)) return;
-
-      deleteAccidentBtn.disabled = true;
-      deleteAccidentBtn.textContent = "Deleting...";
-
-      try {
-        const res = await postAuthorizedSheetUpdate(GOOGLE_SHEET_ACCIDENTS_URL, { action: "delete", "Accident ID": accidentId });
-        const resData = await res.json();
-        if (resData.status === "success") {
-          const refreshed = await fetchAccidents();
-          addAccidentModal.style.display = "none";
-          alert(refreshed ? "Accident record deleted successfully!"
-            : "Accident record deleted, but Accident Tracker could not reload. Click Refresh before continuing.");
-        } else {
-          alert("Error: " + resData.message);
-        }
-      } catch (err) {
-        alert("Failed to communicate with Google Sheets.");
-      } finally {
-        deleteAccidentBtn.disabled = false;
-        deleteAccidentBtn.textContent = "🗑️ Delete Accident";
-      }
-    });
-
-// Load records and update the synchronization badge for this module.
     async function fetchAccidents() {
-      const requestId = ++accidentRefreshSequence;
-      try {
-        const syncBadge = document.getElementById("accident-sync-status");
-        if (syncBadge) syncBadge.textContent = "🔄 Syncing accident records...";
-        
-        const records = await readSheetRecords(GOOGLE_SHEET_ACCIDENTS_URL);
-        if (requestId !== accidentRefreshSequence) return false;
-        accidentsDatabase = records;
-        updateAllFleetAccidentCounts();
-        if (currentActiveVehicle && !isFleetEditMode) renderVehicleProfile(currentActiveVehicle);
-        applyAccidentFilters();
-        
-        if (syncBadge) syncBadge.textContent = `✅ Synced ${accidentsDatabase.length} accident record(s).`;
-        return true;
-      } catch (e) {
-        if (requestId !== accidentRefreshSequence) return false;
-        console.error("Error fetching accidents", e);
-        const syncBadge = document.getElementById("accident-sync-status");
-        if (syncBadge) syncBadge.textContent = "❌ Failed to connect to Accidents Google Sheet.";
-        return false;
-      }
+      accidentsDatabase = [];
+      applyAccidentFilters();
+      return false;
     }
-
 
 // Refresh the records when the user clicks this module's refresh button.
     document.getElementById("refresh-accidents-btn").addEventListener("click", fetchAccidents);
@@ -306,15 +202,13 @@
     function getFilteredAccidents() {
       const q = document.getElementById("accident-search-input").value.trim().toLowerCase();
       const sd = document.getElementById("filter-start-date").value;
-      const st = document.getElementById("filter-start-time").value || "00:00";
       const ed = document.getElementById("filter-end-date").value;
-      const et = document.getElementById("filter-end-time").value || "23:59";
-      const start = sd ? `${sd}T${st}` : "";
-      const end = ed ? `${ed}T${et}` : "";
+      const start = sd ? sd : "";
+      const end = ed ? ed : "";
       return accidentsDatabase.filter(o => {
         if (q && !matchText(o, ACC_KEYS, q)) return false;
         if (start || end) {
-          const dt = `${toDateInput(getField(o, "Date"))}T${toTimeInput(getField(o, "Time")) || "00:00"}`;
+          const dt = toDateInput(getField(o, "Date"));
           if (start && dt < start) return false;
           if (end && dt > end) return false;
         }
@@ -329,7 +223,7 @@
       label: o => `${getField(o, "Accident ID")} - ${getField(o, "Car Plate")} - ${getField(o, "Driver Name")}`
     });
 
-    ["filter-start-date", "filter-start-time", "filter-end-date", "filter-end-time"].forEach(id => {
+    ["filter-start-date", "filter-end-date"].forEach(id => {
       document.getElementById(id).addEventListener("change", applyAccidentFilters);
     });
 
@@ -342,3 +236,5 @@
       XLSX.writeFile(workbook, "Accidents_Period.xlsx");
     }));
 
+
+applyAccidentFilters();

@@ -1,6 +1,6 @@
 /**
  * TaxiQaid | config.js
- * Purpose: Public configuration: Supabase client and Apps Script endpoints.
+ * Purpose: Public configuration: Supabase authentication and disconnected legacy configuration.
  *
  * Loaded as a classic script to preserve original cross-file references.
  * Edit only the features owned by this file. See docs/PROJECT_GUIDE.md.
@@ -11,8 +11,8 @@
     const { createClient } = supabase;
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY);
 
-    const GOOGLE_SHEET_DRIVERS_URL = "https://script.google.com/macros/s/AKfycby7-NkH3HuZF2dXsLf0WGCV76bdxSZ1YXZsbs785qrgIAoBA9eal7DIRYPWypwWRPpQkA/exec";
-    const GOOGLE_SHEET_FLEET_URL = "https://script.google.com/macros/s/AKfycbyaQI9cnIy7qEYt8F0BNSG2y1HOPD-8kjKU12Y9LbDNq4aLaJ3wrVEbYp2e6Mzmnfsr/exec";
-    const GOOGLE_SHEET_ACCIDENTS_URL = "https://script.google.com/macros/s/AKfycbw7pMHgStWn01h_us5DdwndS20sWq9_Ox6uI-dQM1FsC_o8aHj0et96qwZxqD-lsPIs-Q/exec";
-    // TODO: Replace this URL with the deployed Trip Check Apps Script endpoint ending in /exec.
-    const GOOGLE_SHEET_TRIPCHECK_URL = "https://script.google.com/macros/s/REPLACE_WITH_YOUR_DEPLOYMENT_ID/exec";
+    // Legacy data endpoints are intentionally disconnected.
+    const GOOGLE_SHEET_DRIVERS_URL = "";
+    const GOOGLE_SHEET_FLEET_URL = "";
+    const GOOGLE_SHEET_ACCIDENTS_URL = "";
+    const GOOGLE_SHEET_TRIPCHECK_URL = "";

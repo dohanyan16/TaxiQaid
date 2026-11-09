@@ -1,8 +1,3 @@
-/**
- * TaxiQaid | Breakdowns Tracker
- * Status: Not implemented in the original application.
- *
- * Future features: create breakdown reports, assign repair status,
- * track costs and downtime, and link records to vehicle plates.
- * Add a corresponding Apps Script endpoint with server-side authorization.
- */
+// UI only: dropdown values are unsaved and no reports are created.
+TAXIQAID_LOCATIONS.forEach(location => document.getElementById('bdw-breakdown-location').add(new Option(location, location)));
+document.getElementById('bdw-maintenance-status').value = 'Not Requested';
