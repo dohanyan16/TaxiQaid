@@ -1,1 +1,11 @@
-/* NCR Tracker: placeholder module. Shared styles live in shared/common.css. */
+/* NCR module uses the shared TaxiQaid controls, modal and scrolling table styles. */
+.ncr-form-section { border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; margin: 16px 0; min-width: 0; }
+.ncr-form-section legend { font-size: 14px; font-weight: 700; padding: 0 6px; }
+.ncr-form-section .workflow-grid { margin-top: 6px; }
+.ncr-policy-note { padding: 12px; border-left: 4px solid var(--primary); background: #fff7ef; line-height: 1.6; margin: 14px 0; }
+.ncr-history { margin: 22px 0; padding: 12px; border-left: 4px solid; min-width: 0; }
+.ncr-history h3 { margin-bottom: 12px; font-size: 16px; }
+.ncr-active-history { border-color: var(--danger); }
+.ncr-recovered-history { border-color: var(--success); }
+.ncr-score-negative { color: var(--danger); font-weight: 800; }
+#ncr-driver-modal .action-row button { width: auto; }

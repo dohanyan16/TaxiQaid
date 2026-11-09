@@ -99,12 +99,12 @@
         </div>
         <div class="form-group">
           <label for="fuel-price">Fuel Pricing (SAR/L)</label>
-          <input id="fuel-price" type="number" min="0" step="any" inputmode="decimal" readonly placeholder="Depot tariff not configured" aria-describedby="fuel-price-note"/>
-          <p class="preview-note" id="fuel-price-note">Depot pricing will come from a future configured tariff. No tariff is connected.</p>
+          <input id="fuel-price" type="number" min="0" step="any" inputmode="decimal" readonly value="2.18" aria-describedby="fuel-price-note"/>
+          <p class="preview-note" id="fuel-price-note">Approved Depot tariff: 2.18 SAR/L. Transaction pricing will be preserved by the future backend.</p>
         </div>
         <div class="form-group">
           <label for="fuel-total">Total Amount (SAR)</label>
-          <output id="fuel-total" for="fuel-received fuel-price" aria-live="polite">Unavailable — Depot tariff not configured</output>
+          <output id="fuel-total" for="fuel-received fuel-price" aria-live="polite">Unavailable — enter valid fuel quantity and price</output>
         </div>
       </div>
       <p id="fuel-validation" class="preview-note" role="status" hidden>Complete the highlighted preview fields. Database integration is pending; nothing has been saved.</p>

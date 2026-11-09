@@ -1,4 +1,7 @@
-/** Fuel Tracker: unsaved form previews only; no transport, tariffs or record storage. */
+/** Approved frontend tariff; transaction prices must be preserved by the future backend. */
+const TAXIQAID_DEPOT_FUEL_PRICE_SAR_PER_LITER = 2.18;
+
+/** Fuel Tracker: unsaved form previews only; no transport or record storage. */
 (() => {
   const modal = document.getElementById('fuel-modal');
   const form = document.getElementById('fuel-form');
@@ -25,10 +28,6 @@
     price.setCustomValidity(outside && price.value !== '' && !(Number.isFinite(unitPrice) && unitPrice > 0)
       ? 'Enter a fuel price greater than zero in SAR/L.' : '');
     location.setCustomValidity(outside && !location.value.trim() ? 'Enter the Outside Depot Location.' : '');
-    if (!outside) {
-      total.value = 'Unavailable — Depot tariff not configured';
-      return;
-    }
     const amount = liters * unitPrice;
     total.value = received.validity.valid && price.validity.valid && liters > 0 && unitPrice > 0 && Number.isFinite(amount)
       ? `SAR ${amount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false})}` : 'Unavailable — enter valid fuel quantity and price';
@@ -40,10 +39,14 @@
     location.required = outside;
     price.readOnly = detailsOnly || !outside;
     price.required = outside;
-    price.placeholder = outside ? 'Enter price in SAR/L' : 'Depot tariff not configured';
+    if (!outside) {
+      price.value = TAXIQAID_DEPOT_FUEL_PRICE_SAR_PER_LITER.toFixed(2);
+      location.value = '';
+    }
+    price.placeholder = outside ? 'Enter price in SAR/L' : '';
     document.getElementById('fuel-price-note').textContent = outside
       ? 'Enter the price used at fueling in SAR/L. Outside Depot Location and price are required.'
-      : 'Depot pricing will come from a future configured tariff. No tariff is connected.';
+      : `Approved Depot tariff: ${TAXIQAID_DEPOT_FUEL_PRICE_SAR_PER_LITER.toFixed(2)} SAR/L. Future records must preserve the price used at fueling.`;
     updateFuelTotal();
   }
 
@@ -76,7 +79,7 @@
   edit.addEventListener('click', () => { setPreviewMode('edit'); document.getElementById('fuel-date').focus(); });
   document.getElementById('close-fuel-modal').addEventListener('click', () => closePreviewModal(modal));
   fueledIn.addEventListener('change', () => {
-    // Discard manual pricing when switching mode; it must never become a Depot tariff.
+    // Clear the previous mode's price before applying the approved Depot tariff or manual entry.
     price.value = '';
     if (fueledIn.value === 'Depot') location.value = '';
     updateFuelFields();

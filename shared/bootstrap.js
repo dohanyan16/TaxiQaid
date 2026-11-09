@@ -47,8 +47,9 @@ const SCRIPT_ORDER = [
   "modules/accidents/accidents.js",
   "modules/breakdowns/breakdowns.js",
   "modules/maintenance/maintenance.js",
-  // These placeholder scripts do not fetch or modify data yet.
+  // Frontend preview modules do not fetch or persist operational data.
   "modules/operations/fuel/fuel.js",
+  "modules/compliance/ncr/ncr-policy.js",
   "modules/compliance/ncr/ncr.js",
   "modules/compliance/penalties/penalties.js",
   "modules/people/training/training.js",

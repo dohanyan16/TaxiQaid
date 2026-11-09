@@ -1,9 +1,403 @@
-<!-- NCR Tracker: planned module, no business logic is implemented yet. -->
+<!-- NCR Tracker: two independent views; operational collections remain empty. -->
 <section class="view-section" id="view-ncr">
-  <div class="card placeholder-card" aria-labelledby="ncr-title">
-    <span class="placeholder-kicker">PLANNED MODULE</span>
-    <h2 id="ncr-title">NCR Tracker</h2>
-    <p>Non-conformance reports.</p>
-    <div class="placeholder-state">Coming Soon</div>
-  </div>
+<div class="workflow-tabs" role="tablist" aria-label="NCR views">
+<button type="button" class="btn-secondary" role="tab" id="ncr-scores-tab" aria-selected="true" aria-controls="ncr-scores-panel">Driver Scores</button>
+<button type="button" class="btn-secondary" role="tab" id="ncr-tracker-tab" aria-selected="false" aria-controls="ncr-tracker-panel" tabindex="-1">NCR Tracker</button>
+</div>
+<div id="ncr-scores-panel" role="tabpanel" aria-labelledby="ncr-scores-tab">
+<div class="card">
+<div class="card-header-flex">
+<div>
+<h2>Driver NCR Scores</h2>
+<p class="preview-note">Database integration pending — all registered drivers will appear here, including those with no NCRs.</p>
+</div>
+<div class="button-group-row">
+<button type="button" class="btn-secondary" data-ncr-pending>Refresh</button>
+<button type="button" class="btn-secondary" data-ncr-pending>Export Excel</button>
+</div>
+</div>
+<p class="ncr-policy-note">Starting points: 100. Active penalties reduce the current score, which may be negative. Each penalty recovers automatically after 90 KSA calendar days; history remains available.</p>
+<div class="workflow-grid">
+<div class="form-group ">
+<label for="ncr-score-iqama">Driver Iqama</label>
+<input id="ncr-score-iqama" type="search"/>
+</div>
+<div class="form-group ">
+<label for="ncr-score-name">Driver Name</label>
+<input id="ncr-score-name" type="search"/>
+</div>
+</div>
+<fieldset class="ncr-form-section">
+<legend>Current Points</legend>
+<div class="workflow-grid">
+<div class="form-group ">
+<label for="ncr-points-exact">Exact Points</label>
+<input id="ncr-points-exact" placeholder="Any score" type="number"/>
+</div>
+<div class="form-group ">
+<label for="ncr-points-min">Minimum Points</label>
+<input id="ncr-points-min" placeholder="No lower limit" type="number"/>
+</div>
+<div class="form-group ">
+<label for="ncr-points-max">Maximum Points</label>
+<input id="ncr-points-max" placeholder="No upper limit" type="number"/>
+</div>
+</div>
+</fieldset>
+<p id="ncr-score-filter-status" class="preview-note" role="status">
+</p>
+<button type="button" class="btn-secondary" id="preview-ncr-driver">Preview Driver Score Details</button>
+</div>
+<div class="card">
+<div class="tracker-table-container" role="region" tabindex="0" aria-label="ncr-scores-table table">
+<table id="ncr-scores-table" class="tracker-table">
+<thead>
+<tr>
+<th scope="col">Driver Iqama</th>
+<th scope="col">Driver Name</th>
+<th scope="col">Driver Phone Number</th>
+<th scope="col">Starting Points</th>
+<th scope="col">Total NCRs</th>
+<th scope="col">Active NCRs</th>
+<th scope="col">Expired NCRs</th>
+<th scope="col">Active Points Deducted</th>
+<th scope="col">Current Points</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="9">
+<span class="table-empty">No records available — database not connected</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="ncr-tracker-panel" role="tabpanel" aria-labelledby="ncr-tracker-tab" hidden>
+<div class="card">
+<div class="card-header-flex">
+<div>
+<h2>NCR Tracker</h2>
+<p class="preview-note">Manage driver non-conformance reports, disciplinary actions and point recovery.</p>
+</div>
+<div class="button-group-row">
+<button type="button" class="btn-primary" id="open-ncr-modal">Add New NCR</button>
+<button type="button" class="btn-secondary" data-ncr-pending>Refresh</button>
+<button type="button" class="btn-secondary" data-ncr-pending>Export Excel</button>
+</div>
+</div>
+<p class="preview-note">Interface preview — database integration pending. Expired NCRs remain in history.</p>
+<div class="workflow-grid">
+<div class="form-group ">
+<label for="ncr-filter-start">Start Date</label>
+<input id="ncr-filter-start" type="date"/>
+</div>
+<div class="form-group ">
+<label for="ncr-filter-end">End Date</label>
+<input id="ncr-filter-end" type="date"/>
+</div>
+<div class="form-group ">
+<label for="ncr-filter-driver">Driver Iqama / Driver Name</label>
+<input id="ncr-filter-driver" type="search"/>
+</div>
+<div class="form-group ">
+<label for="ncr-filter-tbt">TBT Status</label>
+<select id="ncr-filter-tbt">
+<option value="">All Statuses</option>
+<option value="Pending">Pending</option>
+<option value="Conducted">Conducted</option>
+</select>
+</div>
+<div class="form-group ">
+<label for="ncr-filter-status">Non-Compliance Status</label>
+<select id="ncr-filter-status">
+<option value="">All Statuses</option>
+<option value="Active">Active</option>
+<option value="Expired">Expired</option>
+</select>
+</div>
+</div>
+<button type="button" class="btn-secondary" id="preview-ncr-record">Preview NCR Details</button>
+</div>
+<div class="card">
+<div class="tracker-table-container" role="region" tabindex="0" aria-label="ncr-records-table table">
+<table id="ncr-records-table" class="tracker-table">
+<thead>
+<tr>
+<th scope="col">NCR ID</th>
+<th scope="col">Driver Iqama</th>
+<th scope="col">Driver Name</th>
+<th scope="col">Driver Phone Number</th>
+<th scope="col">Category</th>
+<th scope="col">NCR Score</th>
+<th scope="col">NCR Description</th>
+<th scope="col">NCR Date</th>
+<th scope="col">TBT Status</th>
+<th scope="col">TBT Conducted Date</th>
+<th scope="col">Action Taken</th>
+<th scope="col">Action Taken Date</th>
+<th scope="col">Non-Compliance Expiry Date</th>
+<th scope="col">Non-Compliance Status</th>
+<th scope="col">Individual Statement</th>
+<th scope="col">Remarks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="16">
+<span class="table-empty">No records available — database not connected</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
 </section>
+
+<div class="modal-overlay" id="ncr-modal" aria-hidden="true">
+<div class="modal-content workflow-modal">
+<h2 id="ncr-modal-title">Report New NCR</h2>
+<p class="preview-note" id="ncr-preview-note">Unsaved interface preview — database integration pending. Expiry uses the browser clock converted to Asia/Riyadh for this preview only. Production scores and timestamps require an authoritative backend.</p>
+<form id="ncr-form" aria-describedby="ncr-preview-note">
+<fieldset class="ncr-form-section">
+<legend>NCR Identification</legend>
+<div class="workflow-grid">
+<div class="form-group ">
+<label for="ncr-id">NCR ID</label>
+<input id="ncr-id" readonly placeholder="Generated later: NCT-00001" type="text"/>
+</div>
+<div class="form-group ">
+<label for="ncr-date">NCR Date</label>
+<input id="ncr-date" required type="date"/>
+</div>
+</div>
+</fieldset>
+<fieldset class="ncr-form-section">
+<legend>Driver Identification</legend>
+<div class="workflow-grid">
+<div class="form-group ">
+<label for="ncr-driver-iqama">Driver Iqama</label>
+<input list="ncr-driver-options" autocomplete="off" id="ncr-driver-iqama" placeholder="Search Iqama — database integration pending" type="search"/>
+</div>
+<div class="form-group ">
+<label for="ncr-driver-name">Driver Name</label>
+<input id="ncr-driver-name" readonly placeholder="Derived from the selected driver" type="text"/>
+</div>
+<div class="form-group ">
+<label for="ncr-driver-phone">Driver Phone Number</label>
+<input id="ncr-driver-phone" readonly placeholder="Derived from the selected driver" type="text"/>
+</div>
+<p class="preview-note wide">The searchable driver selector will use Drivers Management. No driver is connected or selected in this preview.</p>
+</div>
+</fieldset>
+<datalist id="ncr-driver-options">
+</datalist>
+<fieldset class="ncr-form-section">
+<legend>Category and Incident</legend>
+<div class="workflow-grid">
+<div class="form-group ">
+<label for="ncr-category">Category</label>
+<select id="ncr-category" required>
+<option value="">Select an NCR category</option>
+</select>
+</div>
+<div class="form-group ">
+<label for="ncr-score">NCR Score</label>
+<input id="ncr-score" readonly placeholder="Select a category" type="text"/>
+</div>
+<div class="form-group wide">
+<label for="ncr-description">NCR Description</label>
+<textarea id="ncr-description" required rows="3">
+</textarea>
+</div>
+</div>
+</fieldset>
+<fieldset class="ncr-form-section">
+<legend>TBT Tracking</legend>
+<div class="workflow-grid">
+<div class="form-group ">
+<label for="ncr-tbt-date">TBT Conducted Date</label>
+<input id="ncr-tbt-date" type="date"/>
+</div>
+<div class="form-group ">
+<label for="ncr-tbt-status">TBT Status</label>
+<input id="ncr-tbt-status" readonly type="text"/>
+</div>
+<p class="preview-note wide">TBT completion does not expire an NCR or recover points.</p>
+</div>
+</fieldset>
+<fieldset class="ncr-form-section">
+<legend>Disciplinary Action</legend>
+<div class="workflow-grid">
+<div class="form-group ">
+<label for="ncr-action">Action Taken</label>
+<select id="ncr-action">
+<option value="">Select an action</option>
+<option value="TBT Conducted">TBT Conducted</option>
+<option value="1st NCR Initiated">1st NCR Initiated</option>
+<option value="2nd NCR Initiated">2nd NCR Initiated</option>
+<option value="3rd NCR Initiated">3rd NCR Initiated</option>
+</select>
+</div>
+<div class="form-group ">
+<label for="ncr-action-date">Action Taken Date</label>
+<input id="ncr-action-date" type="date"/>
+</div>
+</div>
+</fieldset>
+<fieldset class="ncr-form-section">
+<legend>90-Day Point Recovery — Preview</legend>
+<div class="workflow-grid">
+<div class="form-group ">
+<label for="ncr-expiry-date">Non-Compliance Expiry Date</label>
+<input id="ncr-expiry-date" readonly placeholder="NCR Date + 90 calendar days" type="text"/>
+</div>
+<div class="form-group ">
+<label for="ncr-expiry-status">Non-Compliance Status</label>
+<input id="ncr-expiry-status" readonly placeholder="Select an NCR Date" type="text"/>
+</div>
+<p id="ncr-calculation-status" class="preview-note wide" role="status">
+</p>
+</div>
+</fieldset>
+<fieldset class="ncr-form-section">
+<legend>Statement and Remarks</legend>
+<div class="workflow-grid">
+<div class="form-group wide">
+<label for="ncr-statement">Individual Statement</label>
+<textarea id="ncr-statement" rows="3">
+</textarea>
+</div>
+<div class="form-group wide">
+<label for="ncr-remarks">Remarks</label>
+<textarea id="ncr-remarks" rows="3">
+</textarea>
+</div>
+</div>
+</fieldset>
+<fieldset class="ncr-form-section">
+<legend>Future Audit Information</legend>
+<div class="workflow-grid">
+<div class="form-group ">
+<label for="ncr-reported-by">Reported By</label>
+<input id="ncr-reported-by" readonly placeholder="Available after database integration" type="text"/>
+</div>
+<div class="form-group ">
+<label for="ncr-reporting-date">Reporting Date</label>
+<input id="ncr-reporting-date" readonly placeholder="Available after database integration" type="text"/>
+</div>
+<div class="form-group ">
+<label for="ncr-reporting-time">Reporting Time</label>
+<input id="ncr-reporting-time" readonly placeholder="Available after database integration" type="text"/>
+</div>
+<div class="form-group ">
+<label for="ncr-modified-by">Last Modified By</label>
+<input id="ncr-modified-by" readonly placeholder="Available after database integration" type="text"/>
+</div>
+<div class="form-group ">
+<label for="ncr-modified-at">Last Modified At</label>
+<input id="ncr-modified-at" readonly placeholder="Available after database integration" type="text"/>
+</div>
+</div>
+</fieldset>
+<p id="ncr-save-status" class="ncr-policy-note" role="status" hidden>
+</p>
+<div class="action-row">
+<div class="button-group-row">
+<button type="button" class="btn-primary" id="save-ncr-btn">Save NCR</button>
+<button type="button" class="btn-secondary" id="edit-ncr-preview" hidden>Edit Fields — Preview</button>
+<button type="button" class="btn-secondary" id="delete-ncr-preview" hidden>Delete NCR</button>
+</div>
+<button type="button" class="btn-secondary" id="close-ncr-modal">Cancel</button>
+</div>
+</form>
+</div>
+</div>
+
+<div class="modal-overlay" id="ncr-driver-modal" aria-hidden="true">
+<div class="modal-content workflow-modal">
+<h2>Driver Score Details — Empty Preview</h2>
+<p class="preview-note">No driver selected — database integration pending. Active deductions and recovered points remain separate. No driver or NCR records are fabricated.</p>
+<div class="workflow-grid">
+<div class="form-group ">
+<label for="ncr-detail-iqama">Driver Iqama</label>
+<input id="ncr-detail-iqama" readonly placeholder="No driver selected" type="text"/>
+</div>
+<div class="form-group ">
+<label for="ncr-detail-name">Driver Name</label>
+<input id="ncr-detail-name" readonly placeholder="No driver selected" type="text"/>
+</div>
+<div class="form-group ">
+<label for="ncr-detail-phone">Driver Phone Number</label>
+<input id="ncr-detail-phone" readonly placeholder="No driver selected" type="text"/>
+</div>
+<div class="form-group ">
+<label for="ncr-detail-starting">Starting Score</label>
+<input id="ncr-detail-starting" readonly placeholder="100 — approved starting points" type="text"/>
+</div>
+<div class="form-group ">
+<label for="ncr-detail-current">Current Score</label>
+<input id="ncr-detail-current" readonly placeholder="Available after database integration" type="text"/>
+</div>
+<p class="preview-note wide">Negative current scores will be displayed with a minus sign and emphasized in red. Recovery never rewrites starting points.</p>
+</div>
+<section class="ncr-history ncr-active-history">
+<h3>Active NCR History — Current Deductions</h3>
+<div class="tracker-table-container" role="region" tabindex="0" aria-label="ncr-active-history table">
+<table id="ncr-active-history" class="tracker-table">
+<thead>
+<tr>
+<th scope="col">NCR ID</th>
+<th scope="col">Category</th>
+<th scope="col">Points Deducted</th>
+<th scope="col">NCR Date</th>
+<th scope="col">Expiry Date</th>
+<th scope="col">Current NCR Status</th>
+<th scope="col">TBT Status</th>
+<th scope="col">Action Taken</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="8">
+<span class="table-empty">No active NCR history available — database not connected</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section class="ncr-history ncr-recovered-history">
+<h3>Expired NCR History — Recovered Points</h3>
+<div class="tracker-table-container" role="region" tabindex="0" aria-label="ncr-expired-history table">
+<table id="ncr-expired-history" class="tracker-table">
+<thead>
+<tr>
+<th scope="col">NCR ID</th>
+<th scope="col">Category</th>
+<th scope="col">Points Deducted</th>
+<th scope="col">NCR Date</th>
+<th scope="col">Expiry Date</th>
+<th scope="col">Current NCR Status</th>
+<th scope="col">TBT Status</th>
+<th scope="col">Action Taken</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="8">
+<span class="table-empty">No expired NCR history available — database not connected</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<div class="action-row">
+<button type="button" class="btn-secondary" id="close-ncr-driver-modal">Close</button>
+</div>
+</div>
+</div>

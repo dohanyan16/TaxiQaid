@@ -1,96 +1,74 @@
 # TaxiQaid frontend review report
 
-Base inspected: `main` at `9fbea58`. Feature branch: `feat/frontend-workflow-preparation`.
+This revision adds the approved Fuel tariff and complete NCR frontend/scoring rules, based on `main` at `3654bb8`. The previously completed Accident, Breakdown, Maintenance, Fleet, Drivers and Trip Check interfaces remain preserved. The current phase is frontend-only.
 
-## Implemented interfaces
+## Fuel pricing
 
-- Accident Tracker retains its layout, conditional report dropdowns and existing columns; it now has date-only filters, a read-only future ACD identifier, reporting metadata placeholders and Maintenance Status.
-- Breakdown Tracker has the complete 15-column overview and responsive report form with all required fields, all 12 symptom choices, Yes/No controls and the shared complete 40-location list.
-- Maintenance Requests and Maintenance Overview are separate keyboard-accessible tabs with their required controls, filters, columns and empty detail/acceptance/work-order previews. In Progress previews acceptance without creating anything. Source references remain read-only and distinct from the future MTN identifier.
-- Fuel Tracker includes all 12 overview columns, vehicle/driver filters, complete empty Add/Details/Edit form previews, Depot/Outside Depot conditions, required outside location/positive price validation and live two-decimal SAR totals. No Depot tariff or fuel records are invented.
-- Fleet and Drivers retain their lookup/profile layouts. Trip Check retains its wizard, inspection questions, scoring, signature UI, editor and custom PDF layout source. All 17 sidebar pages remain accessible.
-- Shared pending notifications, responsive table containers, visible empty messages, dialog focus handling, Escape dismissal and focus restoration support the frontend previews.
+The named configuration constant `TAXIQAID_DEPOT_FUEL_PRICE_SAR_PER_LITER` sets the approved Depot price to **2.18 SAR/L**. Depot pricing is filled automatically and read-only; outside location is cleared/disabled. **50 L calculates SAR 109.00.** Outside Depot clears the previous price, requires a location and positive manual price, and calculates two-decimal SAR totals. Returning to Depot restores exactly 2.18. No fuel records are persisted; future records must retain their original transaction price.
+
+## NCR interfaces and business rules
+
+- Exactly two main views: Driver Scores (default) and NCR Tracker. Each retains its filters. Driver Scores prepares all-driver Iqama/name/phone lookup and exact/min/max points filters, including negative values.
+- The 9-column scores overview and 16-column NCR overview are horizontally scrollable and honestly empty while disconnected. Empty driver details prepare separate active/recovered history; empty NCR details support future authorized editing/deletion.
+- The report form includes all operational fields, the 23 exact categories with penalties, derived negative NCR Score, date-only event/expiry fields, independent TBT status and disciplinary actions, statements, remarks and read-only future audit fields.
+- Every driver starts at 100. The current score subtracts only active penalty magnitudes, with no minimum. Each penalty expires independently after 90 KSA calendar days, beginning on its Expiry Date. Expired NCRs and original metadata remain in history; no reset or record deletion occurs.
+- Pure, reusable functions require an explicit current KSA date. Invalid/missing dates and unknown categories throw rather than silently return a misleading score. Future-dated records deduct nothing and return explicit diagnostics, with no Active/Expired status until the occurrence date.
+- The unsaved form labels browser-time KSA calculations as previews and automatically updates across a KSA day change without Refresh. Production calculations remain backend-owned and must be correct even without an active browser session.
+- Save says “Database integration pending — NCR not saved.” Delete, Refresh and Export never persist, reload operational data or claim success.
 
 ## Verification results
 
 | Check | Result |
 | --- | --- |
-| JavaScript syntax, all module/shared scripts | Pass |
-| `git diff --check` | Pass |
-| `node --test tests/fleet.test.cjs` | 4 passed |
-| `node tests/workflow.browser.cjs` | Pass |
-| Sidebar navigation | All 17 pages |
-| Shared Accident/Breakdown locations | Exact equality, all 40 original choices |
-| Maintenance tabs, detail/acceptance and read-only source references | Pass |
-| Fuel fields, condition changes, validation, SAR calculation/rounding, details/edit preview | Pass |
-| Trip Check wizard navigation and pending Save | All 27 steps accessible |
-| Desktop and 390px mobile layout | Pass; no main-page horizontal overflow |
-| Legacy Google Sheets/Apps Script requests | 0 |
-| Operational backend writes | 0 |
-| Fabricated exports/downloads | 0 |
-| Uncaught JavaScript errors | 0 |
-| Login, missing-role denial, existing role lookup and logout | Pass with mocked authentication |
+| Application JavaScript syntax and `git diff --check` | Pass |
+| NCR scoring/expiry unit regressions | 11 passed |
+| Existing compatibility unit regressions | 4 passed |
+| Browser workflow test | Pass across all 17 sidebar pages |
+| Category configuration | Exactly 23 unique categories; 3 × -50, 8 × -25, 12 × -10 |
+| Scores | 100 baseline, positive deduction magnitudes, 0 and negative balances preserved |
+| Expiry/recovery | Independent 90-day recovery, retained history, month/year/leap boundaries |
+| Timezones | KSA midnight and America/New_York, Pacific/Honolulu, Europe/Madrid, Asia/Tokyo |
+| Invalid/future dates | Explicit errors/diagnostics; no early deductions |
+| NCR UI | Both tabs, retained filters, category/expiry updates, automatic KSA preview rollover, independent TBT/action, details/edit/delete previews |
+| Fuel UI | Depot 2.18, 50 L = SAR 109.00, manual Outside Depot price, validation and mode transitions |
+| Mobile | 390px layout and both Fuel/NCR dialogs pass without main-page horizontal overflow |
+| Legacy spreadsheet/Apps Script requests | 0 |
+| Operational backend writes, fabricated downloads, uncaught errors | 0 |
+| Authentication | Existing login, role denial/lookup and logout pass with mocks; configuration/source unchanged |
 
-The former spreadsheet integration tests expected persistence that this phase deliberately retires. They were replaced with frontend-only regression checks; the four independent compatibility tests remain. Browser tests use no operational record fixtures and no live user credentials. The managed browser test uses its proxy configuration and ignores the environment proxy certificate mismatch in the test context only; application TLS behavior is unchanged.
+Run `node --test tests/fleet.test.cjs tests/ncr-policy.test.cjs`. With a local server running, run `node tests/workflow.browser.cjs`; `TAXIQAID_URL` and `TAXIQAID_SCREENSHOTS` override the defaults. Synthetic records are confined to pure tests and never populate production data. Browser tests edit unsaved form previews, use mocked authentication and do not use live account credentials. Live authentication/session verification remains a separate account-based check.
 
-**Authentication preservation:** the existing Supabase URL/public key, client creation, password authentication, role lookup, authorization helper and logout remain in place. Only legacy synchronization calls were removed from login. No Supabase schema or data was modified. No live account credentials were supplied, so successful live login/session behavior has not been claimed.
-
-**Legacy disconnection:** shared endpoint constants are blank, the Pre/Post-Trip endpoint map is empty and legacy read/write helpers fail closed without fetch. Login/navigation do not synchronize. The only application fetches outside the authentication SDK load local HTML fragments and the existing local PDF logo asset. No operational localStorage/IndexedDB replacement was added.
-
-No database, migration, spreadsheet or Apps Script project was created. PR #2 also includes the Fuel follow-up on the same feature branch. The owner has authorized merging after successful validation; the final chat/PR state records whether the merge and Pages deployment completed.
+No Supabase credentials, roles, tables, data schemas or migrations were changed. No spreadsheet, Apps Script project, operational localStorage/IndexedDB store or database connection was added. Existing Maintenance Original Source ID relationships remain intact.
 
 ## Screenshots
 
+- [Driver Scores](screenshots/ncr-driver-scores.png)
+- [NCR Tracker](screenshots/ncr-tracker.png)
+- [Approved Fuel tariff and total](screenshots/fuel-form-preview.png)
 - [Accident Tracker](screenshots/accident-tracker.png)
 - [Breakdown Tracker](screenshots/breakdown-tracker.png)
 - [Maintenance Requests](screenshots/maintenance-requests.png)
 - [Maintenance Overview](screenshots/maintenance-overview.png)
-- [Fuel Tracker](screenshots/fuel-tracker.png)
-- [Fuel form preview](screenshots/fuel-form-preview.png)
 
-## Future database connections
+## Future database boundaries
 
-The [workflow specification](TAXIQAID_WORKFLOW_SPEC.md) contains the field-level reference. Future integration requires Fleet vehicle/model lookup, Driver Iqama/name lookup, Accident and Breakdown storage/ID allocation, source-to-request submission, request acceptance and separate MTN work orders, immutable source/request references, repair/completion status propagation, authenticated audit events with authoritative Asia/Riyadh timestamps, Trip Check persistence/signatures/odometer ownership Fuel record IDs, historical unit-price snapshots, Depot tariff configuration, Fleet/Driver relationships, and authorized filters/exports. These interfaces do not implement those operations.
+The [workflow specification](TAXIQAID_WORKFLOW_SPEC.md) documents approved rules and the separate future integration work: all-driver queries, NCR ID allocation/storage, original penalty/history preservation, authoritative KSA scores/expiry, independent TBT/action auditing, authentication/authorization, historical search/export, and Fuel transaction price snapshots. There is no database implementation in this revision. Main/deployment/branch status is reported after validated integration in the task's final response.
 
-## Changed files
+## Changed files in this revision
 
+- `AGENTS.md`
 - `README.md`
 - `docs/FRONTEND_REVIEW_REPORT.md`
-- `docs/PROJECT_GUIDE.md`
-- `docs/SECURITY.md`
 - `docs/TAXIQAID_WORKFLOW_SPEC.md`
-- `docs/screenshots/accident-tracker.png`
-- `docs/screenshots/breakdown-tracker.png`
-- `docs/screenshots/maintenance-overview.png`
-- `docs/screenshots/maintenance-requests.png`
-- `docs/screenshots/fuel-tracker.png`
 - `docs/screenshots/fuel-form-preview.png`
-- `modules/accidents/accidents.html`
-- `modules/accidents/accidents.js`
-- `modules/breakdowns/breakdowns.css`
-- `modules/breakdowns/breakdowns.html`
-- `modules/breakdowns/breakdowns.js`
-- `modules/drivers/drivers.html`
-- `modules/drivers/drivers.js`
-- `modules/fleet/fleet.html`
-- `modules/fleet/fleet.js`
-- `modules/login/login.js`
-- `modules/maintenance/maintenance.css`
-- `modules/maintenance/maintenance.html`
-- `modules/maintenance/maintenance.js`
+- `docs/screenshots/ncr-driver-scores.png`
+- `docs/screenshots/ncr-tracker.png`
+- `modules/compliance/ncr/ncr-policy.js`
+- `modules/compliance/ncr/ncr.css`
+- `modules/compliance/ncr/ncr.html`
+- `modules/compliance/ncr/ncr.js`
 - `modules/operations/fuel/fuel.html`
 - `modules/operations/fuel/fuel.js`
-- `modules/operations/fuel/fuel.css`
-- `modules/tripcheck/tripcheck.html`
-- `modules/tripcheck/tripcheck.js`
 - `shared/bootstrap.js`
-- `shared/common.css`
-- `shared/config.js`
-- `shared/data.js`
-- `shared/frontend-preview.js`
-- `shared/navigation.js`
-- `shared/shell.html`
-- `shared/workflow-options.js`
-- `shared/write-guard.js`
-- `tests/fleet.test.cjs`
+- `tests/ncr-policy.test.cjs`
 - `tests/workflow.browser.cjs`

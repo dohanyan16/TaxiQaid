@@ -105,11 +105,12 @@ const path = require('node:path');
   assert.deepEqual(await page.locator('#fuel-fueled-in option').allTextContents(),['Depot','Outside Depot']);
   assert.equal(await page.locator('#fuel-outside-location').isDisabled(),true);
   assert.notEqual(await page.locator('#fuel-price').getAttribute('readonly'),null);
-  assert.equal(await page.locator('#fuel-price').inputValue(),'');
+  assert.equal(await page.locator('#fuel-price').inputValue(),'2.18');
   await page.locator('#fuel-received').fill('50');
-  assert.match(await page.locator('#fuel-total').innerText(),/Unavailable.*Depot tariff/);
+  assert.equal(await page.locator('#fuel-total').innerText(),'SAR 109.00');
   await page.screenshot({animations:'disabled',path:path.join(screenshotDir,'fuel-form-preview.png')});
   await page.locator('#fuel-fueled-in').selectOption('Outside Depot');
+  assert.equal(await page.locator('#fuel-price').inputValue(),'');
   assert.equal(await page.locator('#fuel-outside-location').isEnabled(),true);
   assert.equal(await page.locator('#fuel-price').getAttribute('readonly'),null);
   assert.equal(await page.locator('#fuel-price').evaluate(el=>el.required),true);
@@ -140,10 +141,10 @@ const path = require('node:path');
   assert.equal(await page.locator('#fuel-modal').isVisible(),true);
   assert.equal(await page.locator('#fuel-table tbody tr').count(),1);
   await page.locator('#fuel-fueled-in').selectOption('Depot');
-  assert.equal(await page.locator('#fuel-price').inputValue(),'');
+  assert.equal(await page.locator('#fuel-price').inputValue(),'2.18');
   assert.equal(await page.locator('#fuel-outside-location').inputValue(),'');
   assert.equal(await page.locator('#fuel-outside-location').isDisabled(),true);
-  assert.match(await page.locator('#fuel-total').innerText(),/Unavailable.*Depot tariff/);
+  assert.equal(await page.locator('#fuel-total').innerText(),'SAR 109.00');
   await page.locator('#close-fuel-modal').click();
   assert.equal(await page.locator('#open-fuel-modal').evaluate(el=>el===document.activeElement),true);
   await page.locator('#preview-fuel-details').click();
@@ -157,8 +158,92 @@ const path = require('node:path');
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#fuel-modal').isVisible(),false);
   await page.locator('#integration-notice button').click();
+  await page.clock.setFixedTime(new Date('2025-03-31T20:59:59Z'));
+  await nav('ncr');
+  assert.equal(await page.locator('#view-ncr [role=tab]').count(),2);
+  assert.equal(await page.locator('#ncr-scores-panel').isVisible(),true);
+  assert.deepEqual(await page.locator('#ncr-scores-table th').allTextContents(),[
+   'Driver Iqama','Driver Name','Driver Phone Number','Starting Points','Total NCRs','Active NCRs','Expired NCRs','Active Points Deducted','Current Points']);
+  await page.locator('#ncr-score-iqama').fill('Unsaved filter');
+  await page.locator('#ncr-points-exact').fill('-10');
+  await page.locator('#ncr-points-min').fill('-50');
+  await page.locator('#ncr-points-max').fill('0');
+  assert.match(await page.locator('#ncr-score-filter-status').innerText(),/No driver scores/);
+  await page.locator('#preview-ncr-driver').click();
+  assert.equal(await page.locator('#ncr-driver-modal').isVisible(),true);
+  for(const id of ['ncr-detail-iqama','ncr-detail-name','ncr-detail-phone','ncr-detail-starting','ncr-detail-current']) {
+   assert.notEqual(await page.locator('#'+id).getAttribute('readonly'),null);
+   assert.equal(await page.locator('#'+id).inputValue(),'');
+  }
+  assert.match(await page.locator('#ncr-active-history').innerText(),/No active NCR history/);
+  assert.match(await page.locator('#ncr-expired-history').innerText(),/No expired NCR history/);
+  await page.keyboard.press('Escape');
+  await page.screenshot({animations:'disabled',path:path.join(screenshotDir,'ncr-driver-scores.png')});
+  await page.locator('#ncr-tracker-tab').click();
+  assert.equal(await page.locator('#ncr-tracker-panel input[type=time]').count(),0);
+  assert.deepEqual(await page.locator('#ncr-records-table th').allTextContents(),[
+   'NCR ID','Driver Iqama','Driver Name','Driver Phone Number','Category','NCR Score','NCR Description','NCR Date',
+   'TBT Status','TBT Conducted Date','Action Taken','Action Taken Date','Non-Compliance Expiry Date','Non-Compliance Status','Individual Statement','Remarks']);
+  await page.locator('#ncr-filter-start').fill('2025-01-01');await page.locator('#ncr-filter-end').fill('2025-04-01');
+  await page.locator('#ncr-filter-driver').fill('Unsaved name filter');
+  await page.locator('#ncr-filter-status').selectOption('Expired');await page.locator('#ncr-filter-tbt').selectOption('Conducted');
+  await page.locator('#ncr-scores-tab').click();
+  assert.equal(await page.locator('#ncr-points-exact').inputValue(),'-10');
+  assert.equal(await page.locator('#ncr-points-min').inputValue(),'-50');
+  assert.equal(await page.locator('#ncr-points-max').inputValue(),'0');
+  assert.equal(await page.locator('#ncr-score-iqama').inputValue(),'Unsaved filter');
+  await page.locator('#ncr-scores-tab').press('ArrowRight');
+  assert.equal(await page.locator('#ncr-filter-status').inputValue(),'Expired');
+  assert.equal(await page.locator('#ncr-filter-tbt').inputValue(),'Conducted');
+  assert.equal(await page.locator('#ncr-filter-start').inputValue(),'2025-01-01');
+  assert.equal(await page.locator('#ncr-filter-driver').inputValue(),'Unsaved name filter');
+  await page.screenshot({animations:'disabled',path:path.join(screenshotDir,'ncr-tracker.png')});
+  await page.locator('#open-ncr-modal').click();
+  assert.equal(await page.locator('#ncr-category option:not([value=""])').count(),23);
+  assert.ok((await page.locator('#ncr-category option').allTextContents()).slice(1).every(label=>/\(-(?:50|25|10) pt\)$/.test(label)));
+  for(const id of ['ncr-id','ncr-driver-name','ncr-driver-phone','ncr-reported-by','ncr-reporting-date','ncr-reporting-time','ncr-modified-by','ncr-modified-at']) {
+   assert.notEqual(await page.locator('#'+id).getAttribute('readonly'),null);
+   assert.equal(await page.locator('#'+id).inputValue(),'');
+  }
+  for(const [key,score] of [['cctv-tampering','-50 pt'],['asset-damage','-25 pt'],['mdt-black-shift','-10 pt']]) {
+   await page.locator('#ncr-category').selectOption(key);assert.equal(await page.locator('#ncr-score').inputValue(),score);
+  }
+  await page.locator('#ncr-date').fill('2025-01-01');
+  assert.equal(await page.locator('#ncr-expiry-date').inputValue(),'2025-04-01');
+  assert.equal(await page.locator('#ncr-expiry-status').inputValue(),'Active');
+  assert.equal(await page.locator('#ncr-tbt-status').inputValue(),'Pending');
+  // KSA midnight changes the unsaved preview automatically, with no Refresh click.
+  await page.clock.setFixedTime(new Date('2025-03-31T21:00:00Z'));
+  await page.waitForFunction(()=>document.getElementById('ncr-expiry-status').value==='Expired');
+  await page.locator('#ncr-tbt-date').fill('2025-03-01');
+  assert.equal(await page.locator('#ncr-tbt-status').inputValue(),'Conducted');
+  assert.equal(await page.locator('#ncr-expiry-status').inputValue(),'Expired');
+  await page.locator('#ncr-tbt-date').fill('');
+  assert.equal(await page.locator('#ncr-tbt-status').inputValue(),'Pending');
+  assert.deepEqual((await page.locator('#ncr-action option').allTextContents()).slice(1),['TBT Conducted','1st NCR Initiated','2nd NCR Initiated','3rd NCR Initiated']);
+  await page.locator('#ncr-action').selectOption('3rd NCR Initiated');
+  assert.equal(await page.locator('#ncr-tbt-status').inputValue(),'Pending');
+  await page.locator('#ncr-date').fill('2025-04-02');
+  assert.equal(await page.locator('#ncr-expiry-status').inputValue(),'');
+  assert.match(await page.locator('#ncr-calculation-status').innerText(),/Future.*not yet active/);
+  await page.locator('#ncr-date').fill('2024-02-29');
+  assert.equal(await page.locator('#ncr-expiry-date').inputValue(),'2024-05-29');
+  await page.locator('#ncr-description').fill('Unsaved form preview only');
+  await page.locator('#save-ncr-btn').click();
+  assert.equal(await page.locator('#ncr-save-status').innerText(),'Database integration pending — NCR not saved.');
+  assert.equal(await page.locator('#ncr-modal').isVisible(),true);
+  assert.equal(await page.locator('#ncr-records-table tbody tr').count(),1);
+  await page.locator('#close-ncr-modal').click();
+  await page.locator('#preview-ncr-record').click();
+  assert.equal(await page.locator('#ncr-description').isDisabled(),true);
+  assert.equal(await page.locator('#ncr-id').inputValue(),'');
+  await page.locator('#edit-ncr-preview').click();
+  assert.equal(await page.locator('#ncr-description').isEnabled(),true);
+  await page.locator('#delete-ncr-preview').click();
+  assert.equal(await page.locator('#ncr-save-status').innerText(),'Database integration pending — NCR not deleted.');
+  await page.keyboard.press('Escape');
   // Every dependent action reports pending and never downloads a fabricated export.
-  for(const name of ['fleet','drivers','accidents','tripcheck','breakdowns','maintenance','fuel']) {
+  for(const name of ['fleet','drivers','accidents','tripcheck','breakdowns','maintenance','fuel','ncr']) {
    await nav(name);
    for(const button of await page.locator(`#view-${name} button`).all()) {
     const text=await button.innerText();
@@ -173,7 +258,12 @@ const path = require('node:path');
   await page.locator('#save-tripcheck-btn').click();
   await page.keyboard.press('Escape');
   await page.setViewportSize({width:390,height:844});
-  for(const name of ['accidents','breakdowns','maintenance']) {await nav(name);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),name+' mobile overflow');}
+  for(const name of ['accidents','breakdowns','maintenance','ncr']) {await nav(name);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),name+' mobile overflow');}
+  await nav('ncr');
+  await page.locator('#ncr-tracker-tab').click();
+  await page.locator('#open-ncr-modal').click();
+  assert.ok(await page.locator('#ncr-modal .modal-content').evaluate(el=>el.getBoundingClientRect().right<=window.innerWidth),'NCR mobile dialog overflow');
+  await page.keyboard.press('Escape');
   await nav('fuel');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'Fuel mobile overflow');
   await page.locator('#open-fuel-modal').click();
@@ -188,6 +278,6 @@ const path = require('node:path');
   assert.ok((await page.evaluate(()=>authCalls)).includes('logout'));
   assert.deepEqual(legacy,[]);assert.deepEqual(databaseWrites,[]);assert.deepEqual(downloads,[]);assert.deepEqual(errors,[]);assert.deepEqual(dialogs,[]);
   assert.equal(await page.evaluate(()=>fleetDatabase.length+driversDatabase.length+accidentsDatabase.length+tripChecksDatabase.length),0);
-  console.log(JSON.stringify({result:'PASS',sidebarPages:views.length,fuel:'Fields, Depot/Outside Depot conditions, validation, live SAR totals, empty details/edit previews and mobile dialog passed',uncaughtErrors:errors,legacyRequests:legacy,databaseWrites,downloads,screenshots:screenshotDir,authentication:'Mocked login, role denial, role lookup and logout verified; live credentials not supplied'},null,2));
+  console.log(JSON.stringify({result:'PASS',sidebarPages:views.length,ncr:'Two views, retained filters, 23 categories, expiry, KSA day rollover, TBT independence, empty details/editing and mobile dialogs passed',fuel:'Fields, Depot/Outside Depot conditions, validation, live SAR totals, empty details/edit previews and mobile dialog passed',uncaughtErrors:errors,legacyRequests:legacy,databaseWrites,downloads,screenshots:screenshotDir,authentication:'Mocked login, role denial, role lookup and logout verified; live credentials not supplied'},null,2));
  } finally {await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1});
