@@ -25,11 +25,7 @@ function activateModule(item) {
   pageTitle.textContent = item.querySelector(".nav-text").textContent.trim();
   const group = item.closest("details.sidebar-group");
   if (group) group.open = true;
-  if (targetView === "drivers" && driversDatabase.length === 0) fetchDrivers();
-  // Always refresh Fleet when opened so recent Post-Trip mileage is reflected.
-  if (targetView === "fleet") refreshFleetData();
-  if (targetView === "accidents" && accidentsDatabase.length === 0) fetchAccidents();
-  if (targetView === "tripcheck" && tripChecksDatabase.length === 0) fetchTripChecks();
+
 }
 
 menuItems.forEach(item => item.querySelector("a")?.addEventListener("click", event => {

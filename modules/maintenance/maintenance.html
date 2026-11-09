@@ -1,2 +1,323 @@
-<!-- Maintenance module: edit this file to change the feature markup. -->
-<section class="view-section" id="view-maintenance"><div class="card"><h2>Maintenance Tracker</h2><p>Pending...</p></div></section>
+<section class="view-section" id="view-maintenance">
+<div class="workflow-tabs" role="tablist" aria-label="Maintenance sections">
+<button class="btn-secondary" role="tab" id="requests-tab" aria-controls="requests-panel" aria-selected="true">Maintenance Requests</button>
+<button class="btn-secondary" role="tab" id="overview-tab" aria-controls="overview-panel" aria-selected="false" tabindex="-1">Maintenance Overview</button>
+</div>
+<div id="requests-panel" role="tabpanel" aria-labelledby="requests-tab">
+<div class="card">
+<div class="card-header-flex">
+<div>
+<h2>Maintenance Requests</h2>
+<p class="preview-note">Interface preview — database integration pending</p>
+</div>
+<div class="button-group-row">
+<button class="btn-secondary" data-pending>Refresh</button>
+<button class="btn-secondary" data-pending>Export Excel</button>
+</div>
+</div>
+<div class="workflow-grid">
+<div class="form-group ">
+<label for="requests-car-plate">Car Plate</label>
+<select id="requests-car-plate">
+<option value="">Available after database integration</option>
+</select>
+</div>
+<div class="form-group ">
+<label for="requests-start-date">Start Date</label>
+<input id="requests-start-date" type="date"/>
+</div>
+<div class="form-group ">
+<label for="requests-end-date">End Date</label>
+<input id="requests-end-date" type="date"/>
+</div>
+<div class="form-group ">
+<label for="requests-status">Status</label>
+<select id="requests-status">
+<option value="All statuses">All statuses</option>
+<option value="Pending">Pending</option>
+<option value="In Progress">In Progress</option>
+<option value="Done">Done</option>
+</select>
+</div>
+</div>
+<button class="btn-secondary" data-open="request-modal">Preview Request Details</button>
+<p class="preview-note">Preview an empty form. No operational records are available.</p>
+</div>
+<div class="card">
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="maintenance-requests table">
+<table class="tracker-table" id="maintenance-requests">
+<thead>
+<tr>
+<th scope="col">ID</th>
+<th scope="col">Date</th>
+<th scope="col">Time</th>
+<th scope="col">Car Plate</th>
+<th scope="col">Car Model</th>
+<th scope="col">Sent By</th>
+<th scope="col">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="7" style="text-align:center;padding:28px;"><span class="table-empty">No records available — database not connected</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="overview-panel" role="tabpanel" aria-labelledby="overview-tab" hidden>
+<div class="card">
+<div class="card-header-flex">
+<div>
+<h2>Maintenance Overview</h2>
+<p class="preview-note">Interface preview — database integration pending</p>
+</div>
+<div class="button-group-row">
+<button class="btn-secondary" data-pending>Refresh</button>
+<button class="btn-secondary" data-pending>Export Excel</button>
+</div>
+</div>
+<div class="workflow-grid">
+<div class="form-group ">
+<label for="overview-car-plate">Car Plate</label>
+<select id="overview-car-plate">
+<option value="">Available after database integration</option>
+</select>
+</div>
+<div class="form-group ">
+<label for="overview-start-date">Start Date</label>
+<input id="overview-start-date" type="date"/>
+</div>
+<div class="form-group ">
+<label for="overview-end-date">End Date</label>
+<input id="overview-end-date" type="date"/>
+</div>
+<div class="form-group ">
+<label for="overview-status">Status</label>
+<select id="overview-status">
+<option value="All statuses">All statuses</option>
+<option value="Requested">Requested</option>
+<option value="In Progress">In Progress</option>
+<option value="Pending of Component">Pending of Component</option>
+<option value="Pending of Approval">Pending of Approval</option>
+<option value="Done">Done</option>
+</select>
+</div>
+</div>
+<button class="btn-secondary" data-open="acceptance-modal">Preview Work Order Form</button>
+<p class="preview-note">Preview an empty form. No operational records are available.</p>
+</div>
+<div class="card">
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="maintenance-overview table">
+<table class="tracker-table" id="maintenance-overview">
+<thead>
+<tr>
+<th scope="col">Maintenance ID</th>
+<th scope="col">Date</th>
+<th scope="col">Time</th>
+<th scope="col">Created By</th>
+<th scope="col">Maintenance Description</th>
+<th scope="col">Maintenance Engineer Iqama</th>
+<th scope="col">Maintenance Location</th>
+<th scope="col">Status</th>
+<th scope="col">Breakdown Type</th>
+<th scope="col">Description Fault</th>
+<th scope="col">Action Taken</th>
+<th scope="col">Action Taken Description</th>
+<th scope="col">Remarks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="13" style="text-align:center;padding:28px;"><span class="table-empty">No records available — database not connected</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</section>
+<div class="modal-overlay" id="request-modal">
+<div class="modal-content workflow-modal">
+<h2>Maintenance Request Details — Preview</h2>
+<p class="preview-note">Interface preview — database integration pending. Fields remain unsaved. IDs and authoritative Asia/Riyadh timestamps will be generated by the future backend.</p>
+<form>
+<div class="workflow-grid">
+<div class="form-group ">
+<label for="request-original-source-id">Original Source ID</label>
+<input id="request-original-source-id" type="text" readonly placeholder="Available after database integration"/>
+</div>
+<div class="form-group ">
+<label for="request-source-type">Source Type</label>
+<input id="request-source-type" type="text" readonly placeholder="Available after database integration"/>
+</div>
+<div class="form-group ">
+<label for="request-date-sent-to-maintenance">Date Sent to Maintenance</label>
+<input id="request-date-sent-to-maintenance" type="text" readonly placeholder="Available after database integration"/>
+</div>
+<div class="form-group ">
+<label for="request-time-sent-to-maintenance">Time Sent to Maintenance</label>
+<input id="request-time-sent-to-maintenance" type="text" readonly placeholder="Available after database integration"/>
+</div>
+<div class="form-group ">
+<label for="request-car-plate">Car Plate</label>
+<input id="request-car-plate" type="text" readonly placeholder="Available after database integration"/>
+</div>
+<div class="form-group ">
+<label for="request-car-model">Car Model</label>
+<input id="request-car-model" type="text" readonly placeholder="Available after database integration"/>
+</div>
+<div class="form-group wide">
+<label for="request-original-description">Original Description</label>
+<textarea id="request-original-description" readonly rows="3">
+</textarea>
+</div>
+<div class="form-group ">
+<label for="request-sent-by">Sent By</label>
+<input id="request-sent-by" type="text" readonly/>
+</div>
+<div class="form-group ">
+<label for="request-request-status">Request Status</label>
+<select id="request-request-status">
+<option value="Pending">Pending</option>
+<option value="In Progress">In Progress</option>
+<option value="Done">Done</option>
+</select>
+</div>
+<div class="form-group ">
+<label for="request-linked-maintenance-id">Linked Maintenance ID</label>
+<input id="request-linked-maintenance-id" type="text" readonly placeholder="Generated later: MTN-000001"/>
+</div>
+<p class="preview-note wide">The original source ID remains permanent. Selecting In Progress previews acceptance only; no request or work order is created.</p>
+<button type="button" class="btn-secondary" data-open="acceptance-modal">Preview Maintenance Acceptance</button>
+</div>
+<div class="action-row">
+<div class="button-group-row">
+<button type="button" class="btn-primary" data-pending>Save Changes</button>
+</div>
+<button type="button" class="btn-secondary" data-close>Cancel</button>
+</div>
+</form>
+</div>
+</div>
+<div class="modal-overlay" id="acceptance-modal">
+<div class="modal-content workflow-modal">
+<h2>Maintenance Acceptance / Work Order — Preview</h2>
+<p class="preview-note">Interface preview — database integration pending. Fields remain unsaved. IDs and authoritative Asia/Riyadh timestamps will be generated by the future backend.</p>
+<form>
+<div class="workflow-grid">
+<div class="form-group ">
+<label for="workorder-maintenance-id">Maintenance ID</label>
+<input id="workorder-maintenance-id" type="text" readonly placeholder="Generated later: MTN-000001"/>
+</div>
+<div class="form-group ">
+<label for="workorder-original-source-id">Original Source ID</label>
+<input id="workorder-original-source-id" type="text" readonly placeholder="Original ACD or BDW ID is preserved"/>
+</div>
+<div class="form-group ">
+<label for="workorder-original-source-type">Original Source Type</label>
+<input id="workorder-original-source-type" type="text" readonly placeholder="Accident or Breakdown"/>
+</div>
+<div class="form-group ">
+<label for="workorder-maintenance-request-reference">Maintenance Request reference</label>
+<input id="workorder-maintenance-request-reference" type="text" readonly placeholder="Original request reference"/>
+</div>
+<div class="form-group ">
+<label for="workorder-date">Date</label>
+<input id="workorder-date" type="text" readonly placeholder="Future server date — Asia/Riyadh"/>
+</div>
+<div class="form-group ">
+<label for="workorder-time">Time</label>
+<input id="workorder-time" type="text" readonly placeholder="Future server time — Asia/Riyadh"/>
+</div>
+<div class="form-group ">
+<label for="workorder-created-by">Created By</label>
+<input id="workorder-created-by" type="text" readonly placeholder="Future authenticated user"/>
+</div>
+<div class="form-group ">
+<label for="workorder-car-plate">Car Plate</label>
+<select id="workorder-car-plate">
+<option value="">Available after database integration</option>
+</select>
+</div>
+<div class="form-group ">
+<label for="workorder-car-model">Car Model</label>
+<input id="workorder-car-model" type="text" readonly/>
+</div>
+<div class="form-group wide">
+<label for="workorder-maintenance-description">Maintenance Description</label>
+<textarea id="workorder-maintenance-description" rows="3">
+</textarea>
+</div>
+<div class="form-group ">
+<label for="workorder-maintenance-engineer-iqama">Maintenance Engineer Iqama</label>
+<input id="workorder-maintenance-engineer-iqama" type="text"/>
+</div>
+<div class="form-group ">
+<label for="workorder-maintenance-location">Maintenance Location</label>
+<input id="workorder-maintenance-location" type="text"/>
+</div>
+<div class="form-group ">
+<label for="workorder-status">Status</label>
+<select id="workorder-status">
+<option value="Requested">Requested</option>
+<option value="In Progress">In Progress</option>
+<option value="Pending of Component">Pending of Component</option>
+<option value="Pending of Approval">Pending of Approval</option>
+<option value="Done">Done</option>
+</select>
+</div>
+<div class="form-group ">
+<label for="workorder-breakdown-type">Breakdown Type</label>
+<select id="workorder-breakdown-type">
+<option value="Accident">Accident</option>
+<option value="Air System">Air System</option>
+<option value="Body Exterior">Body Exterior</option>
+<option value="Brakes">Brakes</option>
+<option value="Doors">Doors</option>
+<option value="Electrical">Electrical</option>
+<option value="Gears">Gears</option>
+<option value="Heating &amp; Cooling">Heating &amp; Cooling</option>
+<option value="Interior">Interior</option>
+<option value="Mechanical">Mechanical</option>
+<option value="No Fault Found">No Fault Found</option>
+<option value="Not Engineering Breakdown">Not Engineering Breakdown</option>
+<option value="Puncture">Puncture</option>
+<option value="Wheels And Tyres">Wheels And Tyres</option>
+<option value="Other">Other</option>
+</select>
+</div>
+<div class="form-group wide">
+<label for="workorder-description-fault">Description Fault</label>
+<textarea id="workorder-description-fault" rows="3">
+</textarea>
+</div>
+<div class="form-group ">
+<label for="workorder-action-taken">Action Taken</label>
+<select id="workorder-action-taken">
+<option value="Changed">Changed</option>
+<option value="Repaired">Repaired</option>
+<option value="Nothing">Nothing</option>
+</select>
+</div>
+<div class="form-group wide">
+<label for="workorder-action-taken-description">Action Taken Description</label>
+<textarea id="workorder-action-taken-description" rows="3">
+</textarea>
+</div>
+<div class="form-group wide">
+<label for="workorder-remarks">Remarks</label>
+<textarea id="workorder-remarks" rows="3">
+</textarea>
+</div>
+</div>
+<div class="action-row">
+<div class="button-group-row">
+<button type="button" class="btn-primary" data-pending>Save Changes</button>
+</div>
+<button type="button" class="btn-secondary" data-close>Cancel</button>
+</div>
+</form>
+</div>
+</div>

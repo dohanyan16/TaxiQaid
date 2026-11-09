@@ -20,8 +20,9 @@ Version **1.2** — each screen has its own HTML, CSS, and JavaScript files.
 - `modules/drivers/`: driver lookup and editing.
 - `modules/tripcheck/`: inspections and 27-step form.
 - `modules/accidents/`: accident reporting and management.
-- `modules/breakdowns/`: future breakdown tracking (placeholder).
-- `modules/maintenance/`: future maintenance tracking (placeholder).
+- `modules/breakdowns/`: complete frontend breakdown report preview.
+- `modules/maintenance/`: Maintenance Requests and Maintenance Overview previews.
+- `modules/operations/fuel/`: Fuel overview, empty record details/editing and conditional fueling form previews.
 - `shared/`: navigation, layout, common CSS, Supabase configuration, general utilities, and data helpers.
 - `assets/`: images.
 - `docs/`: project guide, security instructions, and change history.
@@ -32,7 +33,7 @@ Every `modules/<name>/` folder contains `<name>.html`, `<name>.css`, and `<name>
 
 Upload the **contents** of this folder, including the `modules/`, `shared/`, and `assets/` directories. Keep `index.html` in the publish root. This is a static app with no npm, bundling, or paid GitHub features. URLs are relative and support a repository subpath.
 
-GitHub Pages access is not private just because the application displays a login. Public visitors can download static HTML, CSS, and JS. Protect private data and **all writes** in Supabase and Google Apps Script as described in [docs/SECURITY.md](docs/SECURITY.md).
+GitHub Pages access is not private just because the application displays a login. Public visitors can download static HTML, CSS, and JS. Protect private data and **all writes** in the future operational backend as described in [docs/SECURITY.md](docs/SECURITY.md).
 
 ## Further reading
 
@@ -40,18 +41,14 @@ GitHub Pages access is not private just because the application displays a login
 - [Security notes](docs/SECURITY.md)
 - [Change history](docs/CHANGELOG.md)
 
-## Google Sheets data workflow
+## Frontend preparation phase
 
-Fleet, Drivers, Accident Tracker, Pre-Trip and Post-Trip each use their existing Google Sheet as the permanent database. Browser arrays are temporary snapshots. Web edits save through the corresponding existing Apps Script endpoint and then reload saved rows. Excel exports reload Sheets before exporting; a failed reload cancels the export instead of exporting an old snapshot.
+Operational databases are disconnected. Legacy spreadsheet and Apps Script endpoints are disabled. All operational views start empty, and backend-dependent actions explain that database integration is pending. No operational records are saved locally or remotely. Fuel Tracker includes Depot/Outside Depot form conditions and live SAR totals without a hardcoded Depot tariff. Existing Supabase authentication and roles remain on the same project.
 
-Create Fleet vehicles and Drivers in bulk directly in their Sheets, then click Refresh. Fleet web edits submit only the plate and availability; Driver edits submit only the Iqama identifier, phone, arrangement, shift, car plate and status. Locked/static fields are omitted. The endpoints must implement partial updates that preserve omitted columns; their source is not in this repository.
-
-Fleet accident counts are calculated from Accident Tracker, including zero after the last accident is deleted. They are never submitted to the Fleet Sheet. Fleet displays/exports the latest Post-Trip mileage using normalized plates and inspection date/time in Asia/Riyadh. The Post-Trip Apps Script owns the server-side update of the matching Fleet Sheet `Total KM` cell. The frontend does not duplicate that write. After a Post-Trip save it reads Fleet back and warns if the cell cannot be verified against the latest inspection; a saved inspection must not be resubmitted to retry synchronization.
-
-Trip Check Refresh reloads both inspection Sheets without changing the type, date or search filters. Custom PDF exports continue to use the visible filtered records.
-
-Breakdowns, Maintenance and the other planned modules remain placeholders; no Sheets are provisioned for them. Apps Script projects are externally managed and are not modified or deployed by this frontend.
+See [the workflow specification](docs/TAXIQAID_WORKFLOW_SPEC.md) for all field definitions, status options, future source/request/work-order relationships, identifier formats and KSA timestamp rules. No database schemas or migrations are included. Database integration remains a separate future phase. PR #2 is the single review unit for the Accident, Breakdown, Maintenance and Fuel interfaces; merge/publication follows the current repository owner’s authorization.
 
 ## Validation
 
-Run dependency-free regression tests with `node --test tests/fleet.test.cjs`. The optional browser workflow test requires Playwright and Chromium, a local server in the repository root, and runs with `node tests/workflow.browser.cjs`. It intercepts backend requests with fixture Sheets, tests persistence and failure states, and reads actual Excel/PDF downloads; it never writes live organizational data.
+Run `node --test tests/fleet.test.cjs` for the retained pure compatibility tests. With Playwright and Chromium available and a local HTTP server running, run `node tests/workflow.browser.cjs`. Set `TAXIQAID_URL`, `TAXIQAID_CHROMIUM` or `TAXIQAID_SCREENSHOTS` to override defaults. Browser checks use mocked authentication and never live credentials or operational data. Screenshots are written to `docs/screenshots/` by default.
+
+The former spreadsheet persistence tests were replaced because spreadsheet reads/writes are intentionally retired. Live authentication must be verified separately with an existing authorized account.

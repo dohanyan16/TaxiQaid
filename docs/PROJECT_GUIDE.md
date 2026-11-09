@@ -1,5 +1,7 @@
 # TaxiQaid — Project Guide (v1.2)
 
+> Current phase: operational spreadsheet integrations are retired and disconnected. The historical integration notes below are retained for context and do not authorize reconnection. See [TAXIQAID_WORKFLOW_SPEC.md](TAXIQAID_WORKFLOW_SPEC.md) for the current frontend-only boundaries.
+
 ## 1. Architecture
 
 The application is pure HTML, CSS, and JavaScript. It uses a **feature-folder architecture** rather than a build tool or a frontend framework.

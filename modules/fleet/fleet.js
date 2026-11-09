@@ -135,11 +135,11 @@
 
     toggleFleetBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      if (fleetProfileContainer.style.display === "block" && !isFleetEditMode) {  
-      clearFleetSelection();                                                     
-      populateFleetDropdown(fleetDatabase);                                    
-      return;                                                                  
-      } 
+      if (fleetProfileContainer.style.display === "block" && !isFleetEditMode) {
+      clearFleetSelection();
+      populateFleetDropdown(fleetDatabase);
+      return;
+      }
       if (driversDatabase.length === 0) await fetchDrivers();
       if (fleetDropdown.style.display === "block") { fleetDropdown.style.display = "none"; }
       else {
@@ -170,7 +170,7 @@ fleetPlateInput.addEventListener("click", () => {
     populateFleetDropdown(fleetDatabase);
   }
 });
-    
+
     function renderVehicleProfile(vehicle) {
       currentActiveVehicle = vehicle;
       isFleetEditMode = false;
@@ -180,7 +180,7 @@ fleetPlateInput.addEventListener("click", () => {
 
       const plateStr = String(vehicle["Plate"] || vehicle["plate"] || "");
       const assignedDrivers = getAssignedDrivers(plateStr);
-      
+
       let driversHtml = "";
       if (assignedDrivers.length === 0) {
         driversHtml = `<span style="color: var(--text-muted); font-weight: normal;">No drivers assigned</span>`;
@@ -229,7 +229,7 @@ fleetPlateInput.addEventListener("click", () => {
       const v = currentActiveVehicle;
       const assignedDrivers = getAssignedDrivers(v["Plate"] || v["plate"]);
       const hasDriver = assignedDrivers.length > 0;
-      
+
       // Visual styling for fields that users cannot edit.
       const disabledAttr = 'disabled style="background: #e9ecef; cursor: not-allowed;"';
 
@@ -237,12 +237,12 @@ fleetPlateInput.addEventListener("click", () => {
       document.getElementById("f-val-brand").innerHTML = `<input type="text" id="edit-fleet-brand" value="${v["Brand"] || v["brand"] || ''}" ${disabledAttr}>`;
       document.getElementById("f-val-model").innerHTML = `<input type="text" id="edit-fleet-model" value="${v["Model"] || v["model"] || ''}" ${disabledAttr}>`;
       document.getElementById("f-val-vin").innerHTML = `<input type="text" id="edit-fleet-vin" value="${v["VIN"] || v["vin"] || ''}" ${disabledAttr}>`;
-      
+
       const fuelVal = v["Fuel Type"] || v["fuel type"] || "";
       document.getElementById("f-val-fuel").innerHTML = `<select id="edit-fleet-fuel" ${disabledAttr}><option value="${fuelVal}">${fuelVal}</option></select>`;
-      
+
       document.getElementById("f-val-km").innerHTML = `<input type="number" id="edit-fleet-km" value="${getFleetOdometer(v).value}" ${disabledAttr}>`;
-      
+
       // 2. Availability is the only editable vehicle field in this workflow.
       const availVal = v["Availability"] || v["availability"] || "Unassigned";
 
@@ -272,39 +272,8 @@ fleetPlateInput.addEventListener("click", () => {
     }
 
     async function saveEditedVehicle() {
-      const v = currentActiveVehicle;
-      const updatedVehicle = {
-        action: "update",
-        "Plate": v["Plate"] || v["plate"],
-        // Never submit static fields, derived accidents or Total KM. The
-        // Post-Trip server owns Fleet Sheet odometer synchronization.
-        "Availability": getAssignedDrivers(v["Plate"] || v["plate"]).length
-          ? "Assigned" : document.getElementById("edit-fleet-availability").value
-      };
-
-      editFleetBtn.disabled = true;
-      editFleetBtn.textContent = "Saving...";
-
-      try {
-        const response = await postAuthorizedSheetUpdate(GOOGLE_SHEET_FLEET_URL, updatedVehicle);
-        const resData = await response.json();
-        if (resData.status === "success") {
-          const refreshed = await refreshFleetData();
-          const saved = refreshed && fleetDatabase.find(veh => normalizePlate(veh["Plate"] ?? veh["plate"]) === normalizePlate(updatedVehicle["Plate"]));
-          fleetPlateInput.value = updatedVehicle["Plate"];
-          renderVehicleProfile(saved || v);
-          alert(saved ? "Vehicle saved to Google Sheets successfully!"
-            : "Vehicle saved, but Fleet could not fully reload. Do not save again; click Refresh before continuing.");
-        } else {
-          alert("Error: " + resData.message);
-        }
-      } catch (err) {
-        alert("Could not update Google Sheets.");
-      } finally {
-        editFleetBtn.disabled = false;
-        editFleetBtn.textContent = isFleetEditMode ? "💾 Save Vehicle Changes" : "Edit Vehicle Details";
-      }
-    }
+  showIntegrationPending();
+}
 
     editFleetBtn.addEventListener("click", () => {
       if (!isFleetEditMode) enableFleetEditMode();
@@ -317,64 +286,15 @@ fleetPlateInput.addEventListener("click", () => {
 
 // Load records and update the synchronization badge for this module.
     async function fetchFleet() {
-      const requestId = ++fleetRefreshSequence;
-      const syncBadge = document.getElementById("fleet-sync-status");
-      if (syncBadge) syncBadge.textContent = "Syncing fleet and latest Post-Trip odometers...";
-      try {
-        const vehicles = await readSheetRecords(GOOGLE_SHEET_FLEET_URL);
+  fleetDatabase = [];
+  document.getElementById("fleet-sync-status").textContent = "No records available — database not connected";
 
-        let readings = new Map();
-        let postTripError = null;
-        try {
-          const postUrl = TRIPCHECK_SHEET_ENDPOINTS["Post-Trip"];
-          const postTrips = await readSheetRecords(postUrl);
-          readings = buildLatestPostTripReadings(postTrips);
-        } catch (error) {
-          postTripError = error;
-          console.warn("Post-Trip odometers could not be refreshed:", error);
-        }
-
-        // Ignore outdated responses if another refresh started in the meantime.
-        if (requestId !== fleetRefreshSequence) return false;
-        fleetDatabase = vehicles;
-        fleetPostTripReadings = readings;
-        updateAllFleetAccidentCounts();
-
-        // Keep the selected vehicle open and update its odometer on refresh.
-        if (currentActiveVehicle) {
-          const plate = normalizePlate(currentActiveVehicle["Plate"] ?? currentActiveVehicle["plate"]);
-          const selected = fleetDatabase.find(v => normalizePlate(v["Plate"] ?? v["plate"]) === plate);
-          if (selected) {
-            if (isFleetEditMode) {
-              currentActiveVehicle = selected;
-              // Refresh the locked mileage without discarding availability edits.
-              document.getElementById("edit-fleet-km").value = getFleetOdometer(selected).value;
-            } else renderVehicleProfile(selected);
-          }
-        }
-        if (syncBadge) {
-          syncBadge.textContent = postTripError
-            ? `Fleet synced (${fleetDatabase.length} vehicles). Post-Trip unavailable; displaying Fleet sheet KM.`
-            : `Fleet synced (${fleetDatabase.length} vehicles). Latest Post-Trip KM loaded for ${readings.size} plate(s).`;
-        }
-        return !postTripError;
-      } catch (error) {
-        if (requestId !== fleetRefreshSequence) return false;
-        console.error("Error fetching fleet", error);
-        if (syncBadge) syncBadge.textContent = "Failed to connect to Fleet Google Sheet.";
-        return false;
-      }
-    }
+  return false;
+}
 
     async function refreshFleetData() {
-      const [fleet, drivers, accidents] = await Promise.all([fetchFleet(), fetchDrivers(), fetchAccidents()]);
-      updateAllFleetAccidentCounts();
-      if (currentActiveVehicle && !isFleetEditMode) renderVehicleProfile(currentActiveVehicle);
-      if (!drivers || !accidents) {
-        document.getElementById("fleet-sync-status").textContent = "Fleet refresh incomplete: Drivers or Accident Tracker could not reload. Refresh before exporting.";
-      }
-      return fleet && drivers && accidents;
-    }
+  return fetchFleet();
+}
 
     function isFleetPostTripSynced(plate) {
       const normalized = normalizePlate(plate);
@@ -404,4 +324,3 @@ fleetPlateInput.addEventListener("click", () => {
       XLSX.utils.book_append_sheet(workbook, worksheet, "Fleet Database");
       XLSX.writeFile(workbook, "Fleet_Database.xlsx");
     }));
-

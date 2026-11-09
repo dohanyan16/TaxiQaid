@@ -1,18 +1,6 @@
-/**
- * TaxiQaid | Trip Check
- *
- * Module responsibilities:
- * - Maintain the 27-step Pre-Trip / Post-Trip inspection workflow.
- * - Calculate scores and statuses from all 24 questions.
- * - Read, create and update records in two Google Sheets via Apps Script.
- * - Filter and export the combined Overview as Excel or individual PDFs.
- *
- * SECURITY WARNING: These temporary Apps Script endpoints do not authenticate
- * callers. A login screen alone does NOT protect the underlying Google Sheets.
- * Do not use personal or production data until server-side access control exists.
- */
+/** Frontend inspection preview. Database integration pending. */
 
-// Column names are kept stable for the future Google Sheet integration.
+// Inspection field definitions are retained for future database integration.
 const TRIPCHECK_QUESTIONS = Object.freeze([
   ["tc_documents", "Valid Documents"],
   ["tc_uniform", "Required Uniform"],
@@ -39,11 +27,8 @@ const TRIPCHECK_QUESTIONS = Object.freeze([
   ["tc_plates", "Number Plates"],
   ["tc_toolkit", "Toolkit Bag"]
 ]);
-/** The two published Apps Script web-app URLs (no secrets belong here). */
-const TRIPCHECK_SHEET_ENDPOINTS = Object.freeze({
-  "Pre-Trip": "https://script.google.com/macros/s/AKfycbyf6oLlK-IGx28dmqufEptbz40tQggiawHzxlDNx5BfwLu_jJH-h7_TqrASKWZOg01tqw/exec",
-  "Post-Trip": "https://script.google.com/macros/s/AKfycbyacpJdIJ59mKGttfNUAkSfzKbRfvfCozusdQLjNs-P4N-Sw_HifKjWdsmNysgjfnCCSQ/exec"
-});
+/** Frontend inspection preview. Database integration pending. */
+const TRIPCHECK_SHEET_ENDPOINTS = Object.freeze({});
 const tripCheckModal = document.getElementById("add-tripcheck-modal");
 const openAddTripCheckBtn = document.getElementById("open-add-tripcheck-modal");
 const closeAddTripCheckBtn = document.getElementById("close-add-tripcheck-modal");
@@ -172,7 +157,7 @@ function showWizardStep(step) {
 }
 
 async function populateTripCheckDropdowns() {
-  // These two existing data sources are still used for plate and driver lookup.
+  // Relationship dropdowns remain empty until the future data sources are connected.
   await Promise.all([fetchFleet(), fetchDrivers()]);
   setupTripCheckSelects();
 }
@@ -191,20 +176,13 @@ openAddTripCheckBtn.addEventListener("click", async () => {
   updateTripCheckSignatureStatus();
   updateTripCheckScore();
   showWizardStep(1);
-  tripCheckModal.style.display = "flex";
+  openPreviewModal(tripCheckModal);
 });
 
-closeAddTripCheckBtn.addEventListener("click", () => { tripCheckModal.style.display = "none"; });
+closeAddTripCheckBtn.addEventListener("click", () => { closePreviewModal(tripCheckModal); });
 
 wizardNextBtn.addEventListener("click", () => {
-  if (currentWizardStep === 2) {
-    if (!document.getElementById("tc-plate").value) { alert("Please select a valid Car Plate."); return; }
-    if (!document.getElementById("tc-iqama").value) { alert("Please select a valid Driver."); return; }
-    const km = document.getElementById("tc-odometer").value;
-    if (km === "" || !Number.isFinite(Number(km)) || Number(km) < 0) {
-      alert("Please enter a valid odometer reading."); return;
-    }
-  }
+  // Allow inspection sections to be reviewed while relationship data is disconnected.
   if (currentWizardStep < totalWizardSteps) showWizardStep(currentWizardStep + 1);
 });
 
@@ -294,61 +272,14 @@ wizardPrevBtn.addEventListener("click", () => {
     }
 
 
-/**
- * Temporary Apps Script transport. POST uses text/plain to avoid a JSON
- * preflight request. Each spreadsheet independently validates its Check Type.
- */
+/** Frontend inspection preview. Database integration pending. */
 async function submitTripCheckToSheet(record, isUpdate) {
-  const url = TRIPCHECK_SHEET_ENDPOINTS[record["Check Type"]];
-  if (!url) throw new Error("Unknown inspection type.");
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ ...record, action: isUpdate ? "update" : "create" })
-  });
-  if (!response.ok) throw new Error(`Google Apps Script returned HTTP ${response.status}.`);
-  const result = await response.json();
-  if (!result || result.status !== "success") {
-    throw new Error(result?.message || "Google Sheets rejected the inspection.");
-  }
-  return result.record;
+  throw new Error("Database integration pending");
 }
 
-/** A successful inspection stays saved even if a subsequent read/sync fails. */
+/** Compatibility hook: no inspection is persisted in this phase. */
 async function reportSavedTripCheck(record) {
-  const warnings = [];
-  let overview = false;
-  try { overview = await fetchTripChecks(); } catch (error) { console.warn(error); }
-  if (!overview) warnings.push("the Overview could not reload");
-  if (record["Check Type"] === "Post-Trip") {
-    let synced = false;
-    try {
-      synced = await fetchFleet() && isFleetPostTripSynced(record["Car Plate"]);
-    } catch (error) { console.warn(error); }
-    if (!synced) warnings.push("Fleet synchronization failed or could not be verified; the Fleet Sheet Total KM may be out of date");
-  }
-  const message = warnings.length
-    ? `Inspection saved to Google Sheets. Warning: ${warnings.join("; ")}. Do not submit it again. Click Refresh to retry loading; if Fleet remains out of date, contact the Post-Trip integration owner.`
-    : "Inspection saved to Google Sheets successfully.";
-  const status = document.getElementById("tripcheck-save-status");
-  status.hidden = false;
-  status.setAttribute("role", warnings.length ? "alert" : "status");
-  status.textContent = message;
-  alert(message);
-}
-
-/**
- * Generate the human-readable ID preview.
- * Apps Script also generates and validates this ID on the server.
- * One inspection per type/plate/day can have this exact ID.
- */
-function createTripCheckId(type, plate, date) {
-  const prefix = type === "Post-Trip" ? "POST" : "PRE";
-  const cleanPlate = String(plate ?? "").normalize("NFKC").trim().toUpperCase()
-    .replace(/[^\p{L}\p{N}]/gu, "").slice(0, 55);
-  const day = String(date ?? "").replace(/-/g, "");
-  if (!cleanPlate || !/^\d{8}$/.test(day)) throw new Error("A valid plate and inspection date are required.");
-  return `${prefix}-${cleanPlate}-${day}`;
+  showIntegrationPending();
 }
 
 function getTripCheckField(record, name) {
@@ -358,12 +289,11 @@ function getTripCheckField(record, name) {
 
 /** Use the same data structure for new records and edited ones. */
 function collectTripCheckForm(existingRecord = null) {
-  const now = getKSACurrentDateTime();
   const data = {
-    "Check ID": existingRecord ? getTripCheckField(existingRecord, "Check ID") : createTripCheckId(document.getElementById("tc-type").value, document.getElementById("tc-plate").value, now.date),
+    "Check ID": existingRecord ? getTripCheckField(existingRecord, "Check ID") : "",
     "Check Type": document.getElementById("tc-type").value,
-    "Date": existingRecord ? getTripCheckField(existingRecord, "Date") : now.date,
-    "Time": existingRecord ? getTripCheckField(existingRecord, "Time") : now.time,
+    "Date": existingRecord ? getTripCheckField(existingRecord, "Date") : "",
+    "Time": existingRecord ? getTripCheckField(existingRecord, "Time") : "",
     "Car Plate": document.getElementById("tc-plate").value,
     "Driver Iqama": document.getElementById("tc-iqama").value,
     "Driver Name": document.getElementById("tc-driver-name").value,
@@ -372,7 +302,7 @@ function collectTripCheckForm(existingRecord = null) {
     "Remarks": document.getElementById("tc-remarks").value.trim(),
     "Signed": tripCheckSigned ? "Yes" : "No",
     "Last Edited By": loggedInUserName,
-    "Last Edited At": `${now.date} ${now.time}`
+    "Last Edited At": ""
   };
   for (const [id, field] of TRIPCHECK_QUESTIONS) {
     data[field] = normalizeTripCheckAnswer(document.getElementById(id).value);
@@ -383,48 +313,9 @@ function collectTripCheckForm(existingRecord = null) {
   return data;
 }
 
-addTripCheckForm.addEventListener("submit", async event => {
+addTripCheckForm.addEventListener("submit", event => {
   event.preventDefault();
-  const score = updateTripCheckScore();
-  if (score.answered !== score.total) {
-    const unansweredIndex = TRIPCHECK_QUESTIONS.findIndex(([id]) => !normalizeTripCheckAnswer(document.getElementById(id).value));
-    alert(`Please answer every inspection item before saving (${score.answered}/${score.total} answered).`);
-    if (unansweredIndex >= 0) showWizardStep(unansweredIndex + 3);
-    return;
-  }
-  const kmText = document.getElementById("tc-odometer").value;
-  if (!document.getElementById("tc-plate").value || !document.getElementById("tc-iqama").value ||
-      kmText === "" || !Number.isFinite(Number(kmText)) || Number(kmText) < 0) {
-    alert("Please complete the vehicle, driver and odometer details.");
-    showWizardStep(2);
-    return;
-  }
-  if (!tripCheckSigned) {
-    showWizardStep(totalWizardSteps);
-    openTripCheckSignatureDialog();
-    alert("The driver must confirm their signature before this inspection can be saved.");
-    return;
-  }
-  saveTripCheckBtn.disabled = true;
-  saveTripCheckBtn.textContent = "Saving inspection...";
-  try {
-    const checkId = document.getElementById("tc-id").value.trim();
-    const original = checkId
-      ? tripChecksDatabase.find(row => String(getTripCheckField(row, "Check ID")) === checkId)
-      : null;
-    if (checkId && !original) throw new Error("The inspection to edit could not be found.");
-    const data = collectTripCheckForm(original || null);
-    // The Apps Script generates the canonical ID and checks for duplicate plate/day IDs.
-    const saved = await submitTripCheckToSheet(data, Boolean(checkId));
-    tripCheckModal.style.display = "none";
-    await reportSavedTripCheck({ ...data, ...saved });
-  } catch (error) {
-    console.error("Could not save the Trip Check in Google Sheets:", error);
-    alert(`Unable to save the inspection: ${error.message}`);
-  } finally {
-    saveTripCheckBtn.disabled = false;
-    saveTripCheckBtn.textContent = "💾 Save Inspection";
-  }
+  showIntegrationPending();
 });
 
 /**
@@ -579,63 +470,10 @@ tripCheckEditModal.addEventListener("keydown", event => {
   if (event.key === "Escape") { event.preventDefault(); closeTripCheckEditor(); }
 });
 
-/** Save edited answers to the same Apps Script record without changing Signed. */
-tripCheckEditForm.addEventListener("submit", async event => {
+/** Frontend inspection preview. Database integration pending. */
+tripCheckEditForm.addEventListener("submit", event => {
   event.preventDefault();
-  const original = tripChecksDatabase.find(record =>
-    String(getTripCheckField(record, "Check ID")) === tripCheckEditingId &&
-    String(getTripCheckField(record, "Check Type")) === tripCheckEditingType);
-  if (!original) { alert("The original inspection could not be found. Reload the Overview."); return; }
-  const score = updateTripCheckEditScore();
-  if (score.answered !== score.total) {
-    alert("All 24 inspection items must have a result before saving.");
-    return;
-  }
-  const plate = document.getElementById("tripcheck-edit-plate").value;
-  const iqama = document.getElementById("tripcheck-edit-driver").value;
-  const name = document.getElementById("tripcheck-edit-driver-name").value.trim();
-  const kmText = document.getElementById("tripcheck-edit-odometer").value;
-  if (!plate || !iqama || !name || kmText === "" || !Number.isFinite(Number(kmText)) || Number(kmText) < 0) {
-    alert("Please complete the vehicle, driver and odometer details.");
-    return;
-  }
-
-  const now = getKSACurrentDateTime();
-  const updated = {
-    ...original,
-    "Check ID": getTripCheckField(original, "Check ID"),
-    "Check Type": getTripCheckField(original, "Check Type"),
-    "Date": getTripCheckField(original, "Date"),
-    "Time": getTripCheckField(original, "Time"),
-    "Checked By": getTripCheckField(original, "Checked By"),
-    "Signed": getTripCheckField(original, "Signed"),
-    "Car Plate": plate,
-    "Driver Iqama": iqama,
-    "Driver Name": name,
-    "Odometer (KM)": Number(kmText),
-    "Remarks": document.getElementById("tripcheck-edit-remarks").value.trim(),
-    "Score (%)": score.percentage,
-    "Overall Status": score.status,
-    "Last Edited By": loggedInUserName,
-    "Last Edited At": `${now.date} ${now.time}`
-  };
-  for (const [id, label] of TRIPCHECK_QUESTIONS) {
-    updated[label] = document.getElementById(`tripcheck-edit-${id}`).value;
-  }
-
-  tripCheckEditSave.disabled = true;
-  tripCheckEditSave.textContent = "Saving...";
-  try {
-    const saved = await submitTripCheckToSheet(updated, true);
-    closeTripCheckEditor();
-    await reportSavedTripCheck({ ...updated, ...saved });
-  } catch (error) {
-    console.error("Unable to update Trip Check:", error);
-    alert(`Unable to update the inspection: ${error.message}`);
-  } finally {
-    tripCheckEditSave.disabled = false;
-    tripCheckEditSave.textContent = "Save Changes";
-  }
+  showIntegrationPending();
 });
 
 function renderTripChecksTable(items) {
@@ -647,7 +485,7 @@ function renderTripChecksTable(items) {
     const cell = row.insertCell();
     cell.colSpan = 14;
     cell.className = "tripcheck-empty-table";
-    cell.textContent = "No trip check records match the selected filters.";
+    cell.innerHTML = '<span class="table-empty">No records available — database not connected</span>';
     return;
   }
   for (const record of items) {
@@ -690,28 +528,13 @@ function renderTripChecksTable(items) {
   }
 }
 
-/** Load both worksheets and combine the records for filtering and PDF export. */
+/** Frontend inspection preview. Database integration pending. */
 let tripCheckRefreshSequence = 0;
 async function fetchTripChecks() {
-  const requestId = ++tripCheckRefreshSequence;
-  const badge = document.getElementById("tripcheck-sync-status");
-  badge.textContent = "Loading inspections from Google Sheets...";
-  try {
-    const groups = await Promise.all(Object.entries(TRIPCHECK_SHEET_ENDPOINTS).map(async ([type, url]) => {
-      const data = await readSheetRecords(url);
-      return data.map(record => ({ ...record, "Check Type": type }));
-    }));
-    if (requestId !== tripCheckRefreshSequence) return false;
-    tripChecksDatabase = groups.flat();
-    applyTripCheckFilters();
-    badge.textContent = `Google Sheets connected — ${tripChecksDatabase.length} inspection(s) loaded.`;
-    return true;
-  } catch (error) {
-    if (requestId !== tripCheckRefreshSequence) return false;
-    console.error("Unable to load Trip Check Google Sheets:", error);
-    badge.textContent = `Unable to load Google Sheets: ${error.message}`;
-    return false;
-  }
+  tripChecksDatabase = [];
+  document.getElementById("tripcheck-sync-status").textContent = "No records available — database not connected";
+  applyTripCheckFilters();
+  return false;
 }
 
 document.getElementById("refresh-tripchecks-btn").addEventListener("click", async event => {
@@ -787,12 +610,12 @@ function clearTripCheckSignatureCanvas() {
 }
 function openTripCheckSignatureDialog() {
   clearTripCheckSignatureCanvas();
-  tripCheckSignatureModal.style.display = "flex";
+  openPreviewModal(tripCheckSignatureModal);
   tripCheckSignatureModal.setAttribute("aria-hidden", "false");
   document.getElementById("tc-clear-signature-btn").focus();
 }
 function closeTripCheckSignatureDialog() {
-  tripCheckSignatureModal.style.display = "none";
+  closePreviewModal(tripCheckSignatureModal);
   tripCheckSignatureModal.setAttribute("aria-hidden", "true");
   clearTripCheckSignatureCanvas();
   document.getElementById("open-tripcheck-signature-btn").focus();
@@ -1002,8 +825,10 @@ function createTripCheckPdf(record, logo) {
 
 /** Export one PDF for each record matching the current Overview filters. */
 document.getElementById("export-tripchecks-pdf-zip-btn").addEventListener("click", async () => {
-  const records = getFilteredTripChecks(); // Export exactly the records visible in Overview.
-  if (!records.length) { alert("No inspections match the current filters."); return; }
+  showIntegrationPending();
+  return;
+  const records = getFilteredTripChecks(); // Retained PDF export implementation for future integration.
+  if (!records.length) { alert("No records available — database not connected"); return; }
   const button = document.getElementById("export-tripchecks-pdf-zip-btn");
   button.disabled = true;
   button.textContent = `Preparing ${records.length} PDF(s)...`;
@@ -1040,8 +865,13 @@ document.getElementById("export-tripchecks-pdf-zip-btn").addEventListener("click
 document.getElementById("logout-button").addEventListener("click", () => {
   tripChecksDatabase = [];
   applyTripCheckFilters();
-  tripCheckModal.style.display = "none";
-  tripCheckSignatureModal.style.display = "none";
+  closePreviewModal(tripCheckModal);
+  closePreviewModal(tripCheckSignatureModal);
 });
 
 updateTripCheckSignatureStatus();
+
+[addTripCheckForm, tripCheckEditForm].forEach(form => {
+  form.addEventListener("submit", event => { event.preventDefault(); event.stopImmediatePropagation(); showIntegrationPending(); }, true);
+  form.querySelectorAll("button[type=submit]").forEach(button => { button.type = "button"; button.addEventListener("click", showIntegrationPending); });
+});

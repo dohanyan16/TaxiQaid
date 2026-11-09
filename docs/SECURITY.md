@@ -1,5 +1,7 @@
 # TaxiQaid — Security Requirements
 
+> Current phase: operational spreadsheet integrations are retired and disconnected. The historical integration notes below are retained for context and do not authorize reconnection. See [TAXIQAID_WORKFLOW_SPEC.md](TAXIQAID_WORKFLOW_SPEC.md) for the current frontend-only boundaries.
+
 ## Critical distinction: Login is not API authorization
 
 The current application signs users in via Supabase Auth and verifies that a row exists for the user's ID in `taxiqaid_roles`. Its UI is hidden until the check passes. That does not guarantee that the linked Google Apps Script endpoints reject unauthenticated requests.
