@@ -80,9 +80,11 @@ function initializeSelectDescriptions() {
       hint=document.createElement('p');hint.className='selected-option-text';hint.id=`${select.id}-selected-text`;hint.hidden=true;select.after(hint);
       select.setAttribute('aria-describedby',[select.getAttribute('aria-describedby'),hint.id].filter(Boolean).join(' '));
     }
-    context.font=getComputedStyle(select).font;
+    const style=getComputedStyle(select);
+    context.font=style.font;
+    const availableWidth=select.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight);
     hint.textContent=text;
-    hint.hidden=!(select.getClientRects().length && context.measureText(text).width>select.clientWidth-52);
+    hint.hidden=!(select.getClientRects().length && context.measureText(text).width>availableWidth);
   }
   const observer=new ResizeObserver(entries=>entries.forEach(entry=>describe(entry.target)));
   const observed=new WeakSet();
