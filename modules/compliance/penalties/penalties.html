@@ -1,9 +1,78 @@
-<!-- Penalties: planned module, no business logic is implemented yet. -->
+<!-- Penalties are read-only. Importing and correcting source records is outside this UI. -->
 <section class="view-section" id="view-penalties">
-  <div class="card placeholder-card" aria-labelledby="penalties-title">
-    <span class="placeholder-kicker">PLANNED MODULE</span>
-    <h2 id="penalties-title">Penalties</h2>
-    <p>Penalty records and follow-up.</p>
-    <div class="placeholder-state">Coming Soon</div>
+  <div class="card">
+    <div class="card-header-flex">
+      <div>
+        <h2 id="penalties-title">Penalties Tracker</h2>
+        <p class="preview-note">Review vehicle and driver penalties and export filtered penalty reports.</p>
+      </div>
+      <div class="button-group-row" id="penalties-main-actions">
+        <button class="btn-secondary" id="refresh-penalties-btn" type="button">Refresh</button>
+        <button class="btn-secondary" id="export-penalties-btn" type="button">Export by Period</button>
+      </div>
+    </div>
+    <p class="preview-note">Read-only interface — database integration pending. Penalties will be maintained through a future approved external source.</p>
+    <div class="workflow-grid">
+      <div class="form-group">
+        <label for="penalties-driver-name">Driver Name</label>
+        <input id="penalties-driver-name" type="search" autocomplete="off" placeholder="Search driver name"/>
+      </div>
+      <div class="form-group">
+        <label for="penalties-driver-iqama">Driver Iqama</label>
+        <input id="penalties-driver-iqama" type="search" autocomplete="off" placeholder="Search driver Iqama"/>
+      </div>
+      <div class="form-group">
+        <label for="penalties-start-date">Start Date</label>
+        <input id="penalties-start-date" type="date"/>
+      </div>
+      <div class="form-group">
+        <label for="penalties-end-date">End Date</label>
+        <input id="penalties-end-date" type="date"/>
+      </div>
+    </div>
+    <button class="btn-secondary" id="clear-penalties-filters" type="button">Clear Filters</button>
+    <p class="preview-note" id="penalties-filter-status" role="status">Filters include both Start Date and End Date. Driver Name and Iqama can be used together.</p>
+  </div>
+  <div class="card">
+    <div class="card-header-flex"><h2>Penalties Overview</h2></div>
+    <div class="tracker-table-container" tabindex="0" role="region" aria-label="Penalties Overview table">
+      <table class="tracker-table" id="penalties-table">
+        <thead>
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Details</th>
+            <th scope="col">Date</th>
+            <th scope="col">Time</th>
+            <th scope="col">Car Plate</th>
+            <th scope="col">Driver Iqama</th>
+            <th scope="col">Driver Name</th>
+            <th scope="col">Amount</th>
+            <th scope="col">Charged To</th>
+          </tr>
+        </thead>
+        <tbody id="penalties-table-body"><tr><td colspan="9"><span class="table-empty">No penalties available — database integration pending.</span></td></tr></tbody>
+      </table>
+    </div>
   </div>
 </section>
+
+<div class="modal-overlay" id="penalty-details-modal" aria-hidden="true">
+  <div class="modal-content workflow-modal">
+    <div class="card-header-flex">
+      <h2 id="penalty-details-title">Penalty Details</h2>
+      <button class="btn-secondary" id="close-penalty-details" type="button">Close</button>
+    </div>
+    <p class="preview-note">Read-only record. Corrections will be managed through the future approved external source.</p>
+    <dl class="workflow-grid penalty-details-grid">
+      <div><dt>ID</dt><dd id="penalty-detail-id">Unavailable</dd></div>
+      <div class="wide"><dt>Details</dt><dd id="penalty-detail-description">Unavailable</dd></div>
+      <div><dt>Date</dt><dd id="penalty-detail-date">Unavailable</dd></div>
+      <div><dt>Time</dt><dd id="penalty-detail-time">Unavailable</dd></div>
+      <div><dt>Car Plate</dt><dd id="penalty-detail-plate">Unavailable</dd></div>
+      <div><dt>Driver Iqama</dt><dd id="penalty-detail-iqama">Unavailable</dd></div>
+      <div><dt>Driver Name</dt><dd id="penalty-detail-name">Unavailable</dd></div>
+      <div><dt>Amount (SAR)</dt><dd id="penalty-detail-amount">Unavailable</dd></div>
+      <div><dt>Charged To</dt><dd id="penalty-detail-charged-to">Unavailable</dd></div>
+    </dl>
+  </div>
+</div>

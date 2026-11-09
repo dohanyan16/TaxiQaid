@@ -22,6 +22,7 @@ Version **1.2** — each screen has its own HTML, CSS, and JavaScript files.
 - `modules/accidents/`: accident reporting and management.
 - `modules/breakdowns/`: complete frontend breakdown report preview.
 - `modules/maintenance/`: Maintenance Requests and Maintenance Overview previews.
+- `modules/compliance/penalties/`: read-only Penalties overview, inclusive driver/date filters and record details; future external source pending.
 - `modules/compliance/ncr/`: Driver Scores, NCR Tracker and independently tested 90-day KSA scoring policy.
 - `modules/operations/fuel/`: Fuel overview, empty record details/editing and conditional fueling form previews.
 - `shared/`: navigation, layout, common CSS, Supabase configuration, general utilities, and data helpers.
@@ -50,6 +51,6 @@ See [the workflow specification](docs/TAXIQAID_WORKFLOW_SPEC.md) for all field d
 
 ## Validation
 
-Run `node --test tests/fleet.test.cjs tests/ncr-policy.test.cjs` for the retained pure compatibility tests. With Playwright and Chromium available and a local HTTP server running, run `node tests/workflow.browser.cjs`. Set `TAXIQAID_URL`, `TAXIQAID_CHROMIUM` or `TAXIQAID_SCREENSHOTS` to override defaults. Browser checks use mocked authentication and never live credentials or operational data. Screenshots are written to `docs/screenshots/` by default.
+Run `node --test tests/fleet.test.cjs tests/ncr-policy.test.cjs tests/penalties.test.cjs` for the retained pure compatibility tests. With Playwright and Chromium available and a local HTTP server running, run `node tests/workflow.browser.cjs`. Set `TAXIQAID_URL`, `TAXIQAID_CHROMIUM` or `TAXIQAID_SCREENSHOTS` to override defaults. Browser checks use mocked authentication and never live credentials or operational data. Screenshots are written to `docs/screenshots/` by default.
 
 The former spreadsheet persistence tests were replaced because spreadsheet reads/writes are intentionally retired. Live authentication must be verified separately with an existing authorized account.

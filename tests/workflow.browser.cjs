@@ -242,8 +242,60 @@ const path = require('node:path');
   await page.locator('#delete-ncr-preview').click();
   assert.equal(await page.locator('#ncr-save-status').innerText(),'Database integration pending — NCR not deleted.');
   await page.keyboard.press('Escape');
+  await nav('penalties');
+  assert.equal(await page.locator('#view-penalties h2').first().innerText(),'Penalties Tracker');
+  assert.deepEqual(await page.locator('#penalties-main-actions button').allTextContents(),['Refresh','Export by Period']);
+  assert.deepEqual(await page.locator('#penalties-table th').allTextContents(),['ID','Details','Date','Time','Car Plate','Driver Iqama','Driver Name','Amount','Charged To']);
+  assert.equal(await page.locator('#view-penalties input[type=time]').count(),0);
+  for(const id of ['penalties-driver-name','penalties-driver-iqama','penalties-start-date','penalties-end-date']) assert.equal(await page.locator('#'+id).isVisible(),true);
+  assert.equal(await page.locator('#penalties-table-body').innerText(),'No penalties available — database integration pending.');
+  assert.equal(await page.locator('#view-penalties button, #penalty-details-modal button').allTextContents().then(labels=>labels.some(label=>/Add|New|Edit|Delete|Save/.test(label))),false);
+  await page.locator('#penalties-driver-name').fill('Unsaved name filter');
+  await page.locator('#penalties-driver-iqama').fill('Unsaved Iqama filter');
+  await page.locator('#penalties-start-date').fill('2026-01-10');await page.locator('#penalties-end-date').fill('2026-01-11');
+  for(const id of ['refresh-penalties-btn','export-penalties-btn']) {
+   await page.locator('#'+id).click();assert.match(await page.locator('#integration-notice').innerText(),/Database integration pending/);
+  }
+  await page.locator('#integration-notice button').click();
+  await nav('dashboard');await nav('penalties');
+  assert.equal(await page.locator('#penalties-driver-name').inputValue(),'Unsaved name filter');
+  assert.equal(await page.locator('#penalties-driver-iqama').inputValue(),'Unsaved Iqama filter');
+  assert.equal(await page.locator('#penalties-start-date').inputValue(),'2026-01-10');
+  assert.equal(await page.locator('#penalties-end-date').inputValue(),'2026-01-11');
+  await page.screenshot({animations:'disabled',path:path.join(screenshotDir,'penalties-tracker.png')});
+  await page.locator('#penalties-end-date').fill('2026-01-09');
+  assert.match(await page.locator('#penalties-filter-status').innerText(),/on or before/);
+  await page.locator('#clear-penalties-filters').click();
+  for(const id of ['penalties-driver-name','penalties-driver-iqama','penalties-start-date','penalties-end-date']) assert.equal(await page.locator('#'+id).inputValue(),'');
+  // Synthetic renderer fixtures are injected only by this test, then removed.
+  // No application fixture, import connection or source record store is created.
+  await page.evaluate(()=>{
+   window.penaltyTestRecord=Object.freeze({ID:'test-only-reference',Details:'<img src=x onerror="window.penaltyXss=true">'+ 'Long description '.repeat(500),
+    Date:'2026-01-10',Time:'23:59:59','Car Plate':'test-only-plate','Driver Iqama':'test-only-iqama',
+    'Driver Name':'Synthetic test driver',Amount:12.5,'Charged To':'  arbitrary source value <literal>  '});
+   document.getElementById('penalties-table-body').replaceChildren(TaxiQaidPenalties.buildReadOnlyRow(penaltyTestRecord,TaxiQaidPenaltiesView.openDetails));
+  });
+  assert.equal(await page.locator('#penalties-table-body td').count(),9);
+  assert.equal(await page.locator('#penalties-table-body img').count(),0);
+  assert.equal(await page.locator('#penalties-table-body td').nth(7).innerText(),'SAR 12.50');
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'Long Details page overflow');
+  await page.locator('#penalties-table-body tr').focus();await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#penalty-details-modal').isVisible(),true);
+  assert.deepEqual(await page.locator('#penalty-details-modal button').allTextContents(),['Close']);
+  assert.equal(await page.locator('#penalty-details-modal input, #penalty-details-modal select, #penalty-details-modal textarea, #penalty-details-modal form').count(),0);
+  assert.equal(await page.locator('#penalty-detail-description').textContent(),await page.evaluate(()=>penaltyTestRecord.Details));
+  assert.equal(await page.locator('#penalty-detail-charged-to').textContent(),await page.evaluate(()=>penaltyTestRecord['Charged To']));
+  assert.equal(await page.locator('#penalty-detail-time').innerText(),'23:59:59');
+  assert.equal(await page.locator('#penalty-detail-amount').innerText(),'SAR 12.50');
+  assert.equal(await page.locator('#penalty-details-modal img').count(),0);
+  assert.equal(await page.evaluate(()=>window.penaltyXss),undefined);
+  await page.locator('#close-penalty-details').click();
+  assert.equal(await page.locator('#penalties-table-body tr').evaluate(el=>document.activeElement===el),true);
+  await page.locator('#clear-penalties-filters').click();
+  await page.evaluate(()=>{delete window.penaltyTestRecord});
+  assert.equal(await page.locator('#penalties-table-body').innerText(),'No penalties available — database integration pending.');
   // Every dependent action reports pending and never downloads a fabricated export.
-  for(const name of ['fleet','drivers','accidents','tripcheck','breakdowns','maintenance','fuel','ncr']) {
+  for(const name of ['fleet','drivers','accidents','tripcheck','breakdowns','maintenance','fuel','ncr','penalties']) {
    await nav(name);
    for(const button of await page.locator(`#view-${name} button`).all()) {
     const text=await button.innerText();
@@ -258,7 +310,13 @@ const path = require('node:path');
   await page.locator('#save-tripcheck-btn').click();
   await page.keyboard.press('Escape');
   await page.setViewportSize({width:390,height:844});
-  for(const name of ['accidents','breakdowns','maintenance','ncr']) {await nav(name);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),name+' mobile overflow');}
+  for(const name of ['accidents','breakdowns','maintenance','ncr','penalties']) {await nav(name);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),name+' mobile overflow');}
+  await nav('penalties');
+  assert.ok(await page.locator('#view-penalties .tracker-table-container').evaluate(el=>el.scrollWidth>el.clientWidth),'Penalties should scroll within its own container');
+  await page.evaluate(()=>TaxiQaidPenaltiesView.openDetails({}));
+  assert.ok(await page.locator('#penalty-details-modal .modal-content').evaluate(el=>el.getBoundingClientRect().right<=window.innerWidth),'Penalty mobile dialog overflow');
+  assert.deepEqual(await page.locator('#penalty-details-modal button').allTextContents(),['Close']);
+  await page.keyboard.press('Escape');
   await nav('ncr');
   await page.locator('#ncr-tracker-tab').click();
   await page.locator('#open-ncr-modal').click();
@@ -278,6 +336,6 @@ const path = require('node:path');
   assert.ok((await page.evaluate(()=>authCalls)).includes('logout'));
   assert.deepEqual(legacy,[]);assert.deepEqual(databaseWrites,[]);assert.deepEqual(downloads,[]);assert.deepEqual(errors,[]);assert.deepEqual(dialogs,[]);
   assert.equal(await page.evaluate(()=>fleetDatabase.length+driversDatabase.length+accidentsDatabase.length+tripChecksDatabase.length),0);
-  console.log(JSON.stringify({result:'PASS',sidebarPages:views.length,ncr:'Two views, retained filters, 23 categories, expiry, KSA day rollover, TBT independence, empty details/editing and mobile dialogs passed',fuel:'Fields, Depot/Outside Depot conditions, validation, live SAR totals, empty details/edit previews and mobile dialog passed',uncaughtErrors:errors,legacyRequests:legacy,databaseWrites,downloads,screenshots:screenshotDir,authentication:'Mocked login, role denial, role lookup and logout verified; live credentials not supplied'},null,2));
+  console.log(JSON.stringify({result:'PASS',sidebarPages:views.length,penalties:'Read-only actions/details, four retained filters, inclusive dates, nine columns, long text safety, currency, keyboard navigation and mobile layout passed',ncr:'Two views, retained filters, 23 categories, expiry, KSA day rollover, TBT independence, empty details/editing and mobile dialogs passed',fuel:'Fields, Depot/Outside Depot conditions, validation, live SAR totals, empty details/edit previews and mobile dialog passed',uncaughtErrors:errors,legacyRequests:legacy,databaseWrites,downloads,screenshots:screenshotDir,authentication:'Mocked login, role denial, role lookup and logout verified; live credentials not supplied'},null,2));
  } finally {await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1});

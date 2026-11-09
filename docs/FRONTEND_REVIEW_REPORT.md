@@ -1,58 +1,46 @@
 # TaxiQaid frontend review report
 
-This revision adds the approved Fuel tariff and complete NCR frontend/scoring rules, based on `main` at `3654bb8`. The previously completed Accident, Breakdown, Maintenance, Fleet, Drivers and Trip Check interfaces remain preserved. The current phase is frontend-only.
+This revision replaces the Penalties placeholder with the approved read-only Penalties Tracker, based on `main` at `642474e`. Accident, Breakdown, Maintenance, Fuel, NCR, Fleet, Drivers, Trip Check and authentication source are unchanged. The only navigation change names the existing Penalties destination Penalties Tracker.
 
-## Fuel pricing
+## Penalties interface
 
-The named configuration constant `TAXIQAID_DEPOT_FUEL_PRICE_SAR_PER_LITER` sets the approved Depot price to **2.18 SAR/L**. Depot pricing is filled automatically and read-only; outside location is cleared/disabled. **50 L calculates SAR 109.00.** Outside Depot clears the previous price, requires a location and positive manual price, and calculates two-decimal SAR totals. Returning to Depot restores exactly 2.18. No fuel records are persisted; future records must retain their original transaction price.
-
-## NCR interfaces and business rules
-
-- Exactly two main views: Driver Scores (default) and NCR Tracker. Each retains its filters. Driver Scores prepares all-driver Iqama/name/phone lookup and exact/min/max points filters, including negative values.
-- The 9-column scores overview and 16-column NCR overview are horizontally scrollable and honestly empty while disconnected. Empty driver details prepare separate active/recovered history; empty NCR details support future authorized editing/deletion.
-- The report form includes all operational fields, the 23 exact categories with penalties, derived negative NCR Score, date-only event/expiry fields, independent TBT status and disciplinary actions, statements, remarks and read-only future audit fields.
-- Every driver starts at 100. The current score subtracts only active penalty magnitudes, with no minimum. Each penalty expires independently after 90 KSA calendar days, beginning on its Expiry Date. Expired NCRs and original metadata remain in history; no reset or record deletion occurs.
-- Pure, reusable functions require an explicit current KSA date. Invalid/missing dates and unknown categories throw rather than silently return a misleading score. Future-dated records deduct nothing and return explicit diagnostics, with no Active/Expired status until the occurrence date.
-- The unsaved form labels browser-time KSA calculations as previews and automatically updates across a KSA day change without Refresh. Production calculations remain backend-owned and must be correct even without an active browser session.
-- Save says “Database integration pending — NCR not saved.” Delete, Refresh and Export never persist, reload operational data or claim success.
+- Exactly two main actions: Refresh and Export by Period. Both explain that database integration is pending. Clear Filters is a separate filter action. No operational creation, editing or deletion actions exist.
+- Four filters: Driver Name, Driver Iqama, Start Date and End Date. Name/Iqama filters combine with AND; dates are inclusive and use only the penalty Date. Invalid/reversed ranges are surfaced without silently clearing selections. Filters survive sidebar navigation and pending actions.
+- Exactly nine overview columns: ID, Details, Date, Time, Car Plate, Driver Iqama, Driver Name, Amount, Charged To. The table scrolls horizontally inside its container on narrow screens.
+- The empty state is exactly “No penalties available — database integration pending.” No sample drivers, penalty records, source IDs, default monetary values or Charged To choices populate the application.
+- Future rows can open Penalty Details by click, Enter or Space. The read-only dialog includes all nine fields, has only Close, supports Escape and restores focus. There are no editable record controls or mutation endpoints.
+- Long Details and Charged To values wrap safely and are assigned through `textContent`, never interpreted as HTML. Source values remain intact. Amounts display SAR with two decimals; missing amounts are Unavailable, and negative signs receive no invented business interpretation. Valid source times retain their supplied 24-hour precision.
+- Pure helpers prepare inclusive filtering and safe display. No imports, source reads, synchronization, workbook generation or operational storage are connected. Future Excel exports must use original numeric amounts, approved date/time formats and all active filters, leaving source data unchanged.
 
 ## Verification results
 
 | Check | Result |
 | --- | --- |
-| Application JavaScript syntax and `git diff --check` | Pass |
-| NCR scoring/expiry unit regressions | 11 passed |
-| Existing compatibility unit regressions | 4 passed |
-| Browser workflow test | Pass across all 17 sidebar pages |
-| Category configuration | Exactly 23 unique categories; 3 × -50, 8 × -25, 12 × -10 |
-| Scores | 100 baseline, positive deduction magnitudes, 0 and negative balances preserved |
-| Expiry/recovery | Independent 90-day recovery, retained history, month/year/leap boundaries |
-| Timezones | KSA midnight and America/New_York, Pacific/Honolulu, Europe/Madrid, Asia/Tokyo |
-| Invalid/future dates | Explicit errors/diagnostics; no early deductions |
-| NCR UI | Both tabs, retained filters, category/expiry updates, automatic KSA preview rollover, independent TBT/action, details/edit/delete previews |
-| Fuel UI | Depot 2.18, 50 L = SAR 109.00, manual Outside Depot price, validation and mode transitions |
-| Mobile | 390px layout and both Fuel/NCR dialogs pass without main-page horizontal overflow |
-| Legacy spreadsheet/Apps Script requests | 0 |
-| Operational backend writes, fabricated downloads, uncaught errors | 0 |
-| Authentication | Existing login, role denial/lookup and logout pass with mocks; configuration/source unchanged |
+| All application JavaScript syntax checks | Pass |
+| `git diff --check` | Pass |
+| Penalties unit regressions | 7 passed |
+| Existing compatibility and NCR regressions | 15 passed |
+| Browser workflow suite | Pass across all 17 sidebar pages |
+| Penalties actions, filters, nine columns and exact empty state | Pass |
+| Inclusive period boundaries and combined driver filters | Pass |
+| Filter retention, invalid ranges and Clear Filters | Pass |
+| Long-text literal rendering and script-injection safety | Pass |
+| Read-only details, Close-only controls, keyboard opening and focus restoration | Pass |
+| 390px layout, container scrolling and read-only mobile dialog | Pass |
+| Operational writes, fabricated downloads and legacy spreadsheet requests | 0 |
+| Uncaught JavaScript errors | 0 |
+| Existing authentication/authorization | Mocked login, role denial, role lookup and logout pass; source/configuration unchanged |
 
-Run `node --test tests/fleet.test.cjs tests/ncr-policy.test.cjs`. With a local server running, run `node tests/workflow.browser.cjs`; `TAXIQAID_URL` and `TAXIQAID_SCREENSHOTS` override the defaults. Synthetic records are confined to pure tests and never populate production data. Browser tests edit unsaved form previews, use mocked authentication and do not use live account credentials. Live authentication/session verification remains a separate account-based check.
+Run `node --test tests/fleet.test.cjs tests/ncr-policy.test.cjs tests/penalties.test.cjs`. With a local HTTP server running, run `node tests/workflow.browser.cjs`. `TAXIQAID_URL` and `TAXIQAID_SCREENSHOTS` can override defaults. Synthetic Penalties fixtures exist only in unit tests or temporary local browser-test DOM; browser tests remove them and confirm the application returns to its disconnected empty state. They never become source data or production records.
 
-No Supabase credentials, roles, tables, data schemas or migrations were changed. No spreadsheet, Apps Script project, operational localStorage/IndexedDB store or database connection was added. Existing Maintenance Original Source ID relationships remain intact.
+No Supabase credentials, roles, tables or schemas were changed. No real account credentials were supplied, so live account/session verification is not claimed. Existing Maintenance source references, Fuel tariff and NCR scoring remain intact. No Google Sheets/Apps Script integration, Excel database, localStorage/IndexedDB record store or external import was connected.
 
-## Screenshots
+## Review reference
 
-- [Driver Scores](screenshots/ncr-driver-scores.png)
-- [NCR Tracker](screenshots/ncr-tracker.png)
-- [Approved Fuel tariff and total](screenshots/fuel-form-preview.png)
-- [Accident Tracker](screenshots/accident-tracker.png)
-- [Breakdown Tracker](screenshots/breakdown-tracker.png)
-- [Maintenance Requests](screenshots/maintenance-requests.png)
-- [Maintenance Overview](screenshots/maintenance-overview.png)
+- [Penalties Tracker screenshot](screenshots/penalties-tracker.png)
+- [Workflow specification and future integration boundaries](TAXIQAID_WORKFLOW_SPEC.md#penalties-tracker--read-only-web-module)
 
-## Future database boundaries
-
-The [workflow specification](TAXIQAID_WORKFLOW_SPEC.md) documents approved rules and the separate future integration work: all-driver queries, NCR ID allocation/storage, original penalty/history preservation, authoritative KSA scores/expiry, independent TBT/action auditing, authentication/authorization, historical search/export, and Fuel transaction price snapshots. There is no database implementation in this revision. Main/deployment/branch status is reported after validated integration in the task's final response.
+The source-supplied Penalty ID convention, Charged To vocabulary and meaning of negative amounts remain unapproved. Future import/correction belongs outside the web application. Read synchronization/export access must be authorized by the future source/backend. The final task response reports the validated main commit, branch cleanup and exact GitHub Pages deployment result.
 
 ## Changed files in this revision
 
@@ -60,15 +48,10 @@ The [workflow specification](TAXIQAID_WORKFLOW_SPEC.md) documents approved rules
 - `README.md`
 - `docs/FRONTEND_REVIEW_REPORT.md`
 - `docs/TAXIQAID_WORKFLOW_SPEC.md`
-- `docs/screenshots/fuel-form-preview.png`
-- `docs/screenshots/ncr-driver-scores.png`
-- `docs/screenshots/ncr-tracker.png`
-- `modules/compliance/ncr/ncr-policy.js`
-- `modules/compliance/ncr/ncr.css`
-- `modules/compliance/ncr/ncr.html`
-- `modules/compliance/ncr/ncr.js`
-- `modules/operations/fuel/fuel.html`
-- `modules/operations/fuel/fuel.js`
-- `shared/bootstrap.js`
-- `tests/ncr-policy.test.cjs`
+- `docs/screenshots/penalties-tracker.png`
+- `modules/compliance/penalties/penalties.css`
+- `modules/compliance/penalties/penalties.html`
+- `modules/compliance/penalties/penalties.js`
+- `shared/shell.html`
+- `tests/penalties.test.cjs`
 - `tests/workflow.browser.cjs`

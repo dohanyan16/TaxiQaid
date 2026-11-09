@@ -19,6 +19,7 @@ The shared sidebar, static module paths, existing styling, Fleet/Driver profiles
 | Fleet vehicle | Car Plate | Future Fleet relationship |
 | Driver | Iqama Number | Future Drivers relationship |
 | NCR | `NCT-00001` (five digits) | Future backend |
+| Penalty | Unique source-supplied reference; format unconfirmed | Future approved external source |
 | Trip Check | Future identifier contract to be approved | No current ID generation or storage |
 
 IDs shown in placeholder text illustrate formats and are not records or allocated identifiers. Read-only identifier fields remain blank in previews. Server-generated reporting, sending, creation and status-change timestamps must use `Asia/Riyadh` (KSA, UTC+3), from an authoritative backend clock. The browser clock is not authoritative. User-entered accident/breakdown event dates and times remain separate from reporting dates and times. Overview filters use dates only, including both start and end dates; event-time inputs remain in report forms.
@@ -273,6 +274,51 @@ The unsaved form clearly uses the browser's instant converted to Asia/Riyadh for
 
 Future integration must authorize reads/edits/deletes server-side, preserve original NCR IDs/category penalties/audit history, link Drivers by Iqama and derive name/phone, calculate authoritative current summaries, retain expired records and expose authorized historical searches/exports. No new database implementation or migration is authorized.
 
+## Penalties Tracker — read-only web module
+
+Penalties Tracker is a **read-only** interface. Penalties will be imported, created, corrected and otherwise maintained **outside the web application**, through a future approved external source. No operational database, Excel database, spreadsheet, import, synchronization service or external storage is connected in this phase.
+
+The page describes: “Review vehicle and driver penalties and export filtered penalty reports.” Its only main actions are **Refresh** and **Export by Period**. Both currently show database integration pending and never read a backend, claim successful synchronization, download a workbook or modify source data. Clear Filters is a separate filter action. No Add, New, Save, Edit or Delete Penalty action exists anywhere in this module, including record details, regardless of user role.
+
+### Filters and overview
+
+Four searchable/date filters are prepared: **Driver Name**, **Driver Iqama**, **Start Date**, **End Date**. Name and Iqama may be used independently or together; the pure frontend filter uses case-insensitive text matching and combines active filters with AND. Driver Iqama is the unique future driver reference; names will be linked to Drivers Management, not invented selector records. Leading zeros in Iqama values must be preserved by the future source adapter.
+
+Date filtering applies only to the source **Date** field, includes both boundary dates and does not restrict time of day. One-sided date ranges are supported. Invalid or reversed filter ranges show a validation message without clearing the user's selections. Name, Iqama and date selections survive sidebar navigation and pending Refresh/Export clicks until changed or explicitly cleared. No browser clock is used to infer penalty dates.
+
+The responsive, horizontally scrolling overview has exactly nine columns in this order:
+
+1. ID
+2. Details
+3. Date
+4. Time
+5. Car Plate
+6. Driver Iqama
+7. Driver Name
+8. Amount
+9. Charged To
+
+The disconnected state is exactly **“No penalties available — database integration pending.”** No sample records, default amounts or fabricated driver records populate the application. Details supports long/multiline text, wraps within bounded table cells and remains available in full in the detail dialog. Source text is rendered with DOM `textContent`, never treated as executable HTML.
+
+### Source values and relationships
+
+- **ID** is the unique penalty reference supplied by the future external source. Its convention is unknown; do not invent prefixes, sequences or persistent IDs.
+- **Driver Iqama** links to Drivers Management; **Driver Name** is associated with that driver. The future source contract must define the relationship and how historical names are preserved.
+- **Car Plate** links to Fleet Management.
+- **Date/Time** must be supplied and normalized by the approved source adapter, using authoritative `Asia/Riyadh` dates/times where applicable. The frontend prepares date-only ISO `YYYY-MM-DD` and validated 24-hour `HH:mm` or `HH:mm:ss`, preserving source seconds when supplied. Invalid/missing display values say Unavailable instead of inventing dates or times. Records without a valid Date cannot match an active period filter.
+- **Amount** remains numeric in source data. Display uses SAR and two decimal places; a genuine zero displays SAR 0.00, while a missing/invalid value displays Unavailable. Negative values retain their numeric sign without being labeled credits, refunds or deductions. Their business meaning requires an approved future data contract.
+- **Charged To** is displayed exactly as the source supplies it, including unfamiliar text. No vocabulary, dropdown choices or responsibility rules have been approved; confirm them before backend implementation.
+
+### Read-only details
+
+Future rows support click, Enter and Space to open **Penalty Details**, containing ID, Details, Date, Time, Car Plate, Driver Iqama, Driver Name, Amount (SAR) and Charged To. The dialog has only **Close**, with keyboard focus containment/restoration, Escape and backdrop dismissal. It contains no editable form fields, Save, Edit or Delete actions. The structure/rendering hooks exist now, but there are no connected records or clickable fabricated overview rows.
+
+### Future Refresh and Export by Period
+
+Refresh will eventually read only the latest authorized source records and preserve filters. Export by Period must use the same inclusive Start/End Date and Driver Name/Iqama filters as the overview, include all nine columns and leave the source unchanged. Amounts must remain **numeric Excel cells**, rather than strings containing SAR; apply a suitable currency number format. Dates/times must retain consistent approved formats and precision. The display formatter is not an export serializer. Actual source reads, authorization, imports/corrections and Excel generation remain pending and require the future integration phase.
+
+Pure `TaxiQaidPenalties` helpers prepare source-value formatting, inclusive filtering and safe read-only row construction. They do not connect an external source, import records, allocate IDs or store operational data. Synthetic fixtures used for unit/DOM regression tests are confined to tests and never ship as production records.
+
 ## Future connection inventory
 
 - Existing Supabase authentication and roles remain unchanged; the future operational service must verify identity and permissions server-side.
@@ -285,10 +331,11 @@ Future integration must authorize reads/edits/deletes server-side, preserve orig
 - Trip Check inspection persistence, signatures, authorized edits and eventual exports.
 - Fuel records with unique backend IDs, Fleet/Driver relationships, configured Depot tariffs, historical price snapshots and authorized edit auditing.
 - NCR records/unique IDs, all-driver summaries, authoritative 90-day KSA expiry, preserved historical penalties and independent TBT/action audit fields.
+- Authorized external Penalties source/refresh, source-supplied IDs, Fleet/Drivers references, confirmed Charged To/amount contracts and read-only filtered numeric Excel exports.
 - Authorized date/search/filter reads and Excel/PDF export services using connected records.
 
 These are planned capabilities, not schema proposals or migrations.
 
 ## Verification and review
 
-Run `node --test tests/fleet.test.cjs tests/ncr-policy.test.cjs` for compatibility and scoring/expiry regression tests. Run `node tests/workflow.browser.cjs` against a local HTTP server for frontend regression checks. Browser tests use mocked authentication and role responses, never a live user account or operational records. They cover all sidebar modules, date-only filters, shared location equality, forms, maintenance tabs/acceptance, mobile overflow, Fuel conditional fields/validation/approved Depot tariff/live totals/detail editing, both NCR views/retained filters/23 categories/automatic KSA preview rollover/TBT independence, pending controls and the absence of legacy requests, operational writes, downloads and uncaught errors. Live Supabase login/session behavior still requires review with an existing authorized account; no account credentials were supplied to this task.
+Run `node --test tests/fleet.test.cjs tests/ncr-policy.test.cjs tests/penalties.test.cjs` for compatibility and scoring/expiry regression tests. Run `node tests/workflow.browser.cjs` against a local HTTP server for frontend regression checks. Browser tests use mocked authentication and role responses, never a live user account or real operational records. Penalties rendering tests inject temporary synthetic DOM fixtures locally and remove them; the deployed module has no sample records. They cover all sidebar modules, date-only filters, shared location equality, forms, maintenance tabs/acceptance, mobile overflow, Fuel conditional fields/validation/approved Depot tariff/live totals/detail editing, both NCR views/retained filters/23 categories/automatic KSA preview rollover/TBT independence, read-only Penalties/filter retention/long-text safety/detail keyboard access, pending controls and the absence of legacy requests, operational writes, downloads and uncaught errors. Live Supabase login/session behavior still requires review with an existing authorized account; no account credentials were supplied to this task.
