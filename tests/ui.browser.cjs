@@ -8,6 +8,9 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
  try {
   const page=await browser.newPage({ignoreHTTPSErrors:true,viewport:{width:1440,height:1050}});
   const errors=[],legacy=[],writes=[],downloads=[];
+  const retiredRequests=[], brokenModuleResources=[];
+  page.on('request', request=>{if(request.url().includes('/modules/people/driver-weekly-schedule/'))retiredRequests.push(request.url());});
+  page.on('response', response=>{if(/\/(?:modules|shared)\/.*\.(?:html|css|js)(?:[?#].*)?$/.test(response.url())&&response.status()>=400)brokenModuleResources.push({url:response.url(),status:response.status()});});
   page.on('pageerror',e=>errors.push(e.message));page.on('download',d=>downloads.push(d.suggestedFilename()));
   page.on('request',r=>{if(/script\.google|sheets\.google|docs\.google/.test(r.url()))legacy.push(r.url());if(/supabase.co/.test(r.url())&&r.method()!=='GET')writes.push(r.url());});
   await page.route('https://*.supabase.co/**',r=>r.abort());
@@ -21,6 +24,8 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
   await page.waitForFunction(()=>document.getElementById('erp-app').style.display==='flex');
   async function nav(view){const link=page.locator(`[data-view="${view}"] a`);await link.evaluate(el=>{const group=el.closest('details');if(group)group.open=true;});await link.click();}
   const views=await page.locator('[data-view]').evaluateAll(nodes=>nodes.map(n=>n.dataset.view));
+  assert.equal(views.length,16);assert.equal(views.includes('driver-weekly-schedule'),false);
+  assert.equal(await page.locator('#view-driver-weekly-schedule').count(),0);
   const screenshotViews=['dashboard','fleet','drivers','accidents','breakdowns','maintenance','fuel','ncr','penalties','tripcheck'];
   const pdfHash=crypto.createHash('sha256').update(await page.evaluate(()=>createTripCheckPdf.toString())).digest('hex');
   assert.equal(pdfHash,'f3ca12a764f62d34862e4a1893c0cf9511a27ebf162e56541370a9b68af9218a','Custom PDF source changed');
@@ -133,8 +138,9 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
   await nav('tripcheck');await page.locator('#open-add-tripcheck-modal').click();await audit('#add-tripcheck-modal');await page.keyboard.press('Escape');
   await page.evaluate(()=>document.documentElement.style.fontSize='');
   const emoji=await page.locator('#erp-app, #module-overlays').evaluateAll(roots=>roots.flatMap(root=>[...root.querySelectorAll('button,h1,h2,h3,label,.nav-text,.nav-icon,.group-icon,.status-badge')].filter(el=>/\p{Extended_Pictographic}/u.test(el.textContent)).map(el=>el.textContent)));
-  assert.deepEqual(emoji,[]);assert.equal(await page.locator('.sidebar .nav-icon svg').count(),18);
+  assert.deepEqual(emoji,[]);assert.equal(await page.locator('.sidebar .nav-icon svg').count(),views.length+1);
+  assert.deepEqual(retiredRequests,[]);assert.deepEqual(brokenModuleResources,[]);
   assert.deepEqual(errors,[]);assert.deepEqual(legacy,[]);assert.deepEqual(writes,[]);assert.deepEqual(downloads,[]);
-  console.log(JSON.stringify({result:'PASS',viewports:[320,375,768,1024,1440],textScaling:'200% at 768px',pages:views.length,screenshots:output,pdfSource:'unchanged',errors,legacy,writes,downloads},null,2));
+  console.log(JSON.stringify({result:'PASS',viewports:[320,375,768,1024,1440],textScaling:'200% at 768px',pages:views.length,retiredRequests,brokenModuleResources,screenshots:output,pdfSource:'unchanged',errors,legacy,writes,downloads},null,2));
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1});

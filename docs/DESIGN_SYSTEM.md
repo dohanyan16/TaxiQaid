@@ -65,6 +65,6 @@ Preserve its 27-step wizard, 24 questions, inspection scoring, signature canvas,
 
 ## Validation
 
-Run `node --test tests/*.test.cjs`, the existing `tests/workflow.browser.cjs` and `tests/ui.browser.cjs` against a local HTTP server. The UI audit checks all 17 pages at 320, 375, 768, 1024 and 1440px, and 200% text scaling at 768px. It checks label/control separation, natural button growth, page/modal overflow, long selected text, shared search keyboard/selection behavior and exact Trip Check PDF source preservation.
+Run `node --test tests/*.test.cjs`, the existing `tests/workflow.browser.cjs` and `tests/ui.browser.cjs` against a local HTTP server. The UI audit checks all 16 administrative pages at 320, 375, 768, 1024 and 1440px, and 200% text scaling at 768px. It checks label/control separation, natural button growth, page/modal overflow, long selected text, shared search keyboard/selection behavior and exact Trip Check PDF source preservation.
 
 Review desktop/mobile screenshots for Dashboard, Fleet, Drivers, Accident, Breakdown, Maintenance, Fuel, NCR, Penalties and Trip Check, plus enlarged-text form examples. Synthetic test records are isolated to local test harnesses and removed afterwards; they are never production fixtures or database records.

@@ -12,6 +12,9 @@ const path = require('node:path');
   const context = await browser.newContext({ignoreHTTPSErrors:true,viewport:{width:1440,height:1000},timezoneId:'America/Los_Angeles'});
   const page = await context.newPage();
   const errors=[], legacy=[], databaseWrites=[], downloads=[], dialogs=[];
+  const retiredRequests=[], brokenModuleResources=[];
+  page.on('request', request=>{if(request.url().includes('/modules/people/driver-weekly-schedule/'))retiredRequests.push(request.url());});
+  page.on('response', response=>{if(/\/(?:modules|shared)\/.*\.(?:html|css|js)(?:[?#].*)?$/.test(response.url())&&response.status()>=400)brokenModuleResources.push({url:response.url(),status:response.status()});});
   page.on('pageerror', e=>errors.push(e.message));
   page.on('request', r=>{
    if (/script\.google|sheets\.google|sheets\.googleapis|docs\.google/.test(r.url())) legacy.push(r.url());
@@ -38,6 +41,12 @@ const path = require('node:path');
   assert.ok((await page.evaluate(()=>authCalls)).includes('role:taxiqaid_roles'));
   // All sidebar destinations remain usable, including grouped pages.
   const views=await page.locator('.sidebar-menu li[data-view]').evaluateAll(items=>items.map(item=>item.dataset.view));
+  const expectedViews=['dashboard','fleet','drivers','tripcheck','accidents','breakdowns','maintenance','fuel','ncr','penalties','training','customer-care','driver-deductions','driver-appeals','helpdesk','roster'];
+  assert.deepEqual([...views].sort(),[...expectedViews].sort());
+  assert.deepEqual(await page.evaluate(()=>FEATURE_MODULES.map(module=>module.name).sort()),[...expectedViews].sort());
+  assert.equal(await page.locator('[data-view="driver-weekly-schedule"], #view-driver-weekly-schedule').count(),0);
+  assert.equal(await page.evaluate(()=>SCRIPT_ORDER.some(path=>path.includes('driver-weekly-schedule'))),false);
+  assert.equal(await page.locator('link[href*="driver-weekly-schedule"],script[src*="driver-weekly-schedule"]').count(),0);
   async function nav(name) {const link=page.locator(`[data-view="${name}"] a`);await link.evaluate(el=>{const group=el.closest('details');if(group)group.open=true});await link.click();assert.ok(await page.locator('#view-'+name).isVisible());}
   for(const name of views) await nav(name);
   await nav('accidents');
@@ -332,8 +341,9 @@ const path = require('node:path');
   if(await page.locator('#integration-notice').count()) await page.locator('#integration-notice button').click();
   await page.locator('#logout-button').click();assert.ok(await page.locator('#login-screen').isVisible());
   assert.ok((await page.evaluate(()=>authCalls)).includes('logout'));
+  assert.deepEqual(retiredRequests,[]);assert.deepEqual(brokenModuleResources,[]);
   assert.deepEqual(legacy,[]);assert.deepEqual(databaseWrites,[]);assert.deepEqual(downloads,[]);assert.deepEqual(errors,[]);assert.deepEqual(dialogs,[]);
   assert.equal(await page.evaluate(()=>fleetDatabase.length+driversDatabase.length+accidentsDatabase.length+tripChecksDatabase.length),0);
-  console.log(JSON.stringify({result:'PASS',sidebarPages:views.length,penalties:'Read-only actions/details, unified search with retained date filters, inclusive dates, nine columns, long text safety, currency, keyboard navigation and mobile layout passed',ncr:'Two views, retained filters, 23 categories, expiry, KSA day rollover, TBT independence, empty details/editing and mobile dialogs passed',fuel:'Fields, Depot/Outside Depot conditions, validation, live SAR totals, empty details/edit previews and mobile dialog passed',uncaughtErrors:errors,legacyRequests:legacy,databaseWrites,downloads,screenshots:screenshotDir,authentication:'Mocked login, role denial, role lookup and logout verified; live credentials not supplied'},null,2));
+  console.log(JSON.stringify({result:'PASS',sidebarPages:views.length,retiredRequests,brokenModuleResources,penalties:'Read-only actions/details, unified search with retained date filters, inclusive dates, nine columns, long text safety, currency, keyboard navigation and mobile layout passed',ncr:'Two views, retained filters, 23 categories, expiry, KSA day rollover, TBT independence, empty details/editing and mobile dialogs passed',fuel:'Fields, Depot/Outside Depot conditions, validation, live SAR totals, empty details/edit previews and mobile dialog passed',uncaughtErrors:errors,legacyRequests:legacy,databaseWrites,downloads,screenshots:screenshotDir,authentication:'Mocked login, role denial, role lookup and logout verified; live credentials not supplied'},null,2));
  } finally {await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1});

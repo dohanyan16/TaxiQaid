@@ -49,6 +49,10 @@ Operational databases are disconnected. Legacy spreadsheet and Apps Script endpo
 
 See [the workflow specification](docs/TAXIQAID_WORKFLOW_SPEC.md) for all field definitions, status options, future source/request/work-order relationships, identifier formats and KSA timestamp rules. No database schemas or migrations are included. Database integration remains a separate future phase. Validated changes are integrated into main following AGENTS.md and the repository owner’s authorization.
 
+## Future Driver Portal
+
+The administrative app has 16 modules. Driver Weekly Schedule has been retired; personal schedules belong exclusively to the future Driver Portal → My Schedule. My Profile, My Documents, My Signatures and My NCRs are also planned. The portal and its account/data connections are not implemented. See [the workflow specification](docs/TAXIQAID_WORKFLOW_SPEC.md#future-driver-portal--planned-only).
+
 ## Shared interface standards
 
 [The design system](docs/DESIGN_SYSTEM.md) documents the common orange palette, typography, controls, SVG navigation, responsive layouts and unified record search. Date, status and NCR point filters remain independent. Trip Check retains its dedicated inspection experience and PDF implementation.

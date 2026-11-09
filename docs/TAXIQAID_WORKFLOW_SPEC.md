@@ -319,6 +319,28 @@ Refresh will eventually read only the latest authorized source records and prese
 
 Pure `TaxiQaidPenalties` helpers prepare source-value formatting, inclusive filtering and safe read-only row construction. They do not connect an external source, import records, allocate IDs or store operational data. Synthetic fixtures used for unit/DOM regression tests are confined to tests and never ship as production records.
 
+## Future Driver Portal — planned only
+
+Driver Weekly Schedule is removed from the administrative sidebar, active module configuration, stylesheet/script imports and standalone placeholder files. There is no replacement administrative weekly schedule page. The administrative application now contains 16 modules. No schedule records or other operational data were deleted; the retired module contained only a Coming Soon placeholder.
+
+Weekly schedules will be available exclusively to drivers through **Driver Portal → My Schedule**. The Driver Portal is a future, authenticated personal area, not an implemented module or route in this phase.
+
+| Planned section | Intended personal access |
+| --- | --- |
+| **My Profile** | Personal driver details from the linked Drivers Management record |
+| **My Schedule** | The driver's own weekly shifts, working days, rest days and vehicle assignments |
+| **My Documents** | The driver's own authorized documents, certificates and downloads |
+| **My Signatures** | Documents and inspections requiring that driver's confirmation |
+| **My NCRs** | The driver's personal NCR history, current points and expired NCR penalties, preserving the approved scoring/recovery rules and historical records |
+
+The portal will reuse the **existing Supabase authentication system**, project, sessions, profiles and permissions. Every driver account must have a verified link between its authenticated Supabase user ID and the corresponding stable driver record. A driver-entered Iqama, URL parameter or browser-side filter must not grant access to another driver's records.
+
+The future backend must verify authenticated identity and record ownership for each read, download and confirmation action. Drivers may access **only their own authorized records** across every portal section; hiding other drivers in the interface is not an authorization boundary. The exact account-to-driver mapping and enforcement mechanism will be designed and approved during future database integration. Existing administrative authorization checks remain unchanged now.
+
+Administrators with appropriate permissions will eventually manage schedule assignments through a permission-controlled administrative workflow, with authenticated audit information and authoritative KSA timestamps. That workflow is future work and does not reinstate a standalone administrative Driver Weekly Schedule page or expose other drivers' schedules through the personal portal.
+
+This section documents future functionality only. **No Driver Portal UI, login route, account mapping, schedule workflow, storage, Supabase tables, migrations, data connections or new databases are implemented.** No legacy spreadsheet or Apps Script integration is reconnected. All other administrative modules, standardized orange styling and existing Supabase authentication remain intact.
+
 ## Future connection inventory
 
 - Existing Supabase authentication and roles remain unchanged; the future operational service must verify identity and permissions server-side.
@@ -332,6 +354,7 @@ Pure `TaxiQaidPenalties` helpers prepare source-value formatting, inclusive filt
 - Fuel records with unique backend IDs, Fleet/Driver relationships, configured Depot tariffs, historical price snapshots and authorized edit auditing.
 - NCR records/unique IDs, all-driver summaries, authoritative 90-day KSA expiry, preserved historical penalties and independent TBT/action audit fields.
 - Authorized external Penalties source/refresh, source-supplied IDs, Fleet/Drivers references, confirmed Charged To/amount contracts and read-only filtered numeric Excel exports.
+- Future Driver Portal account-to-driver ownership mapping and authorized personal profile, schedule, documents, signatures and NCR access; permission-controlled administrative schedule assignments. No portal connections exist in this phase.
 - Authorized date/search/filter reads and Excel/PDF export services using connected records.
 
 These are planned capabilities, not schema proposals or migrations.

@@ -25,7 +25,6 @@ const FEATURE_MODULES = [
   {name: "driver-deductions", folder: "modules/people/driver-deductions"},
   {name: "driver-appeals", folder: "modules/people/driver-appeals"},
   {name: "helpdesk", folder: "modules/customer/helpdesk"},
-  {name: "driver-weekly-schedule", folder: "modules/people/driver-weekly-schedule"},
   {name: "roster", folder: "modules/people/roster"}
 ];
 
@@ -57,7 +56,6 @@ const SCRIPT_ORDER = [
   "modules/people/driver-deductions/driver-deductions.js",
   "modules/people/driver-appeals/driver-appeals.js",
   "modules/customer/helpdesk/helpdesk.js",
-  "modules/people/driver-weekly-schedule/driver-weekly-schedule.js",
   "modules/people/roster/roster.js"
 ];
 

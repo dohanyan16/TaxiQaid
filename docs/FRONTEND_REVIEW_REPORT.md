@@ -1,4 +1,6 @@
-# TaxiQaid UI standardization review
+# TaxiQaid UI standardization review (historical)
+
+**Current navigation update:** Driver Weekly Schedule has been retired from the administrative application; 16 modules remain. Its future personal schedule belongs to Driver Portal → My Schedule, documented in the [workflow specification](TAXIQAID_WORKFLOW_SPEC.md#future-driver-portal--planned-only). The screenshots and 17-page results below describe the earlier UI-standardization revision before this retirement; they are not the current sidebar. Current regression suites cover all remaining modules and assert that the retired module and its assets are not loaded.
 
 Base inspected: `main` at `29a6157`. This revision standardizes frontend presentation and record search without connecting operational databases or changing approved business rules.
 
