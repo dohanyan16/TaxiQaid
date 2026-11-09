@@ -82,8 +82,83 @@ const path = require('node:path');
   assert.ok(await page.locator('#overview-panel').isVisible());
   await page.screenshot({animations:'disabled',path:path.join(screenshotDir,'maintenance-overview.png')});
   await page.locator('#overview-tab').press('ArrowLeft');assert.ok(await page.locator('#requests-panel').isVisible());
+  await nav('fuel');
+  assert.deepEqual(await page.locator('#fuel-table th').allTextContents(),[
+   'Date','Time','Car Plate','Car Model','Driver Iqama','Driver Name','Driver Arrangement',
+   'Fueled In','Outside Depot Location','Fuel Received (L)','Fuel Pricing (SAR/L)','Total Amount (SAR)'
+  ]);
+  await page.locator('#fuel-filter-driver').fill('No connected driver');
+  assert.equal(await page.locator('#fuel-table tbody tr').count(),1);
+  assert.match(await page.locator('#fuel-table tbody').innerText(),/No records available/);
+  await page.locator('#fuel-filter-driver').fill('');
+  await page.screenshot({animations:'disabled',path:path.join(screenshotDir,'fuel-tracker.png')});
+  await page.locator('#open-fuel-modal').click();
+  const fuelFields=['fuel-date','fuel-time','fuel-plate','fuel-model','fuel-iqama','fuel-driver-name',
+   'fuel-driver-arrangement','fuel-fueled-in','fuel-outside-location','fuel-received','fuel-price','fuel-total'];
+  for(const id of fuelFields) assert.equal(await page.locator('#'+id).count(),1);
+  for(const id of ['fuel-record-id','fuel-model','fuel-driver-name','fuel-driver-arrangement']) {
+   assert.notEqual(await page.locator('#'+id).getAttribute('readonly'),null);
+   assert.equal(await page.locator('#'+id).inputValue(),'');
+  }
+  assert.equal(await page.locator('#fuel-plate option').count(),1);
+  assert.equal(await page.locator('#fuel-iqama option').count(),1);
+  assert.deepEqual(await page.locator('#fuel-fueled-in option').allTextContents(),['Depot','Outside Depot']);
+  assert.equal(await page.locator('#fuel-outside-location').isDisabled(),true);
+  assert.notEqual(await page.locator('#fuel-price').getAttribute('readonly'),null);
+  assert.equal(await page.locator('#fuel-price').inputValue(),'');
+  await page.locator('#fuel-received').fill('50');
+  assert.match(await page.locator('#fuel-total').innerText(),/Unavailable.*Depot tariff/);
+  await page.screenshot({animations:'disabled',path:path.join(screenshotDir,'fuel-form-preview.png')});
+  await page.locator('#fuel-fueled-in').selectOption('Outside Depot');
+  assert.equal(await page.locator('#fuel-outside-location').isEnabled(),true);
+  assert.equal(await page.locator('#fuel-price').getAttribute('readonly'),null);
+  assert.equal(await page.locator('#fuel-price').evaluate(el=>el.required),true);
+  assert.equal(await page.locator('#fuel-outside-location').evaluate(el=>el.required),true);
+  await page.locator('#save-fuel-btn').click();
+  assert.equal(await page.locator('#fuel-form').evaluate(el=>el.checkValidity()),false);
+  assert.match(await page.locator('#integration-notice').innerText(),/pending/);
+  await page.locator('#fuel-outside-location').fill('   ');
+  await page.locator('#fuel-price').fill('2.33');
+  assert.equal(await page.locator('#fuel-form').evaluate(el=>el.checkValidity()),false);
+  await page.locator('#fuel-outside-location').fill('Unsaved location preview');
+  assert.equal(await page.locator('#fuel-form').evaluate(el=>el.checkValidity()),true);
+  assert.equal(await page.locator('#fuel-total').innerText(),'SAR 116.50');
+  await page.locator('#fuel-received').fill('0.1');await page.locator('#fuel-price').fill('0.2');
+  assert.equal(await page.locator('#fuel-total').innerText(),'SAR 0.02');
+  await page.locator('#fuel-received').fill('1');await page.locator('#fuel-price').fill('1.005');
+  assert.equal(await page.locator('#fuel-total').innerText(),'SAR 1.01');
+  for(const invalid of ['0','-1','']) {
+   await page.locator('#fuel-price').fill(invalid);
+   assert.match(await page.locator('#fuel-total').innerText(),/Unavailable/);
+   assert.equal(await page.locator('#fuel-form').evaluate(el=>el.checkValidity()),false);
+  }
+  await page.locator('#fuel-price').fill('2.33');
+  await page.locator('#fuel-received').fill('-1');
+  assert.match(await page.locator('#fuel-total').innerText(),/Unavailable/);
+  await page.locator('#fuel-received').fill('50');
+  await page.locator('#save-fuel-btn').click();
+  assert.equal(await page.locator('#fuel-modal').isVisible(),true);
+  assert.equal(await page.locator('#fuel-table tbody tr').count(),1);
+  await page.locator('#fuel-fueled-in').selectOption('Depot');
+  assert.equal(await page.locator('#fuel-price').inputValue(),'');
+  assert.equal(await page.locator('#fuel-outside-location').inputValue(),'');
+  assert.equal(await page.locator('#fuel-outside-location').isDisabled(),true);
+  assert.match(await page.locator('#fuel-total').innerText(),/Unavailable.*Depot tariff/);
+  await page.locator('#close-fuel-modal').click();
+  assert.equal(await page.locator('#open-fuel-modal').evaluate(el=>el===document.activeElement),true);
+  await page.locator('#preview-fuel-details').click();
+  assert.match(await page.locator('#fuel-modal-title').innerText(),/Details.*Empty Preview/);
+  assert.equal(await page.locator('#fuel-received').isDisabled(),true);
+  assert.equal(await page.locator('#fuel-record-id').inputValue(),'');
+  await page.locator('#edit-fuel-preview').click();
+  assert.match(await page.locator('#fuel-modal-title').innerText(),/Edit Fuel Record/);
+  assert.equal(await page.locator('#fuel-received').isEnabled(),true);
+  assert.equal(await page.locator('#fuel-received').inputValue(),'');
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#fuel-modal').isVisible(),false);
+  await page.locator('#integration-notice button').click();
   // Every dependent action reports pending and never downloads a fabricated export.
-  for(const name of ['fleet','drivers','accidents','tripcheck','breakdowns','maintenance']) {
+  for(const name of ['fleet','drivers','accidents','tripcheck','breakdowns','maintenance','fuel']) {
    await nav(name);
    for(const button of await page.locator(`#view-${name} button`).all()) {
     const text=await button.innerText();
@@ -99,6 +174,13 @@ const path = require('node:path');
   await page.keyboard.press('Escape');
   await page.setViewportSize({width:390,height:844});
   for(const name of ['accidents','breakdowns','maintenance']) {await nav(name);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),name+' mobile overflow');}
+  await nav('fuel');
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'Fuel mobile overflow');
+  await page.locator('#open-fuel-modal').click();
+  assert.ok(await page.locator('#fuel-modal .modal-content').evaluate(el=>el.getBoundingClientRect().right<=window.innerWidth),'Fuel mobile dialog overflow');
+  await page.locator('#fuel-fueled-in').selectOption('Outside Depot');
+  await page.keyboard.press('Escape');
+  await nav('maintenance');
   await page.locator('[data-open=request-modal]').click();
   await page.keyboard.press('Escape');
   if(await page.locator('#integration-notice').count()) await page.locator('#integration-notice button').click();
@@ -106,6 +188,6 @@ const path = require('node:path');
   assert.ok((await page.evaluate(()=>authCalls)).includes('logout'));
   assert.deepEqual(legacy,[]);assert.deepEqual(databaseWrites,[]);assert.deepEqual(downloads,[]);assert.deepEqual(errors,[]);assert.deepEqual(dialogs,[]);
   assert.equal(await page.evaluate(()=>fleetDatabase.length+driversDatabase.length+accidentsDatabase.length+tripChecksDatabase.length),0);
-  console.log(JSON.stringify({result:'PASS',sidebarPages:views.length,uncaughtErrors:errors,legacyRequests:legacy,databaseWrites,downloads,screenshots:screenshotDir,authentication:'Mocked login, role denial, role lookup and logout verified; live credentials not supplied'},null,2));
+  console.log(JSON.stringify({result:'PASS',sidebarPages:views.length,fuel:'Fields, Depot/Outside Depot conditions, validation, live SAR totals, empty details/edit previews and mobile dialog passed',uncaughtErrors:errors,legacyRequests:legacy,databaseWrites,downloads,screenshots:screenshotDir,authentication:'Mocked login, role denial, role lookup and logout verified; live credentials not supplied'},null,2));
  } finally {await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1});

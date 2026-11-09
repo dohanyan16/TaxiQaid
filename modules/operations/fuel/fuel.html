@@ -1,9 +1,120 @@
-<!-- Fuel Tracker: planned module, no business logic is implemented yet. -->
+<!-- Fuel Tracker is a frontend preview; no operational records are connected. -->
 <section class="view-section" id="view-fuel">
-  <div class="card placeholder-card" aria-labelledby="fuel-title">
-    <span class="placeholder-kicker">PLANNED MODULE</span>
-    <h2 id="fuel-title">Fuel Tracker</h2>
-    <p>Fuel and refuelling records.</p>
-    <div class="placeholder-state">Coming Soon</div>
+  <div class="card">
+    <div class="card-header-flex">
+      <div>
+        <h2>Fuel Tracker</h2>
+        <p class="preview-note">Interface preview — database integration pending</p>
+      </div>
+      <div class="button-group-row">
+        <button class="btn-primary" id="open-fuel-modal" type="button">Add Fuel Record</button>
+        <button class="btn-secondary" id="refresh-fuel-btn" type="button">Refresh</button>
+        <button class="btn-secondary" id="export-fuel-btn" type="button">Export Excel</button>
+      </div>
+    </div>
+    <div class="workflow-grid">
+      <div class="form-group">
+        <label for="fuel-filter-plate">Car Plate</label>
+        <select id="fuel-filter-plate"><option value="">Available after database integration</option></select>
+      </div>
+      <div class="form-group">
+        <label for="fuel-filter-driver">Driver Iqama / Driver Name</label>
+        <input id="fuel-filter-driver" type="search" placeholder="Search by Iqama or driver name" autocomplete="off"/>
+      </div>
+    </div>
+    <button class="btn-secondary" id="preview-fuel-details" type="button">Preview Record Details</button>
+    <p class="preview-note">Preview an empty detail form and future editing controls. No operational records are available.</p>
+  </div>
+  <div class="card">
+    <div class="card-header-flex"><h2>Fuel Overview</h2><span>0 records found</span></div>
+    <div class="tracker-table-container" tabindex="0" role="region" aria-label="Fuel Overview table">
+      <table class="tracker-table" id="fuel-table">
+        <thead>
+          <tr>
+            <th scope="col">Date</th>
+            <th scope="col">Time</th>
+            <th scope="col">Car Plate</th>
+            <th scope="col">Car Model</th>
+            <th scope="col">Driver Iqama</th>
+            <th scope="col">Driver Name</th>
+            <th scope="col">Driver Arrangement</th>
+            <th scope="col">Fueled In</th>
+            <th scope="col">Outside Depot Location</th>
+            <th scope="col">Fuel Received (L)</th>
+            <th scope="col">Fuel Pricing (SAR/L)</th>
+            <th scope="col">Total Amount (SAR)</th>
+          </tr>
+        </thead>
+        <tbody><tr><td colspan="12"><span class="table-empty">No records available — database not connected</span></td></tr></tbody>
+      </table>
+    </div>
   </div>
 </section>
+
+<div class="modal-overlay" id="fuel-modal" aria-hidden="true">
+  <div class="modal-content workflow-modal">
+    <h2 id="fuel-modal-title">Add Fuel Record</h2>
+    <p class="preview-note" id="fuel-preview-note">Interface preview — database integration pending. Fields are unsaved; no fuel record will be created.</p>
+    <form id="fuel-form" aria-describedby="fuel-preview-note">
+      <div class="workflow-grid">
+        <div class="form-group wide">
+          <label for="fuel-record-id">Fuel Record ID</label>
+          <input id="fuel-record-id" readonly placeholder="Assigned by the future backend"/>
+        </div>
+        <div class="form-group">
+          <label for="fuel-date">Date</label><input id="fuel-date" type="date"/>
+        </div>
+        <div class="form-group">
+          <label for="fuel-time">Time</label><input id="fuel-time" type="time"/>
+        </div>
+        <div class="form-group">
+          <label for="fuel-plate">Car Plate</label>
+          <select id="fuel-plate"><option value="">Available after database integration</option></select>
+        </div>
+        <div class="form-group">
+          <label for="fuel-model">Car Model</label><input id="fuel-model" readonly placeholder="Derived from the selected vehicle"/>
+        </div>
+        <div class="form-group">
+          <label for="fuel-iqama">Driver Iqama</label>
+          <select id="fuel-iqama"><option value="">Available after database integration</option></select>
+        </div>
+        <div class="form-group">
+          <label for="fuel-driver-name">Driver Name</label><input id="fuel-driver-name" readonly placeholder="Derived from the selected driver"/>
+        </div>
+        <div class="form-group">
+          <label for="fuel-driver-arrangement">Driver Arrangement</label><input id="fuel-driver-arrangement" readonly placeholder="Derived from the selected driver"/>
+        </div>
+        <div class="form-group">
+          <label for="fuel-fueled-in">Fueled In</label>
+          <select id="fuel-fueled-in"><option value="Depot">Depot</option><option value="Outside Depot">Outside Depot</option></select>
+        </div>
+        <div class="form-group">
+          <label for="fuel-outside-location">Outside Depot Location</label>
+          <input id="fuel-outside-location" disabled aria-describedby="fuel-location-note"/>
+          <p class="preview-note" id="fuel-location-note">Required only when fueled outside the Depot.</p>
+        </div>
+        <div class="form-group">
+          <label for="fuel-received">Fuel Received (L)</label>
+          <input id="fuel-received" type="number" min="0" step="any" inputmode="decimal" required/>
+        </div>
+        <div class="form-group">
+          <label for="fuel-price">Fuel Pricing (SAR/L)</label>
+          <input id="fuel-price" type="number" min="0" step="any" inputmode="decimal" readonly placeholder="Depot tariff not configured" aria-describedby="fuel-price-note"/>
+          <p class="preview-note" id="fuel-price-note">Depot pricing will come from a future configured tariff. No tariff is connected.</p>
+        </div>
+        <div class="form-group">
+          <label for="fuel-total">Total Amount (SAR)</label>
+          <output id="fuel-total" for="fuel-received fuel-price" aria-live="polite">Unavailable — Depot tariff not configured</output>
+        </div>
+      </div>
+      <p id="fuel-validation" class="preview-note" role="status" hidden>Complete the highlighted preview fields. Database integration is pending; nothing has been saved.</p>
+      <div class="action-row">
+        <div class="button-group-row">
+          <button class="btn-primary" id="save-fuel-btn" type="button">Save Fuel Record</button>
+          <button class="btn-secondary" id="edit-fuel-preview" type="button" hidden>Edit Fields — Preview</button>
+        </div>
+        <button class="btn-secondary" id="close-fuel-modal" type="button">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>

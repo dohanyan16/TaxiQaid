@@ -153,6 +153,34 @@ Drivers retains Iqama/name lookup, existing profile and editable-field layout. I
 
 Trip Check retains the 27-step Pre-Trip/Post-Trip wizard, 24 inspection questions, unsaved answers, score calculation, signature UI, record editor and custom PDF layout/generation source. Its Overview remains empty. Save and export controls display integration pending; no spreadsheet requests, generated persistent IDs, authoritative browser timestamps or operational downloads occur. Future integration must decide inspection identity, vehicle/driver links, signatures, edit auditing, odometer authority and export access before connecting storage.
 
+## Fuel Tracker
+
+Fuel Tracker is a frontend-only interface with Add Fuel Record, Refresh and Export Excel controls. Filters prepare Car Plate lookup and Driver Iqama / Driver Name search. The overview remains empty; filters never load operational data. Refresh and Export only display the integration-pending notice, and Save never persists data or claims success.
+
+Overview columns, in order: **Date, Time, Car Plate, Car Model, Driver Iqama, Driver Name, Driver Arrangement, Fueled In, Outside Depot Location, Fuel Received (L), Fuel Pricing (SAR/L), Total Amount (SAR)**.
+
+The Add Fuel Record form includes every overview field. Date and Time are editable event fields, initially blank; no browser clock supplies authoritative reporting timestamps. The future backend must define and validate the event's KSA time and use authoritative `Asia/Riyadh` timestamps for audit metadata. The read-only Fuel Record ID placeholder is blank and does not allocate an identifier.
+
+| Field | Future relationship / behavior |
+| --- | --- |
+| Fuel Record ID | A unique, backend-generated identifier for each record; its format remains to be approved |
+| Car Plate | Linked Fleet vehicle lookup |
+| Car Model | Automatically derived from the selected Fleet vehicle; read-only |
+| Driver Iqama | Linked Drivers lookup |
+| Driver Name | Automatically derived from the selected driver; read-only |
+| Driver Arrangement | Automatically derived from the selected driver; read-only |
+| Fueled In | Exactly Depot or Outside Depot |
+| Outside Depot Location | Disabled for Depot; required and editable for Outside Depot |
+| Fuel Received (L) | Positive, finite decimal quantity entered in liters |
+| Fuel Pricing (SAR/L) | Read-only future configured tariff for Depot; positive, finite manual decimal price required for Outside Depot |
+| Total Amount (SAR) | Read-only calculation: Fuel Received × Fuel Pricing, shown in SAR with two decimal places |
+
+No Depot tariff is hardcoded or connected. Depot pricing stays blank and the total reads **Unavailable — Depot tariff not configured**, even when liters are entered. Outside Depot enables location and manual pricing. Missing or whitespace-only locations and missing, zero or negative prices fail preview validation. Invalid quantities and non-finite products never produce a monetary total. Valid decimal input updates the SAR total live with two-decimal currency rounding. Switching back to Depot clears the manual price and disables/clears the outside location so an outside price cannot become a Depot tariff.
+
+Preview Record Details opens a clearly labeled empty, read-only detail form, with an Edit Fields — Preview control for future editing. This prepares record view/edit behavior without fabricated records. Add and detail previews begin blank each time; switching from details to editing only changes unsaved form controls. Cancel, Escape and backdrop dismissal close the dialog; closing discards the preview when it is next opened. Save validates the editable preview fields and explains that integration is pending; it does not create/update a record, close as if saved, reload data or export anything. Fleet/Driver dropdowns remain empty pending integration.
+
+Each future fuel record must preserve the **actual unit price used at the time of fueling**, its SAR currency, the quantity and resulting amount. Historical amounts must not be recomputed using a later Depot tariff or a changed outside price. The future backend should retain tariff provenance/version where applicable and an audit trail for authorized corrections. A unique record ID and the Fleet/Driver references must survive future view/edit workflows. No fuel IDs, fuel records, Depot tariff sources, schemas, Excel databases or migrations are implemented in this phase.
+
 ## Future connection inventory
 
 - Existing Supabase authentication and roles remain unchanged; the future operational service must verify identity and permissions server-side.
@@ -163,10 +191,11 @@ Trip Check retains the 27-step Pre-Trip/Post-Trip wizard, 24 inspection question
 - Maintenance acceptance transaction, MTN identifier allocation, work-order storage and permanent source/request references.
 - Repair status, request completion and source read-only status projection with audit history.
 - Trip Check inspection persistence, signatures, authorized edits and eventual exports.
+- Fuel records with unique backend IDs, Fleet/Driver relationships, configured Depot tariffs, historical price snapshots and authorized edit auditing.
 - Authorized date/search/filter reads and Excel/PDF export services using connected records.
 
 These are planned capabilities, not schema proposals or migrations.
 
 ## Verification and review
 
-Run `node --test tests/fleet.test.cjs` for retained pure compatibility helpers. Run `node tests/workflow.browser.cjs` against a local HTTP server for frontend regression checks. Browser tests use mocked authentication and role responses, never a live user account or operational records. They cover all sidebar modules, date-only filters, shared location equality, forms, maintenance tabs/acceptance, mobile overflow, pending controls and the absence of legacy requests, operational writes, downloads and uncaught errors. Live Supabase login/session behavior still requires review with an existing authorized account; no account credentials were supplied to this task.
+Run `node --test tests/fleet.test.cjs` for retained pure compatibility helpers. Run `node tests/workflow.browser.cjs` against a local HTTP server for frontend regression checks. Browser tests use mocked authentication and role responses, never a live user account or operational records. They cover all sidebar modules, date-only filters, shared location equality, forms, maintenance tabs/acceptance, mobile overflow, Fuel conditional fields/validation/live totals/detail editing, pending controls and the absence of legacy requests, operational writes, downloads and uncaught errors. Live Supabase login/session behavior still requires review with an existing authorized account; no account credentials were supplied to this task.

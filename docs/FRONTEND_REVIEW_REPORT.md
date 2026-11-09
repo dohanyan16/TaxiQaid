@@ -7,6 +7,7 @@ Base inspected: `main` at `9fbea58`. Feature branch: `feat/frontend-workflow-pre
 - Accident Tracker retains its layout, conditional report dropdowns and existing columns; it now has date-only filters, a read-only future ACD identifier, reporting metadata placeholders and Maintenance Status.
 - Breakdown Tracker has the complete 15-column overview and responsive report form with all required fields, all 12 symptom choices, Yes/No controls and the shared complete 40-location list.
 - Maintenance Requests and Maintenance Overview are separate keyboard-accessible tabs with their required controls, filters, columns and empty detail/acceptance/work-order previews. In Progress previews acceptance without creating anything. Source references remain read-only and distinct from the future MTN identifier.
+- Fuel Tracker includes all 12 overview columns, vehicle/driver filters, complete empty Add/Details/Edit form previews, Depot/Outside Depot conditions, required outside location/positive price validation and live two-decimal SAR totals. No Depot tariff or fuel records are invented.
 - Fleet and Drivers retain their lookup/profile layouts. Trip Check retains its wizard, inspection questions, scoring, signature UI, editor and custom PDF layout source. All 17 sidebar pages remain accessible.
 - Shared pending notifications, responsive table containers, visible empty messages, dialog focus handling, Escape dismissal and focus restoration support the frontend previews.
 
@@ -21,6 +22,7 @@ Base inspected: `main` at `9fbea58`. Feature branch: `feat/frontend-workflow-pre
 | Sidebar navigation | All 17 pages |
 | Shared Accident/Breakdown locations | Exact equality, all 40 original choices |
 | Maintenance tabs, detail/acceptance and read-only source references | Pass |
+| Fuel fields, condition changes, validation, SAR calculation/rounding, details/edit preview | Pass |
 | Trip Check wizard navigation and pending Save | All 27 steps accessible |
 | Desktop and 390px mobile layout | Pass; no main-page horizontal overflow |
 | Legacy Google Sheets/Apps Script requests | 0 |
@@ -35,7 +37,7 @@ The former spreadsheet integration tests expected persistence that this phase de
 
 **Legacy disconnection:** shared endpoint constants are blank, the Pre/Post-Trip endpoint map is empty and legacy read/write helpers fail closed without fetch. Login/navigation do not synchronize. The only application fetches outside the authentication SDK load local HTML fragments and the existing local PDF logo asset. No operational localStorage/IndexedDB replacement was added.
 
-No database, migration, spreadsheet or Apps Script project was created. No merge or deployment was performed.
+No database, migration, spreadsheet or Apps Script project was created. PR #2 also includes the Fuel follow-up on the same feature branch. The owner has authorized merging after successful validation; the final chat/PR state records whether the merge and Pages deployment completed.
 
 ## Screenshots
 
@@ -43,10 +45,12 @@ No database, migration, spreadsheet or Apps Script project was created. No merge
 - [Breakdown Tracker](screenshots/breakdown-tracker.png)
 - [Maintenance Requests](screenshots/maintenance-requests.png)
 - [Maintenance Overview](screenshots/maintenance-overview.png)
+- [Fuel Tracker](screenshots/fuel-tracker.png)
+- [Fuel form preview](screenshots/fuel-form-preview.png)
 
 ## Future database connections
 
-The [workflow specification](TAXIQAID_WORKFLOW_SPEC.md) contains the field-level reference. Future integration requires Fleet vehicle/model lookup, Driver Iqama/name lookup, Accident and Breakdown storage/ID allocation, source-to-request submission, request acceptance and separate MTN work orders, immutable source/request references, repair/completion status propagation, authenticated audit events with authoritative Asia/Riyadh timestamps, Trip Check persistence/signatures/odometer ownership and authorized filters/exports. These interfaces do not implement those operations.
+The [workflow specification](TAXIQAID_WORKFLOW_SPEC.md) contains the field-level reference. Future integration requires Fleet vehicle/model lookup, Driver Iqama/name lookup, Accident and Breakdown storage/ID allocation, source-to-request submission, request acceptance and separate MTN work orders, immutable source/request references, repair/completion status propagation, authenticated audit events with authoritative Asia/Riyadh timestamps, Trip Check persistence/signatures/odometer ownership Fuel record IDs, historical unit-price snapshots, Depot tariff configuration, Fleet/Driver relationships, and authorized filters/exports. These interfaces do not implement those operations.
 
 ## Changed files
 
@@ -59,6 +63,8 @@ The [workflow specification](TAXIQAID_WORKFLOW_SPEC.md) contains the field-level
 - `docs/screenshots/breakdown-tracker.png`
 - `docs/screenshots/maintenance-overview.png`
 - `docs/screenshots/maintenance-requests.png`
+- `docs/screenshots/fuel-tracker.png`
+- `docs/screenshots/fuel-form-preview.png`
 - `modules/accidents/accidents.html`
 - `modules/accidents/accidents.js`
 - `modules/breakdowns/breakdowns.css`
@@ -72,6 +78,9 @@ The [workflow specification](TAXIQAID_WORKFLOW_SPEC.md) contains the field-level
 - `modules/maintenance/maintenance.css`
 - `modules/maintenance/maintenance.html`
 - `modules/maintenance/maintenance.js`
+- `modules/operations/fuel/fuel.html`
+- `modules/operations/fuel/fuel.js`
+- `modules/operations/fuel/fuel.css`
 - `modules/tripcheck/tripcheck.html`
 - `modules/tripcheck/tripcheck.js`
 - `shared/bootstrap.js`
