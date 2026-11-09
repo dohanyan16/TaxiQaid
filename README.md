@@ -47,7 +47,7 @@ GitHub Pages access is not private just because the application displays a login
 
 Operational databases are disconnected. Legacy spreadsheet and Apps Script endpoints are disabled. All operational views start empty, and backend-dependent actions explain that database integration is pending. No operational records are saved locally or remotely. Fuel Tracker includes Depot/Outside Depot form conditions and live SAR totals with the approved 2.18 SAR/L Depot tariff and manual Outside Depot pricing. Existing Supabase authentication and roles remain on the same project.
 
-See [the workflow specification](docs/TAXIQAID_WORKFLOW_SPEC.md) for all field definitions, status options, future source/request/work-order relationships, identifier formats and KSA timestamp rules. No database schemas or migrations are included. Database integration remains a separate future phase. PR #2 is the single review unit for the Accident, Breakdown, Maintenance and Fuel interfaces; merge/publication follows the current repository owner’s authorization.
+See [the workflow specification](docs/TAXIQAID_WORKFLOW_SPEC.md) for all field definitions, status options, future source/request/work-order relationships, identifier formats and KSA timestamp rules. No database schemas or migrations are included. Database integration remains a separate future phase. Validated changes are integrated into main following AGENTS.md and the repository owner’s authorization.
 
 ## Shared interface standards
 
