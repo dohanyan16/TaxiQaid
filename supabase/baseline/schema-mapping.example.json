@@ -1,34 +1,43 @@
 {
   "user_accounts": {
-    "uid": null,
-    "username": null,
-    "fullName": null,
-    "type": null,
-    "role": null,
-    "status": null,
-    "iqama": null,
-    "driverRecordRef": null
+    "uid": "user_id",
+    "username": "username",
+    "fullName": "full_name",
+    "type": "account_type",
+    "role": "role_key",
+    "status": "status",
+    "createdAt": "created_at",
+    "updatedAt": "updated_at"
   },
   "departments": {
-    "id": null,
-    "code": null
+    "key": "department_key",
+    "name": "department_name",
+    "active": "is_active",
+    "createdAt": "created_at"
   },
   "user_departments": {
-    "uid": null,
-    "departmentId": null
+    "uid": "user_id",
+    "departmentKey": "department_key",
+    "assignedAt": "assigned_at"
   },
   "permissions": {
-    "id": null,
-    "key": null
+    "key": "permission_key",
+    "module": "module_key",
+    "action": "action_key",
+    "displayName": "display_name",
+    "description": "description",
+    "active": "is_active"
   },
   "role_permissions": {
-    "role": null,
-    "permissionId": null,
-    "allowed": null
+    "role": "role_key",
+    "permissionKey": "permission_key",
+    "allowed": "is_allowed"
   },
   "user_permission_overrides": {
-    "uid": null,
-    "permissionId": null,
-    "effect": null
+    "uid": "user_id",
+    "permissionKey": "permission_key",
+    "allowed": "is_allowed",
+    "updatedAt": "updated_at",
+    "updatedBy": "updated_by"
   }
 }

@@ -17,7 +17,17 @@ SELECT 'permissions' AS entity,count(*) AS row_count FROM taxiqaid_private.permi
 UNION ALL SELECT 'role_permissions',count(*) FROM taxiqaid_private.role_permissions
 UNION ALL SELECT 'user_permission_overrides',count(*) FROM taxiqaid_private.user_permission_overrides
 UNION ALL SELECT 'departments',count(*) FROM taxiqaid_private.departments;
+-- Read-only aggregate checks using the owner-verified columns; no user identifiers are returned.
+SELECT role_key,count(*) FILTER (WHERE is_allowed = true) AS allowed_grants
+FROM taxiqaid_private.role_permissions GROUP BY role_key ORDER BY role_key;
+SELECT count(*) FILTER (WHERE is_active = true) AS active_definitions,
+       count(*) FILTER (WHERE is_active = false) AS inactive_definitions
+FROM taxiqaid_private.permissions;
+SELECT count(*) FILTER (WHERE is_allowed = true) AS explicit_allows,
+       count(*) FILTER (WHERE is_allowed = false) AS explicit_denies
+FROM taxiqaid_private.user_permission_overrides;
+SELECT department_key,department_name,is_active FROM taxiqaid_private.departments ORDER BY department_key;
 ROLLBACK;
 -- Expected OWNER-REPORTED counts: 107 permission definitions; 101 allowed super_admin grants,
--- zero other-role grants; zero overrides; nine canonical departments. Actual columns/grants need review.
+-- zero other-role grants; zero overrides; nine canonical departments. Columns are owner-verified; live grant/activity and RLS validation remain pending.
 -- Do not dump personal user_accounts or auth.users into the repository.
