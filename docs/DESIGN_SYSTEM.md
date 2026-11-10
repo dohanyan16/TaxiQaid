@@ -54,6 +54,8 @@ Use a title, short description, actions, shared record search plus independent b
 | roster | Driver Name, Driver Iqama, Car Plate |
 | rosterDriver | Driver Name, Driver Iqama |
 | rosterLocations | Stop Name, Aliases |
+| customerCare | Customer Care Case ID (ID/Case ID), Car Plate, Customer Name |
+| helpdesk | Ticket ID, Creator Email, Creator Name/Created By |
 | tripcheck | Check ID, Car Plate, Driver Iqama, Driver Name |
 | appeals | Appeal ID, Driver Iqama, Driver Name |
 | trainingOverview | Driver Iqama, Driver Name |
@@ -75,8 +77,10 @@ Preserve its 27-step wizard, 24 questions, inspection scoring, signature canvas,
 
 ## Validation
 
-Run `node --test tests/*.test.cjs`, the `tests/workflow.browser.cjs`, `tests/ui.browser.cjs` and `tests/people.browser.cjs` and `tests/roster.browser.cjs` against a local HTTP server. The UI audit checks all 16 administrative pages at 320, 375, 768, 1024 and 1440px, and 200% text scaling at 768px. It checks label/control separation, natural button growth, page/modal overflow, long selected text, shared search keyboard/selection behavior and exact Trip Check PDF source preservation.
+Run `node --test tests/*.test.cjs`, the `tests/workflow.browser.cjs`, `tests/ui.browser.cjs`, `tests/people.browser.cjs`, `tests/roster.browser.cjs` and `tests/support.browser.cjs` against a local HTTP server. The UI audit checks all 16 administrative pages at 320, 375, 768, 1024 and 1440px, and 200% text scaling at 768px. It checks label/control separation, natural button growth, page/modal overflow, long selected text, shared search keyboard/selection behavior and exact Trip Check PDF source preservation.
 
 Review desktop/mobile screenshots for Dashboard, Fleet, Drivers, Accident, Breakdown, Maintenance, Fuel, NCR, Penalties, Trip Check, Appeals, Training and Drivers Deduction, plus enlarged-text form examples. The people suite audits all internal tabs and dialogs, including the bounded driver picker and financial history. Synthetic test records are isolated to local test harnesses and removed afterwards; they are never production fixtures or database records.
 
 Roster uses the same shared search, controls, tabs and responsive tables. Its approved geographic catalog is visible from startup; private assignments remain empty until local imports validate. Read-only configuration provenance distinguishes supplied coordinates from local edits/additions. Real local PDF/ZIP/JSON downloads are explicitly authorized for Roster only. Its landscape PDF follows the reviewed company reference with English labels and separate measured text layout. No other module export behavior changes.
+
+Customer Care uses native radios with monochrome SVG star outlines and orange selected fills, 46px targets, numeric rating output and an explicit unrated state. Details/editing share the standard modal and preserve focus when controls change mode. Helpdesk has two tabs; its shared search appears in the Manage Tickets overview, while Create Ticket is a separate form. Long private descriptions stay fully readable in details and use safe text nodes/visual clipping in overview cells. User-directory and department-access notices describe unavailable features without claiming permissions.

@@ -21,6 +21,8 @@ const TaxiQaidSearch = (() => {
     roster: {fields:['Driver Name','Driver Iqama',{key:'Car Plate',plate:true}], id:'Driver Iqama'},
     rosterDriver: {fields:['Driver Name','Driver Iqama'], id:'Driver Iqama'},
     rosterLocations: {fields:['Stop Name','Aliases'], id:'Stop Name'},
+    customerCare: {fields:[{key:'Customer Care Case ID',aliases:['ID','Case ID']},{key:'Car Plate',plate:true},'Customer Name'], id:'Customer Care Case ID'},
+    helpdesk: {fields:['Ticket ID','Creator Email',{key:'Creator Name',aliases:['Created By']}], id:'Ticket ID'},
     tripcheck: {fields:['Check ID',{key:'Car Plate',plate:true},'Driver Iqama','Driver Name'], id:'Check ID'}
   };
   Object.values(configs).forEach(config => { config.fields.forEach(field => { if(typeof field==='object') Object.freeze(field); }); Object.freeze(config.fields); Object.freeze(config); });

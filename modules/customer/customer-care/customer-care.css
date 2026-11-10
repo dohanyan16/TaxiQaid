@@ -1,1 +1,17 @@
-/* Customer Care Tracker: placeholder module. Shared styles live in shared/common.css. */
+/* Shared orange controls and table scrolling remain in shared/common.css. */
+#care-table .care-cell-text { display: block; max-width: 20rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.support-form-section { margin: 1.5rem 0; }
+.support-rating { border: 0; padding: 0; margin: 1.5rem 0; min-width: 0; }
+.support-rating legend { font-size: var(--font-section); font-weight: var(--weight-bold); }
+.support-rating-choices { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .75rem; }
+.support-rating-choice { position: relative; display: inline-flex; align-items: center; justify-content: center; min-width: var(--control-height); min-height: var(--control-height); border: 1px solid var(--border-color); border-radius: var(--control-radius); background: var(--card-bg); cursor: pointer; margin: 0; }
+.support-rating-choice input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.support-rating-choice svg { width: 1.5rem; height: 1.5rem; fill: none; stroke: var(--text-main); stroke-width: 1.5; pointer-events: none; }
+.support-rating-choice.is-filled svg { fill: var(--primary); }
+.support-rating-choice:focus-within { outline: 2px solid var(--primary); outline-offset: 2px; }
+.support-rating-choice:has(input:disabled) { background: var(--readonly-bg); cursor: default; }
+#care-rating-label { margin-bottom: .75rem; }
+#care-history { padding-left: 1.25rem; overflow-wrap: anywhere; }
+#care-history li { margin: .75rem 0; white-space: pre-wrap; }
+
+#care-current-assignee { overflow-wrap: anywhere; }

@@ -1,9 +1,193 @@
-<!-- Helpdesk: planned module, no business logic is implemented yet. -->
+<!-- Frontend-only internal Helpdesk. Backend access must filter tickets before returning records. -->
 <section class="view-section" id="view-helpdesk">
-  <div class="card placeholder-card" aria-labelledby="helpdesk-title">
-    <span class="placeholder-kicker">PLANNED MODULE</span>
-    <h2 id="helpdesk-title">Helpdesk</h2>
-    <p>Internal support requests.</p>
-    <div class="placeholder-state">Coming Soon</div>
-  </div>
+<div class="card">
+<h2>Helpdesk</h2>
+<p class="preview-note">Internal support requests and department ticket management. Database integration pending.</p>
+<div class="workflow-tabs" role="tablist" aria-label="Helpdesk views">
+<button type="button" class="btn-secondary" role="tab" id="helpdesk-create-tab" aria-selected="true" aria-controls="helpdesk-create-panel" tabindex="0">Create Ticket</button>
+<button type="button" class="btn-secondary" role="tab" id="helpdesk-manage-tab" aria-selected="false" aria-controls="helpdesk-manage-panel" tabindex="-1">Manage Tickets</button>
+</div>
+</div>
+<section id="helpdesk-create-panel" role="tabpanel" aria-labelledby="helpdesk-create-tab">
+<div class="card">
+<h2>Create Helpdesk Ticket</h2>
+<p class="preview-note">Submit an internal support request to the appropriate department.</p>
+<form id="helpdesk-create-form">
+<div class="workflow-grid">
+<div class="form-group">
+<label for="helpdesk-email">Your Email</label>
+<input id="helpdesk-email" type="email" readonly placeholder="Verified account email pending" aria-describedby="helpdesk-identity-note"/>
+</div>
+<div class="form-group">
+<label for="helpdesk-own-department">Your Department</label>
+<input id="helpdesk-own-department" type="text" readonly placeholder="Profile department pending"/>
+</div>
+<div class="form-group">
+<label for="helpdesk-department">Department</label>
+<select id="helpdesk-department" required>
+<option value="">Select receiving department</option>
+<option value="Operation">Operation</option>
+<option value="Planning">Planning</option>
+<option value="Finance">Finance</option>
+<option value="Maintenance">Maintenance</option>
+<option value="HR">HR</option>
+<option value="IT">IT</option>
+<option value="QHSE">QHSE</option>
+</select>
+</div>
+<div class="form-group wide">
+<label for="helpdesk-description">Ticket Description</label>
+<textarea id="helpdesk-description" rows="4" required>
+</textarea>
+</div>
+</div>
+<p id="helpdesk-identity-note" class="preview-note">Account information pending. Your verified account email will appear here.</p>
+<p class="preview-note">Department identifies the team receiving this request. Your own department is separate profile information. New tickets will start as Pending after backend integration.</p>
+<p id="helpdesk-create-validation" role="status" class="preview-note" hidden>
+</p>
+<p id="helpdesk-submit-status" role="status" class="preview-note" hidden>Database integration pending — ticket not submitted.</p>
+<div class="button-group-row">
+<button id="helpdesk-submit" type="button" class="btn-primary" >Submit Ticket</button>
+<button id="helpdesk-clear" type="button" class="btn-secondary" >Clear Form</button>
+</div>
+</form>
+</div>
 </section>
+<section id="helpdesk-manage-panel" role="tabpanel" aria-labelledby="helpdesk-manage-tab" hidden>
+<div class="card">
+<div class="card-header-flex">
+<div>
+<h2>Manage Tickets</h2>
+<p class="preview-note">Review and manage internal tickets assigned to your department.</p>
+</div>
+<button id="helpdesk-refresh" type="button" class="btn-secondary" >Refresh</button>
+</div>
+<p id="helpdesk-scope" class="preview-note" role="status">Ticket source and department permissions are not connected.</p>
+<div class="workflow-grid">
+<div class="form-group wide">
+<label for="helpdesk-search">Search Records</label>
+<input id="helpdesk-search" type="search" autocomplete="off" placeholder="Search by Ticket ID, Creator Email or Name..."/>
+</div>
+<div class="form-group">
+<label for="helpdesk-creator-filter">Created By</label>
+<select id="helpdesk-creator-filter" >
+<option value="">All Creators</option>
+</select>
+</div>
+<div class="form-group">
+<label for="helpdesk-status-filter">Status</label>
+<select id="helpdesk-status-filter" >
+<option value="">All Statuses</option>
+<option value="Pending">Pending</option>
+<option value="In Progress">In Progress</option>
+<option value="Done">Done</option>
+</select>
+</div>
+</div>
+<button id="helpdesk-preview" type="button" class="btn-secondary" >Preview Ticket Details</button>
+<p class="preview-note">Empty details preview only. No ticket is created or updated.</p>
+</div>
+<div class="card">
+<div class="card-header-flex">
+<h2>Helpdesk Overview</h2>
+<span id="helpdesk-count" role="status">0 tickets found</span>
+</div>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Helpdesk Overview">
+<table id="helpdesk-table" class="tracker-table">
+<thead>
+<tr>
+<th scope="col">Ticket ID</th>
+<th scope="col">Created Date</th>
+<th scope="col">Created Time</th>
+<th scope="col">Created By</th>
+<th scope="col">Creator Email</th>
+<th scope="col">Assigned Department</th>
+<th scope="col">Status</th>
+<th scope="col">Last Updated At</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="8">
+<span class="table-empty">No helpdesk tickets available — database integration pending.</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+</section>
+<div class="modal-overlay" id="helpdesk-details-modal" aria-hidden="true">
+<div class="modal-content workflow-modal">
+<h2>Helpdesk Ticket Details</h2>
+<p class="preview-note">Source information is read-only. Status changes are an unsaved preview; department permissions require future integration.</p>
+<form id="helpdesk-details-form">
+<div class="workflow-grid">
+<div class="form-group">
+<label for="helpdesk-detail-id">Ticket ID</label>
+<input id="helpdesk-detail-id" type="text" readonly placeholder="Unavailable — database integration pending"/>
+</div>
+<div class="form-group">
+<label for="helpdesk-detail-created-by">Created By</label>
+<input id="helpdesk-detail-created-by" type="text" readonly placeholder="Unavailable — database integration pending"/>
+</div>
+<div class="form-group">
+<label for="helpdesk-detail-creator-id">Creator User ID</label>
+<input id="helpdesk-detail-creator-id" type="text" readonly placeholder="Unavailable — database integration pending"/>
+</div>
+<div class="form-group">
+<label for="helpdesk-detail-creator-email">Creator Email</label>
+<input id="helpdesk-detail-creator-email" type="text" readonly placeholder="Unavailable — database integration pending"/>
+</div>
+<div class="form-group">
+<label for="helpdesk-detail-requester-department">Requester's Department</label>
+<input id="helpdesk-detail-requester-department" type="text" readonly placeholder="Unavailable — database integration pending"/>
+</div>
+<div class="form-group">
+<label for="helpdesk-detail-assigned-department">Assigned Department</label>
+<input id="helpdesk-detail-assigned-department" type="text" readonly placeholder="Unavailable — database integration pending"/>
+</div>
+<div class="form-group wide">
+<label for="helpdesk-detail-description">Description</label>
+<textarea id="helpdesk-detail-description" rows="4" readonly placeholder="Unavailable — database integration pending">
+</textarea>
+</div>
+<div class="form-group">
+<label for="helpdesk-detail-created-date">Created Date</label>
+<input id="helpdesk-detail-created-date" type="text" readonly placeholder="Unavailable — database integration pending"/>
+</div>
+<div class="form-group">
+<label for="helpdesk-detail-created-time">Created Time</label>
+<input id="helpdesk-detail-created-time" type="text" readonly placeholder="Unavailable — database integration pending"/>
+</div>
+<div class="form-group">
+<label for="helpdesk-detail-status">Status</label>
+<select id="helpdesk-detail-status" >
+<option value="Pending">Pending</option>
+<option value="In Progress">In Progress</option>
+<option value="Done">Done</option>
+</select>
+</div>
+<div class="form-group">
+<label for="helpdesk-detail-updated-by">Last Updated By</label>
+<input id="helpdesk-detail-updated-by" type="text" readonly placeholder="Unavailable — database integration pending"/>
+</div>
+<div class="form-group">
+<label for="helpdesk-detail-updated-at">Last Updated At</label>
+<input id="helpdesk-detail-updated-at" type="text" readonly placeholder="Unavailable — database integration pending"/>
+</div>
+<div class="form-group">
+<label for="helpdesk-detail-resolved-at">Resolved At</label>
+<input id="helpdesk-detail-resolved-at" type="text" readonly placeholder="Unavailable — database integration pending"/>
+</div>
+</div>
+<p class="preview-note">Future status changes will be audited. Done tickets remain in history; no ticket is deleted on completion.</p>
+<p id="helpdesk-save-status" role="status" class="preview-note" hidden>Database integration pending — ticket changes not saved.</p>
+<div class="action-row">
+<button id="helpdesk-save" type="button" class="btn-primary" >Save Changes</button>
+<button id="helpdesk-close" type="button" class="btn-secondary" data-people-close="helpdesk-details-modal">Cancel</button>
+</div>
+</form>
+</div>
+</div>

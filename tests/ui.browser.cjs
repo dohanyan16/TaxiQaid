@@ -26,7 +26,7 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
   const views=await page.locator('[data-view]').evaluateAll(nodes=>nodes.map(n=>n.dataset.view));
   assert.equal(views.length,16);assert.equal(views.includes('driver-weekly-schedule'),false);
   assert.equal(await page.locator('#view-driver-weekly-schedule').count(),0);
-  const screenshotViews=['dashboard','fleet','drivers','accidents','breakdowns','maintenance','fuel','ncr','penalties','tripcheck','driver-appeals','training','driver-deductions','roster'];
+  const screenshotViews=['dashboard','fleet','drivers','accidents','breakdowns','maintenance','fuel','ncr','penalties','tripcheck','driver-appeals','training','driver-deductions','roster','customer-care','helpdesk'];
   const pdfHash=crypto.createHash('sha256').update(await page.evaluate(()=>createTripCheckPdf.toString())).digest('hex');
   assert.equal(pdfHash,'f3ca12a764f62d34862e4a1893c0cf9511a27ebf162e56541370a9b68af9218a','Custom PDF source changed');
   assert.equal(await page.locator('#sidebar-toggle').innerText(),'‹');
@@ -108,13 +108,13 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
    assert.ok(await page.locator('.main-content').evaluate(el=>el.scrollWidth<=el.clientWidth+1),'Main panel overflow');
    if(scope.endsWith('-modal'))assert.ok(await page.locator(scope+' .modal-content').evaluate(el=>el.scrollWidth<=el.clientWidth+1),'Modal panel overflow: '+scope);
   }
-  const searchViews=['fleet','drivers','accidents','breakdowns','maintenance','fuel','ncr','penalties','tripcheck','driver-appeals','training','driver-deductions','roster'];
+  const searchViews=['customer-care','fleet','drivers','accidents','breakdowns','maintenance','fuel','ncr','penalties','tripcheck','driver-appeals','training','driver-deductions','roster'];
   for(const width of [320,375,768,1024,1440]){
    await page.setViewportSize({width,height:1050});
    for(const view of views){await nav(view);await audit('#view-'+view);if(searchViews.includes(view))assert.equal(await page.locator(`#view-${view} input[role=combobox]:visible`).count(),1,'Unified search '+view);}
    if(width===320||width===1440)for(const view of screenshotViews){await nav(view);await page.screenshot({animations:'disabled',path:path.join(output,`${width===320?'mobile':'desktop'}-${view}.png`)});}
-   for(const [view,button,modal] of [['accidents','#open-add-accident-modal','#add-accident-modal'],['breakdowns','[data-open=breakdown-modal]','#breakdown-modal'],['maintenance','[data-open=request-modal]','#request-modal'],['fuel','#open-fuel-modal','#fuel-modal'],['ncr','#open-ncr-modal','#ncr-modal'],['tripcheck','#open-add-tripcheck-modal','#add-tripcheck-modal'],['driver-appeals','#appeals-preview','#appeals-modal'],['training','#training-create','#training-session-modal'],['driver-deductions','#deductions-add-expense','#deductions-expense-modal']]){
-    await nav(view);if(view==='ncr')await page.locator('#ncr-tracker-tab').click();if(view==='training')await page.locator('#training-sessions-tab').click();if(view==='driver-deductions')await page.locator('#deductions-expenses-tab').click();
+   for(const [view,button,modal] of [['accidents','#open-add-accident-modal','#add-accident-modal'],['breakdowns','[data-open=breakdown-modal]','#breakdown-modal'],['maintenance','[data-open=request-modal]','#request-modal'],['fuel','#open-fuel-modal','#fuel-modal'],['ncr','#open-ncr-modal','#ncr-modal'],['tripcheck','#open-add-tripcheck-modal','#add-tripcheck-modal'],['driver-appeals','#appeals-preview','#appeals-modal'],['training','#training-create','#training-session-modal'],['driver-deductions','#deductions-add-expense','#deductions-expense-modal'],['customer-care','#care-open','#care-modal'],['helpdesk','#helpdesk-preview','#helpdesk-details-modal']]){
+    await nav(view);if(view==='ncr')await page.locator('#ncr-tracker-tab').click();if(view==='training')await page.locator('#training-sessions-tab').click();if(view==='helpdesk')await page.locator('#helpdesk-manage-tab').click();if(view==='driver-deductions')await page.locator('#deductions-expenses-tab').click();
     await page.locator(button).click();await audit(modal);
     if(view==='tripcheck')assert.equal(await page.locator('#add-tripcheck-modal input[type=hidden]:visible').count(),0,'Hidden wizard state became visible');
     if(view==='ncr'){
@@ -127,7 +127,7 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
     await page.keyboard.press('Escape');
    }
    // Return tabbed modules to their default view for the next viewport's shared-search check.
-   await nav('ncr');await page.locator('#ncr-scores-tab').click();await nav('training');await page.locator('#training-overview-tab').click();await nav('driver-deductions');await page.locator('#deductions-balances-tab').click();
+   await nav('ncr');await page.locator('#ncr-scores-tab').click();await nav('training');await page.locator('#training-overview-tab').click();await nav('driver-deductions');await page.locator('#deductions-balances-tab').click();await nav('helpdesk');await page.locator('#helpdesk-create-tab').click();
   }
   await page.setViewportSize({width:768,height:1050});await page.evaluate(()=>document.documentElement.style.fontSize='200%');
   for(const view of screenshotViews){await nav(view);await audit('#view-'+view);}

@@ -54,6 +54,7 @@ const SCRIPT_ORDER = [
   "modules/compliance/penalties/penalties.js",
   "modules/people/training/training-model.js",
   "modules/people/training/training.js",
+  "modules/customer/support-policy.js",
   "modules/customer/customer-care/customer-care.js",
   "modules/people/driver-deductions/deductions-policy.js",
   "modules/people/driver-deductions/driver-deductions.js",

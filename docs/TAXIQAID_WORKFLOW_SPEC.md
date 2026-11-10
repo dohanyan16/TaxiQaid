@@ -6,7 +6,7 @@ This phase is **frontend-only**. Operational collections start empty. All legacy
 
 Supabase URL, public key, password login, existing sessions, user profiles, role lookup and logout remain on the existing project. The existing `taxiqaid_roles` authorization boundary is preserved. There are no new tables, migrations, spreadsheets or Apps Script projects. Authentication SDK storage remains separate from operational records.
 
-The shared sidebar, static module paths, existing styling, Fleet/Driver profiles and Trip Check wizard/editor/PDF source remain in place. Other planned modules retain Coming Soon states. Do not implement persistence until the interfaces and future database design are approved.
+The shared sidebar, static module paths, existing styling, Fleet/Driver profiles and Trip Check wizard/editor/PDF source remain in place. Customer Care and Helpdesk now provide disconnected management interfaces; future portal and operational services remain separate work. Do not implement persistence until the interfaces and future database design are approved.
 
 ## Identifier and timestamp contracts
 
@@ -21,6 +21,8 @@ The shared sidebar, static module paths, existing styling, Fleet/Driver profiles
 | NCR | `NCT-00001` (five digits) | Future backend |
 | Penalty | Unique source-supplied reference; format unconfirmed | Future approved external source |
 | Trip Check | Future identifier contract to be approved | No current ID generation or storage |
+| Customer Care | `CS-YYYYMMDD-NNNN` (date plus four-digit daily sequence) | Future backend; immutable case ID and atomic allocation |
+| Helpdesk | Permanent unique ID; format unapproved | Future backend; independent from Customer Care |
 
 IDs shown in placeholder text illustrate formats and are not records or allocated identifiers. Read-only identifier fields remain blank in previews. Server-generated reporting, sending, creation and status-change timestamps must use `Asia/Riyadh` (KSA, UTC+3), from an authoritative backend clock. The browser clock is not authoritative. User-entered accident/breakdown event dates and times remain separate from reporting dates and times. Overview filters use dates only, including both start and end dates; event-time inputs remain in report forms.
 
@@ -402,6 +404,115 @@ Future concepts are separate: authorized driver expense/charge, source financial
 
 Future financial permissions must distinguish **view balances**, **add expenses**, **apply deductions**, **approve reversals/adjustments** and **export financial data**. An existing administrative role alone must not imply every financial write permission. Existing Supabase role checks are unchanged now; no operational permission service is implemented.
 
+## Customer Care Tracker — external customer cases
+
+Customer Care handles external complaints, service requests, inquiries, suggestions, lost property, refund/compensation information and case resolution. It is independent of internal Helpdesk, Driver Appeals and NCR; records, identifiers and histories are not merged. The interface is complete but its operational source is disconnected. Add New Case opens an unsaved form. Refresh and Export Excel only display integration pending and preserve active filters. No cases, accounts, notifications, refunds or exports are fabricated.
+
+### Future permanent case ID
+
+The target convention is **`CS-YYYYMMDD-NNNN`**, represented by `CS-Date-0001` in the business request. Example **`CS-20261110-0001`** refers to November 10, 2026. Date is exactly eight digits `YYYYMMDD`, from the authoritative **Asia/Riyadh** creation date. The four-digit sequence is unique within that date and must be allocated atomically by the future backend, including concurrency checks. The ID is permanent after creation. The precise backend allocation, rollover/exhaustion and retry/idempotency contracts still require approval. Neither a browser clock nor a client counter allocates case IDs now.
+
+### Exact overview fields and forms
+
+The horizontally scrolling overview retains these **23 columns in this exact order**. Long values are rendered through safe text nodes, clipped visually within table cells and fully available in details.
+
+| Order | Field | Intended meaning / current preview |
+| --- | --- | --- |
+| 1 | ID | Read-only permanent backend case ID; empty in new previews |
+| 2 | Received Date | Required customer receipt date, distinct from creation audit time |
+| 3 | Customer Name | Optional customer-provided name |
+| 4 | Customer Contact | Private phone/email/contact information; neither phone nor email is forced |
+| 5 | Channel | Required approved channel |
+| 6 | Case Type | Required approved case type |
+| 7 | Category | Required approved category |
+| 8 | Car Plate | Optional searchable future Fleet reference; no vehicle required for unrelated cases |
+| 9 | Trip/Route | Optional trip/route text |
+| 10 | Complaint/Requirement Details | Required multiline description |
+| 11 | Priority | Required explicit selection; no automatic escalation |
+| 12 | Department | Responsible case department; independent of status/priority |
+| 13 | Assigned To | Future eligible active user; current selector is empty and disabled |
+| 14 | Status | Approved case status; new draft defaults to New |
+| 15 | Date | Read-only future creation date |
+| 16 | Time | Read-only future KSA creation time, 24-hour display |
+| 17 | Created By | Read-only verified actor from the future authenticated backend |
+| 18 | Root Cause | Optional multiline resolution information |
+| 19 | Action Taken | Optional multiline resolution steps |
+| 20 | Refund | Optional details and separately represented SAR amount; not a financial transaction |
+| 21 | Customer Satisfaction | Optional integer rating 1–5; unrated is null/blank, never zero |
+| 22 | Solved Date | Read-only authoritative resolution date; never browser-populated |
+| 23 | Solved Hour | Read-only authoritative KSA resolution time, 24-hour format |
+
+The empty overview says **“No customer care cases available — database integration pending.”** One shared search covers Customer Care Case ID (ID/Case ID aliases), Car Plate and Customer Name, alongside independent Car Plate and Status selectors. Car Plate comparison uses the shared plate normalization. Filters remain selected when navigating away, opening/closing a modal or using pending Refresh/Export controls.
+
+**Add New Customer Care Case** is organized into Customer Information, Case Information, Assignment, Resolution, Customer Satisfaction and Audit Information. Received Date, Channel, Case Type, Category, Priority and Complaint/Requirement Details are required. Resolution-only fields and optional customer identity/contact are not required to create an initial case. The backend-owned ID, creation date/time/actor and solved date/hour are always read-only and start blank. An empty Details preview and future editing mode are available without fake rows. Existing Received Date is read-only during the editing preview so its original value is retained. Changing fields never mutates the source snapshot.
+
+Save Case/Save Changes always displays **“Database integration pending — case not saved.”** Validation can highlight incomplete/invalid draft fields but never appends a case, updates an operational record, allocates an ID or invents a success confirmation. Details include the full description/contact, current source assignment and a read-only future resolution-history list. Edit preview supports department reassignment, future assignee selection, priority/status, resolution/refund information and rating; selecting edit preserves keyboard focus inside the modal.
+
+### Approved selections
+
+| Field | Exact vocabulary, in order |
+| --- | --- |
+| Channel | Phone; WhatsApp; Email; Website; Social Media; Walk-in; App; Other |
+| Case Type | Complaint; Service Request; Inquiry; Suggestion; Lost & Found; Refund/Compensation; General Requirement |
+| Category | Driver Behavior; Delay/Punctuality; Ticket/Booking; Refund/Payment; Lost & Found; Vehicle Condition; Staff Conduct; Cleanliness; Safety; Accessibility; Customer Service; Other |
+| Priority | Low; Medium; High; Critical |
+| Department | Customer Service; Operation; Planning; Finance; Maintenance; HR; IT; QHSE |
+| Status | New; Assigned; In Progress; Awaiting Customer; Awaiting Internal Dept; Escalated; Closed |
+
+Filters add All Statuses/All Car Plates; required form selectors start unselected. No unapproved categories/departments/statuses are added. Priority or assignment does not change status automatically. A new draft starts New; a status choice alone does not constitute closure, refund approval or a customer rating.
+
+### Users, refunds, ratings and closure
+
+Future Assigned To choices must come from a **secure, permission-checked TaxiQaid user directory** linked to existing Supabase identities. Only eligible active users under the eventual department/permission configuration may be assigned. The browser must never enumerate Supabase Auth users through an Admin API. No names are hardcoded. An existing case's current assignment can be read from an authorized case response, but the unavailable user selector does not pretend that reassignment is connected.
+
+Refund has a clear distinction between no recorded information, refund/compensation details and an explicit optional monetary amount. The preview representation may contain `{details, amount}`; this is an interface adapter contract, **not an approved database schema or financial workflow**. Optional SAR amounts are finite, nonnegative, at most two decimal places and formatted with two decimals using integer halalas. Blank is different from an explicit SAR 0.00. No payout, financial transaction, approval threshold or automatic charge is implemented. Final refund approvals, corrections and reopening rules remain unspecified.
+
+Customer Satisfaction uses five **native radio controls with vector stars**, accessible labels, normal keyboard/arrow navigation, a numeric `n / 5` output and Clear Rating. The initial state is Unrated; valid values are 1, 2, 3, 4 and 5. Zero, fractions, nonfinite and non-scalar ratings are invalid. Closing a case never fills a rating automatically. Icons are SVG/CSS, not decorative emoji.
+
+Genuine future closure must validate the close permission, record the authenticated closing user and authoritative Asia/Riyadh timestamp, derive Solved Date/Hour, and preserve status/assignment/resolution history, original Received Date and creation timestamp. Closed cases remain available for authorized reporting. The frontend neither creates these audit events nor defines reopening/refund approval policies.
+
+### Future export and privacy permissions
+
+Future Export Excel must include all 23 approved overview columns for the **authorized filtered result**, respecting text, plate and status filters, without limiting output to visible table rows. Dates/times must remain usable, satisfaction must be numeric 1–5 or blank, explicit SAR amounts must remain numeric and multiline descriptions must survive. The representation of both textual refund details and numeric amounts within the fixed overview/export contract still requires approval; do not silently convert money to mixed text or discard details. No Excel export is generated now.
+
+Customer contact and case descriptions are private data. Backend permissions must distinguish **View Cases, Create Cases, Update Cases, Assign Cases, Close Cases, Export Cases**, including field-level contact access/redaction as appropriate. A signed-in account or generic existing administrative role does not imply access to all customer information. Every future read, assignment, update, closure and export must verify the authenticated account/action and return only authorized fields/records. Read-only client fields, source labels and hidden controls are not authorization.
+
+## Internal Helpdesk — staff support tickets
+
+Helpdesk is independent of Customer Care, Driver Appeals and NCR. It has exactly **two main tabs: Create Ticket and Manage Tickets**, using the shared keyboard-accessible tabs. Creation drafts, management filters and record details are separate. No operational tickets or user accounts are created in this phase.
+
+### Creation and verified identity
+
+**Create Helpdesk Ticket** describes submitting an internal request to the appropriate department. Your Email is read-only and displays an existing SDK-authenticated account's **confirmed email** when available. If confirmation/account information is absent, the value stays blank with an account-information-pending explanation; no address is constructed from the login username. A generic confirmation timestamp or user-editable metadata is not substituted for confirmed email. This is a display convenience, not proof of identity for an operational backend.
+
+**Your Department** is a separate read-only future profile field. No department is inferred from user-editable account metadata or the receiving department selector. **Department** means the team receiving the request, with exactly: **Operation, Planning, Finance, Maintenance, HR, IT, QHSE**. Customer Service belongs to the Customer Care configuration, not this ticket dropdown. Receiving Department and the required multiline **Ticket Description** are meaningful initial validation fields.
+
+Submit Ticket always displays **“Database integration pending — ticket not submitted.”** It does not allocate a ticket ID, append a record, generate audit times or send email/WhatsApp/notifications. Clear Form clears the receiving department/description and pending messages while retaining the current verified email. Tab changes do not silently clear drafts or management filters.
+
+### Management and details
+
+Manage Tickets describes reviewing internal tickets assigned to the user's department. It has pending **Refresh**, one shared search for Ticket ID, Creator Email and Creator Name when available, plus **Created By** and **Status** selectors. Created By choices are derived only from the already-authorized ticket response, using stable Creator User ID (email/source identity fallback for preview adapters), never by enumerating all accounts. The overview has exactly: **Ticket ID, Created Date, Created Time, Created By, Creator Email, Assigned Department, Status, Last Updated At**. Full descriptions remain in details rather than the main table.
+
+A record button or empty preview opens a detail modal with Ticket ID, Created By, Creator User ID, Creator Email, Requester's Department, Assigned Department, full Description, Created Date/Time, editable Status, Last Updated By/At and Resolved At. All source/identity/audit fields remain read-only; only the status choice is editable. Save Changes says **“Database integration pending — ticket changes not saved.”** Cancel/Escape return focus. Source rows remain unchanged, and no resolution timestamp is synthesized.
+
+Approved ticket statuses are exactly **Pending, In Progress, Done**, with All Statuses in the filter. Genuine new tickets start Pending; the intended lifecycle is **Pending → In Progress → Done**. Future authorized status transitions must be audited and validated on the backend. The preview selector does not grant transition/update permission, invent extra escalation states or delete completed tickets. Done tickets stay in authorized history. Ticket ID format is **unapproved**; the future backend must generate permanent unique IDs without a browser numbering convention.
+
+### Single registry and server-side department authorization
+
+All future Helpdesk tickets belong to **one unified approved Google Sheet or equivalent operational registry**, not one spreadsheet per department. Suggested logical metadata includes Ticket ID, Creator User ID/verified email, requester department, assigned department, description, creation timestamp, current status, last-updated actor/time, resolved timestamp and status-audit references. This is a future logical contract only: no Sheet, database, table or migration is created.
+
+The secure backend must verify the Supabase authenticated account, current account status, authoritative department memberships, allowed action, current ticket assignment and view/update permission **before returning sensitive ticket data**. IT members may receive only tickets they are authorized to view in IT; Finance/Maintenance and other departments follow their own permissions. Explicitly authorized cross-department administrators may receive broader scopes; a generic admin label alone is insufficient. Permissions changing or tickets being reassigned must be checked again on writes, with audit/concurrency controls.
+
+**Never download the full registry and hide unauthorized rows in JavaScript.** The current preview has no data connection and performs only text/creator/status business filtering on an **already permission-filtered response** supplied by a future adapter. No client-side department filter, scope label, dropdown, manually typed email or account metadata grants access. User-directory and membership/permission contracts remain future approval work; no direct browser Supabase Admin API or exposed operational Sheet is introduced.
+
+Future actions must distinguish **Create Ticket, View Assigned Department Tickets, Update Assigned Department Tickets, View All Department Tickets, Manage Department Permissions**. Only assigned-department users with the permitted action, or explicitly authorized cross-department administrators, may update a ticket. Backend writes must derive creator identity and audit actors from verified sessions, use authoritative **Asia/Riyadh** timestamps, preserve original creation data and retain a full change history. No existing Supabase accounts/roles/sessions are changed now.
+
+### Shared boundaries and future infrastructure
+
+Both support modules start empty, use separate in-memory authorized-response snapshots solely as view adapters, and retain only unsaved form drafts. They never persist operational data through localStorage/IndexedDB, Supabase tables, spreadsheets or any other store. Logout/account change clears snapshots, private drafts and search suggestions. Auth observers only display current account information or clear previews; they do not enumerate users, query operational tables or modify authentication.
+
+Future storage follows the separately approved direction: existing Supabase authentication, a secure authorization/validation backend, approved Sheets or another operational source, and private Drive/document services only when separately authorized. No legacy Sheets/Apps Script integration, live Drive access, email, WhatsApp, notifications, financial service or new persistence is connected in this task. Roster's existing explicitly authorized local file workflows remain unchanged.
+
 ## Roster Management — implemented local frontend
 
 The five tabs are **Daily Overview**, **Weekly Roster**, **Driver Schedule & PDF**, **Roster Import**, and **Stops & Locations**. This replaces the Roster placeholder within the same administrative module and navigation path; it does not reinstate a standalone Driver Weekly Schedule page. All interface labels, generated PDF labels, messages, comments and documentation are English. Original driver names, official geographic names and source identifiers are preserved as data.
@@ -520,6 +631,8 @@ Private data cannot rely on public Sheets/Drive links, guessable identifiers or 
 - Training definitions/requirements, sessions/enrollments, confirmation evidence, trainer verification, valid completions and full all-driver compliance/detail exports.
 - Driver financial source approvals, stable/idempotent expense provenance, posted charges, partial deductions, reversal/adjustment audit trails and distinct financial permissions.
 - Roster local parsing, validation, projections and personal PDF/ZIP generation are implemented; secure versioned approval/publication, station schedules, storage, personal portal access and verified WhatsApp delivery remain future integrations.
+- Customer Care authorized case source, permanent daily CS IDs, eligible active account directory, resolution/refund/rating contracts, contact privacy and filtered numeric Excel reporting.
+- One unified Helpdesk registry with server-side department/action filtering, verified creator metadata and retained status-resolution audit history.
 - Authorized date/search/filter reads and Excel/PDF export services using connected records.
 
 These are planned capabilities, not schema proposals or migrations.
@@ -535,3 +648,5 @@ Run `node --test tests/*.test.cjs` for compatibility and scoring/expiry regressi
 The people-operation regression suite (`node tests/people.browser.cjs`) checks appeal filters and independent assignments, training tabs and bounded cross-page selection above 800 drivers, and financial previews with original references and partial deductions. Its records are isolated test fixtures and cleared before screenshots; the deployed application starts empty. Pure people-policy tests verify inclusive dates, selection completeness/uniqueness, requirement completion boundaries, currency precision and source/posted-transaction controls.
 
 Roster verification adds `node tests/roster.browser.cjs` and `python tests/verify-roster-pdfs.py <private-test-output>` (PyMuPDF). Pure tests cover paired rows, variable/empty shifts, calendar dates, overnight conflicts, aliases, coordinates and atomic source validation. Browser tests include dynamic batches above 800 drivers, complete/incomplete ZIP handling, mapping changes, private-session clearing, all tabs/filters/dialogs and responsive layouts. Reference workbooks may be supplied through environment paths; neither them nor generated personal output belongs in the repository.
+
+Support verification adds `node tests/support.browser.cjs` alongside the existing suites. Synthetic fixtures test the exact 23/8 columns and vocabularies, required initial data, five-star keyboard controls and unrated distinction, optional SAR/refund fields, confirmed versus unconfirmed email, independent requester/receiving departments, immutable source snapshots, retained filters, private-session clearing and pending operations. All 16 pages remain in navigation regression coverage; no customer/ticket fixtures are deployed. Live authentication still needs an existing authorized account; preview tests use mocks.

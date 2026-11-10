@@ -28,6 +28,8 @@ Version **1.2** — each screen has its own HTML, CSS, and JavaScript files.
 - `modules/people/training/`: compliance, sessions, attendance and bounded cross-page driver selection previews.
 - `modules/people/driver-deductions/`: balances, expenses and partial deduction previews; NCR points remain separate from SAR.
 - `modules/people/roster/`: local Day/Night Excel validation, daily/weekly/personal schedules, stop catalog editing and English interactive PDF/ZIP generation; WhatsApp and publication remain disconnected.
+- `modules/customer/customer-care/`: complete 23-column case interface, sectioned form, optional SAR refund information and accessible 1–5/unrated rating previews.
+- `modules/customer/helpdesk/`: internal Create Ticket/Manage Tickets, confirmed email display and disconnected status/details interfaces; department access requires a future secure backend.
 - `modules/operations/fuel/`: Fuel overview, empty record details/editing and conditional fueling form previews.
 - `shared/`: navigation, layout, common CSS, Supabase configuration, general utilities, and data helpers.
 - `assets/`: images.
@@ -63,7 +65,7 @@ The administrative app has 16 modules. Driver Weekly Schedule has been retired; 
 
 ## Validation
 
-Run `node --test tests/*.test.cjs` for the retained pure compatibility tests. With Playwright and Chromium available and a local HTTP server running, run `node tests/workflow.browser.cjs`, `node tests/ui.browser.cjs`, `node tests/people.browser.cjs` and `node tests/roster.browser.cjs`. Set `TAXIQAID_URL`, `TAXIQAID_CHROMIUM` or `TAXIQAID_SCREENSHOTS` to override defaults. Browser checks use mocked authentication and never live credentials or operational data. Screenshots are written to `docs/screenshots/` by default.
+Run `node --test tests/*.test.cjs` for the retained pure compatibility tests. With Playwright and Chromium available and a local HTTP server running, run `node tests/workflow.browser.cjs`, `node tests/ui.browser.cjs`, `node tests/people.browser.cjs`, `node tests/roster.browser.cjs` and `node tests/support.browser.cjs`. Set `TAXIQAID_URL`, `TAXIQAID_CHROMIUM` or `TAXIQAID_SCREENSHOTS` to override defaults. Browser checks use mocked authentication and never live credentials or operational data. Screenshots are written to `docs/screenshots/` by default.
 
 The former spreadsheet persistence tests were replaced because spreadsheet reads/writes are intentionally retired. Live authentication must be verified separately with an existing authorized account.
 
@@ -74,3 +76,5 @@ Choose the Day Shift and Night Shift `.xlsx` files, then Validate Roster. A succ
 The supplied location catalog is public non-personal configuration. Add/Edit Stop changes only the current preview; download the updated JSON to retain it. A reviewed full catalog import requires explicit replacement confirmation. No station time is inferred from the sample PDF.
 
 Keep private workbooks, personal PDFs/ZIPs and private screenshots outside this repository. For tests, set `TAXIQAID_ROSTER_OUTPUT` to a private directory. The Roster browser suite generates isolated synthetic artifacts there; run `python tests/verify-roster-pdfs.py <that-directory>` with PyMuPDF installed to inspect all generated synthetic PDFs and their map annotations. Optional `TAXIQAID_DAY_FILE` and `TAXIQAID_NIGHT_FILE` paths exercise the private reference workbooks without committing them. Local browser tests require Playwright/Chromium; XLSX and ZIP helpers are vendored. See [the Roster review](docs/ROSTER_REVIEW.md) for validation evidence and [the full workflow](docs/TAXIQAID_WORKFLOW_SPEC.md#roster-management--implemented-local-frontend).
+
+Customer Care and Helpdesk have independent records/lifecycles. Their Save/Submit/Refresh/Export actions remain pending and never create operational records, notifications or exports. Customer contact information and departmental tickets require future backend permissions; no full ticket registry is downloaded for client-side hiding. See [the support review](docs/SUPPORT_REVIEW.md) and [workflow specification](docs/TAXIQAID_WORKFLOW_SPEC.md#customer-care-tracker--external-customer-cases).

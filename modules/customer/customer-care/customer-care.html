@@ -1,9 +1,334 @@
-<!-- Customer Care Tracker: planned module, no business logic is implemented yet. -->
+<!-- Frontend-only Customer Care. No customer records are connected or persisted. -->
 <section class="view-section" id="view-customer-care">
-  <div class="card placeholder-card" aria-labelledby="customer-care-title">
-    <span class="placeholder-kicker">PLANNED MODULE</span>
-    <h2 id="customer-care-title">Customer Care Tracker</h2>
-    <p>Customer feedback and requests.</p>
-    <div class="placeholder-state">Coming Soon</div>
-  </div>
+<div class="card">
+<div class="card-header-flex">
+<div>
+<h2>Customer Care Tracker</h2>
+<p class="preview-note">Manage customer complaints, service requests, inquiries and case resolution.</p>
+</div>
+<div class="button-group-row">
+<button id="care-open" type="button" class="btn-primary" >Add New Case</button>
+<button id="care-refresh" type="button" class="btn-secondary" >Refresh</button>
+<button id="care-export" type="button" class="btn-secondary" >Export Excel</button>
+</div>
+</div>
+<p class="preview-note">Database integration pending. Customer information is private; no cases are saved or exported.</p>
+<div class="workflow-grid">
+<div class="form-group wide">
+<label for="care-search">Search Records</label>
+<input id="care-search" type="search" placeholder="Search by Case ID, Car Plate or Customer Name..." autocomplete="off"/>
+</div>
+<div class="form-group">
+<label for="care-car-filter">Car Plate</label>
+<select id="care-car-filter" >
+<option value="">All Car Plates</option>
+</select>
+</div>
+<div class="form-group">
+<label for="care-status-filter">Status</label>
+<select id="care-status-filter" >
+<option value="">All Statuses</option>
+<option value="New">New</option>
+<option value="Assigned">Assigned</option>
+<option value="In Progress">In Progress</option>
+<option value="Awaiting Customer">Awaiting Customer</option>
+<option value="Awaiting Internal Dept">Awaiting Internal Dept</option>
+<option value="Escalated">Escalated</option>
+<option value="Closed">Closed</option>
+</select>
+</div>
+</div>
+<button id="care-preview" type="button" class="btn-secondary" >Preview Case Details</button>
+<p class="preview-note">Open an empty detail and editing preview. No customer records are available.</p>
+</div>
+<div class="card">
+<div class="card-header-flex">
+<h2>Customer Care Overview</h2>
+<span id="care-count" role="status">0 cases found</span>
+</div>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Customer Care Overview">
+<table id="care-table" class="tracker-table">
+<thead>
+<tr>
+<th scope="col">ID</th>
+<th scope="col">Received Date</th>
+<th scope="col">Customer Name</th>
+<th scope="col">Customer Contact</th>
+<th scope="col">Channel</th>
+<th scope="col">Case Type</th>
+<th scope="col">Category</th>
+<th scope="col">Car Plate</th>
+<th scope="col">Trip/Route</th>
+<th scope="col">Complaint/Requirement Details</th>
+<th scope="col">Priority</th>
+<th scope="col">Department</th>
+<th scope="col">Assigned To</th>
+<th scope="col">Status</th>
+<th scope="col">Date</th>
+<th scope="col">Time</th>
+<th scope="col">Created By</th>
+<th scope="col">Root Cause</th>
+<th scope="col">Action Taken</th>
+<th scope="col">Refund</th>
+<th scope="col">Customer Satisfaction</th>
+<th scope="col">Solved Date</th>
+<th scope="col">Solved Hour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="23">
+<span class="table-empty">No customer care cases available — database integration pending.</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </section>
+<div class="modal-overlay" id="care-modal" aria-hidden="true">
+<div class="modal-content workflow-modal">
+<h2 id="care-modal-title">Add New Customer Care Case</h2>
+<p id="care-form-note" class="preview-note">Unsaved preview — database integration pending.</p>
+<form id="care-form" aria-describedby="care-form-note">
+<section class="support-form-section">
+<h3>Customer Information</h3>
+<div class="workflow-grid">
+<div class="form-group">
+<label for="care-customer-name">Customer Name</label>
+<input id="care-customer-name" type="text" />
+</div>
+<div class="form-group">
+<label for="care-contact">Customer Contact</label>
+<input id="care-contact" type="text" aria-describedby="care-contact-note"/>
+</div>
+<p class="preview-note wide" id="care-contact-note">Phone or email information is optional and private. Both are not required.</p>
+</div>
+</section>
+<section class="support-form-section">
+<h3>Case Information</h3>
+<p class="preview-note">Received Date records when the customer contacted us. Creation and resolution timestamps are separate future audit fields.</p>
+<div class="workflow-grid">
+<div class="form-group">
+<label for="care-received-date">Received Date</label>
+<input id="care-received-date" type="date" required/>
+</div>
+<div class="form-group">
+<label for="care-channel">Channel</label>
+<select id="care-channel" required>
+<option value="">Select channel</option>
+<option value="Phone">Phone</option>
+<option value="WhatsApp">WhatsApp</option>
+<option value="Email">Email</option>
+<option value="Website">Website</option>
+<option value="Social Media">Social Media</option>
+<option value="Walk-in">Walk-in</option>
+<option value="App">App</option>
+<option value="Other">Other</option>
+</select>
+</div>
+<div class="form-group">
+<label for="care-type">Case Type</label>
+<select id="care-type" required>
+<option value="">Select case type</option>
+<option value="Complaint">Complaint</option>
+<option value="Service Request">Service Request</option>
+<option value="Inquiry">Inquiry</option>
+<option value="Suggestion">Suggestion</option>
+<option value="Lost &amp; Found">Lost &amp; Found</option>
+<option value="Refund/Compensation">Refund/Compensation</option>
+<option value="General Requirement">General Requirement</option>
+</select>
+</div>
+<div class="form-group">
+<label for="care-category">Category</label>
+<select id="care-category" required>
+<option value="">Select category</option>
+<option value="Driver Behavior">Driver Behavior</option>
+<option value="Delay/Punctuality">Delay/Punctuality</option>
+<option value="Ticket/Booking">Ticket/Booking</option>
+<option value="Refund/Payment">Refund/Payment</option>
+<option value="Lost &amp; Found">Lost &amp; Found</option>
+<option value="Vehicle Condition">Vehicle Condition</option>
+<option value="Staff Conduct">Staff Conduct</option>
+<option value="Cleanliness">Cleanliness</option>
+<option value="Safety">Safety</option>
+<option value="Accessibility">Accessibility</option>
+<option value="Customer Service">Customer Service</option>
+<option value="Other">Other</option>
+</select>
+</div>
+<div class="form-group">
+<label for="care-plate">Car Plate</label>
+<input id="care-plate" type="text" autocomplete="off" placeholder="Optional — Fleet integration pending"/>
+</div>
+<div class="form-group">
+<label for="care-trip">Trip/Route</label>
+<input id="care-trip" type="text" />
+</div>
+<div class="form-group wide">
+<label for="care-details">Complaint/Requirement Details</label>
+<textarea id="care-details" rows="4" required>
+</textarea>
+</div>
+<div class="form-group">
+<label for="care-priority">Priority</label>
+<select id="care-priority" required>
+<option value="">Select priority</option>
+<option value="Low">Low</option>
+<option value="Medium">Medium</option>
+<option value="High">High</option>
+<option value="Critical">Critical</option>
+</select>
+</div>
+</div>
+</section>
+<section class="support-form-section">
+<h3>Assignment</h3>
+<div class="workflow-grid">
+<div class="form-group">
+<label for="care-department">Department</label>
+<select id="care-department" >
+<option value="">Not assigned</option>
+<option value="Customer Service">Customer Service</option>
+<option value="Operation">Operation</option>
+<option value="Planning">Planning</option>
+<option value="Finance">Finance</option>
+<option value="Maintenance">Maintenance</option>
+<option value="HR">HR</option>
+<option value="IT">IT</option>
+<option value="QHSE">QHSE</option>
+</select>
+</div>
+<div class="form-group">
+<label for="care-assigned-to">Assigned To</label>
+<select id="care-assigned-to" disabled aria-describedby="care-assigned-note">
+<option value="">User directory integration pending</option>
+</select>
+</div>
+<div class="form-group">
+<label for="care-status">Status</label>
+<select id="care-status" >
+<option value="New">New</option>
+<option value="Assigned">Assigned</option>
+<option value="In Progress">In Progress</option>
+<option value="Awaiting Customer">Awaiting Customer</option>
+<option value="Awaiting Internal Dept">Awaiting Internal Dept</option>
+<option value="Escalated">Escalated</option>
+<option value="Closed">Closed</option>
+</select>
+</div>
+<p id="care-assigned-note" class="preview-note wide">No user directory is connected. Eligible active users will become available after integration.</p>
+<p id="care-current-assignee" class="preview-note wide">No current assignment available.</p>
+</div>
+</section>
+<section class="support-form-section">
+<h3>Resolution</h3>
+<p class="preview-note">Refund details and any SAR amount are optional. No refund is issued and no financial transaction is created. Closure timestamps require the future backend.</p>
+<div class="workflow-grid">
+<div class="form-group wide">
+<label for="care-root-cause">Root Cause</label>
+<textarea id="care-root-cause" rows="4" >
+</textarea>
+</div>
+<div class="form-group wide">
+<label for="care-action-taken">Action Taken</label>
+<textarea id="care-action-taken" rows="4" >
+</textarea>
+</div>
+<div class="form-group wide">
+<label for="care-refund-details">Refund/Compensation Details</label>
+<textarea id="care-refund-details" rows="4" >
+</textarea>
+</div>
+<div class="form-group">
+<label for="care-refund-amount">Refund Amount (SAR)</label>
+<input id="care-refund-amount" type="text" inputmode="decimal" placeholder="Optional monetary amount"/>
+</div>
+<div class="form-group">
+<label for="care-solved-date">Solved Date</label>
+<input id="care-solved-date" type="text" readonly placeholder="Future authoritative resolution date"/>
+</div>
+<div class="form-group">
+<label for="care-solved-hour">Solved Hour</label>
+<input id="care-solved-hour" type="text" readonly placeholder="Future KSA time (24-hour format)"/>
+</div>
+</div>
+</section>
+<fieldset id="care-rating" class="support-rating" role="radiogroup" aria-labelledby="care-rating-heading">
+<legend id="care-rating-heading">Customer Satisfaction</legend>
+<p class="preview-note">Optional rating from 1 to 5. Leave unrated when no customer rating is available.</p>
+<div class="support-rating-choices">
+<label class="support-rating-choice">
+<input type="radio" id="care-rating-1" name="care-rating" value="1" aria-label="Rate 1 out of 5 stars"/>
+<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/>
+</svg>
+</label>
+<label class="support-rating-choice">
+<input type="radio" id="care-rating-2" name="care-rating" value="2" aria-label="Rate 2 out of 5 stars"/>
+<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/>
+</svg>
+</label>
+<label class="support-rating-choice">
+<input type="radio" id="care-rating-3" name="care-rating" value="3" aria-label="Rate 3 out of 5 stars"/>
+<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/>
+</svg>
+</label>
+<label class="support-rating-choice">
+<input type="radio" id="care-rating-4" name="care-rating" value="4" aria-label="Rate 4 out of 5 stars"/>
+<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/>
+</svg>
+</label>
+<label class="support-rating-choice">
+<input type="radio" id="care-rating-5" name="care-rating" value="5" aria-label="Rate 5 out of 5 stars"/>
+<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/>
+</svg>
+</label>
+</div>
+<output id="care-rating-label" for="care-rating-1 care-rating-2 care-rating-3 care-rating-4 care-rating-5" aria-live="polite">Unrated</output>
+<button id="care-rating-clear" type="button" class="btn-secondary" >Clear Rating</button>
+</fieldset>
+<section class="support-form-section">
+<h3>Audit Information</h3>
+<div class="workflow-grid">
+<div class="form-group wide">
+<label for="care-id">ID</label>
+<input id="care-id" type="text" readonly placeholder="Assigned by the future backend (CS-YYYYMMDD-0001)"/>
+</div>
+<div class="form-group">
+<label for="care-created-date">Date</label>
+<input id="care-created-date" type="text" readonly placeholder="Future KSA creation date"/>
+</div>
+<div class="form-group">
+<label for="care-created-time">Time</label>
+<input id="care-created-time" type="text" readonly placeholder="Future KSA creation time (24-hour format)"/>
+</div>
+<div class="form-group">
+<label for="care-created-by">Created By</label>
+<input id="care-created-by" type="text" readonly placeholder="Verified authenticated identity"/>
+</div>
+</div>
+</section>
+<section id="care-history-section" class="support-form-section" hidden>
+<h3>Resolution History</h3>
+<p class="preview-note">Status changes, reassignment and closure history will come from the authorized source.</p>
+<ol id="care-history">
+<li>No history available — database integration pending.</li>
+</ol>
+</section>
+<p id="care-validation" role="status" class="preview-note" hidden>
+</p>
+<p id="care-save-status" role="status" class="preview-note" hidden>Database integration pending — case not saved.</p>
+<div class="action-row">
+<button id="care-save" type="button" class="btn-primary" >Save Case</button>
+<button id="care-edit" type="button" class="btn-primary" hidden>Edit Case — Preview</button>
+<button id="care-close" type="button" class="btn-secondary" data-people-close="care-modal">Cancel</button>
+</div>
+</form>
+</div>
+</div>

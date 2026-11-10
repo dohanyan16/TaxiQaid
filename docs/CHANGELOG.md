@@ -1,6 +1,14 @@
 # TaxiQaid — Change History
 
-## Current — Local Roster Management
+## Current — Customer Care and Internal Helpdesk
+
+- Replaced both customer-support placeholders with independent frontend workflows: 23-column Customer Care and two-tab internal Helpdesk.
+- Added complete case forms/details/editing, immutable audit previews, required initial-case validation, optional SAR/refund information and accessible 1–5/unrated vector-star controls.
+- Added verified account-email display, separate requester/receiving department fields, ticket search/filters/details and pending submissions/status changes.
+- Documented secure active-user assignment, private customer reporting, one unified ticket registry and server-side department/action permissions. No operational source, user directory, persistence or notifications are connected.
+- Added support policy/browser regressions and expanded all-16-page UI coverage while preserving Roster, authentication and all existing business modules.
+
+## Local Roster Management
 
 - Replaced Roster with five views, paired Day/Night Excel validation, dynamic driver counts, overnight conflict checks and atomic same-week replacement.
 - Added shared roster searches, paginated schedules, the approved 76-location catalog, validated local stop/alias management and JSON import/export.

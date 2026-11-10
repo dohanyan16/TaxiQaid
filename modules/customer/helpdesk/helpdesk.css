@@ -1,1 +1,4 @@
-/* Helpdesk: placeholder module. Shared styles live in shared/common.css. */
+/* Internal ticket interfaces reuse the shared orange design, tabs and modal layout. */
+#helpdesk-table .helpdesk-cell-text { display: block; max-width: 22rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#helpdesk-detail-description { min-height: 10rem; }
+#helpdesk-identity-note, #helpdesk-scope { overflow-wrap: anywhere; }
