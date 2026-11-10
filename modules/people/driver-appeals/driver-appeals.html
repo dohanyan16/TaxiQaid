@@ -54,7 +54,7 @@
 </div>
 <p id="appeals-date-error" class="preview-note" role="status" hidden>End Date must be on or after Start Date.</p>
 <button id="appeals-preview" type="button" class="btn-secondary">Preview Appeal Details</button>
-<p class="preview-note">Empty preview only. Administrative changes are limited to status and department.</p>
+<p class="preview-note">Empty preview only. Administrative changes are limited to classification, status and department.</p>
 </div>
 <div class="card">
 <div class="card-header-flex">
@@ -125,6 +125,7 @@
 <label for="appeal-detail-submission-time">Submission Time</label>
 <input id="appeal-detail-submission-time" type="text" readonly placeholder="Unavailable — database not connected"/>
 </div>
+<div class="form-group"><label for="appeal-detail-classification">Classify Appeal Type</label><select id="appeal-detail-classification" disabled><option value="">Types pending configuration</option></select></div>
 <div class="form-group">
 <label for="appeal-detail-status">Status</label>
 <select id="appeal-detail-status" >

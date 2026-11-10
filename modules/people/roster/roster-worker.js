@@ -44,7 +44,7 @@ self.onmessage=async event=>{
     }
     const resources=await preparePdf();
     if(type==='pdf') {
-      const bytes=TaxiQaidRosterPdf.create(payload.driver,payload.week,payload.catalog,resources);
+      const bytes=TaxiQaidRosterPdf.create(payload.driver,payload.week,payload.catalog,resources,payload.publication);
       send(id,'pdf',{buffer:bytes.buffer},[bytes.buffer]);return;
     }
     if(type!=='batch')throw new Error('Unknown roster task.');

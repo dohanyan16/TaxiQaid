@@ -24,9 +24,9 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
   await page.waitForFunction(()=>document.getElementById('erp-app').style.display==='flex');
   async function nav(view){const link=page.locator(`[data-view="${view}"] a`);await link.evaluate(el=>{const group=el.closest('details');if(group)group.open=true;});await link.click();}
   const views=await page.locator('[data-view]').evaluateAll(nodes=>nodes.map(n=>n.dataset.view));
-  assert.equal(views.length,16);assert.equal(views.includes('driver-weekly-schedule'),false);
+  assert.equal(views.length,18);assert.equal(views.includes('driver-weekly-schedule'),false);
   assert.equal(await page.locator('#view-driver-weekly-schedule').count(),0);
-  const screenshotViews=['dashboard','fleet','drivers','accidents','breakdowns','maintenance','fuel','ncr','penalties','tripcheck','driver-appeals','training','driver-deductions','roster','customer-care','helpdesk'];
+  const screenshotViews=['dashboard','fleet','drivers','accidents','breakdowns','maintenance','fuel','ncr','penalties','tripcheck','driver-appeals','training','driver-deductions','roster','customer-care','helpdesk','driver-portal-preview','user-management'];
   const pdfHash=crypto.createHash('sha256').update(await page.evaluate(()=>createTripCheckPdf.toString())).digest('hex');
   assert.equal(pdfHash,'f3ca12a764f62d34862e4a1893c0cf9511a27ebf162e56541370a9b68af9218a','Custom PDF source changed');
   assert.equal(await page.locator('#sidebar-toggle').innerText(),'‹');
@@ -108,7 +108,7 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
    assert.ok(await page.locator('.main-content').evaluate(el=>el.scrollWidth<=el.clientWidth+1),'Main panel overflow');
    if(scope.endsWith('-modal'))assert.ok(await page.locator(scope+' .modal-content').evaluate(el=>el.scrollWidth<=el.clientWidth+1),'Modal panel overflow: '+scope);
   }
-  const searchViews=['customer-care','fleet','drivers','accidents','breakdowns','maintenance','fuel','ncr','penalties','tripcheck','driver-appeals','training','driver-deductions','roster'];
+  const searchViews=['customer-care','fleet','drivers','accidents','breakdowns','maintenance','fuel','ncr','penalties','tripcheck','driver-appeals','training','driver-deductions','roster','driver-portal-preview','user-management'];
   for(const width of [320,375,768,1024,1440]){
    await page.setViewportSize({width,height:1050});
    for(const view of views){await nav(view);await audit('#view-'+view);if(searchViews.includes(view))assert.equal(await page.locator(`#view-${view} input[role=combobox]:visible`).count(),1,'Unified search '+view);}

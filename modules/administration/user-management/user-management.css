@@ -1,0 +1,12 @@
+/* Permission groups wrap on phones and scroll only within table regions. */
+#um-permission-matrix details {border:1px solid var(--border,#ddd);border-radius:8px;margin-top:12px;}
+#um-permission-matrix summary {padding:14px;cursor:pointer;min-height:46px;font-weight:700;}
+#um-permission-matrix table {min-width:660px;width:100%;border-collapse:collapse;}
+#um-permission-matrix th,#um-permission-matrix td {padding:10px;text-align:left;border-top:1px solid #ddd;}
+#um-permission-matrix th:first-child {min-width:220px;}
+#um-permission-matrix select {min-width:145px;}
+.um-departments {display:flex;flex-wrap:wrap;gap:8px 20px;}
+.um-departments label {display:flex;align-items:center;gap:8px;min-height:46px;}
+.um-departments input[type=checkbox] {width:22px;height:22px;min-height:22px;}
+#um-create-departments {margin-top:8px;}
+#um-permission-matrix .um-allow {color:#216b29;}#um-permission-matrix .um-deny {color:var(--muted,#666);}

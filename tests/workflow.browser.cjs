@@ -41,7 +41,7 @@ const path = require('node:path');
   assert.ok((await page.evaluate(()=>authCalls)).includes('role:taxiqaid_roles'));
   // All sidebar destinations remain usable, including grouped pages.
   const views=await page.locator('.sidebar-menu li[data-view]').evaluateAll(items=>items.map(item=>item.dataset.view));
-  const expectedViews=['dashboard','fleet','drivers','tripcheck','accidents','breakdowns','maintenance','fuel','ncr','penalties','training','customer-care','driver-deductions','driver-appeals','helpdesk','roster'];
+  const expectedViews=['dashboard','fleet','drivers','tripcheck','accidents','breakdowns','maintenance','fuel','ncr','penalties','training','customer-care','driver-deductions','driver-appeals','helpdesk','roster','driver-portal-preview','user-management'];
   assert.deepEqual([...views].sort(),[...expectedViews].sort());
   assert.deepEqual(await page.evaluate(()=>FEATURE_MODULES.map(module=>module.name).sort()),[...expectedViews].sort());
   assert.equal(await page.locator('[data-view="driver-weekly-schedule"], #view-driver-weekly-schedule').count(),0);

@@ -27,3 +27,5 @@
       margin: 0 auto 25px;
     }
 #error-message { color: var(--danger); font-size: var(--font-body); margin: 15px 0 0; }
+
+#driver-signin-entry {margin-top:var(--layout-gap);width:100%;}

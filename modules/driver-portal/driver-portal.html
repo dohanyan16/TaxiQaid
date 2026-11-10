@@ -1,0 +1,132 @@
+<!-- Personal portal is outside the administrative shell. No identity is derived from the URL. -->
+<section id="driver-portal" hidden>
+<header class="portal-header">
+<img src="assets/TaxiQaidLogo.jpg" alt="TaxiQaid Logo">
+<div>
+<h1>Driver Portal</h1>
+<p id="portal-driver-name">Driver account integration pending</p>
+</div>
+<button id="portal-signout" type="button" class="btn-secondary">Sign Out</button>
+</header>
+<div class="portal-body">
+<p id="portal-preview-banner" class="portal-banner" hidden>Management Preview — Read Only</p>
+<button id="portal-return" type="button" class="btn-secondary" hidden>Return to Management</button>
+<div id="portal-login" class="card">
+<h2>Driver Sign In</h2>
+<form id="portal-login-form" class="workflow-grid">
+<div class="form-group">
+<label for="portal-iqama">Iqama</label>
+<input id="portal-iqama" type="text" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="username" required>
+</div>
+<div class="form-group">
+<label for="portal-password">Password</label>
+<input id="portal-password" type="password" autocomplete="current-password" required>
+</div>
+<div class="action-row wide">
+<button class="btn-primary" type="submit">Sign In</button>
+<button class="btn-secondary" type="button" id="portal-management-login">Management Sign In</button>
+<button class="btn-secondary" type="button" id="portal-recovery">Forgot Password</button>
+</div>
+</form>
+<p id="portal-login-status" role="status" hidden>
+</p>
+</div>
+<div id="portal-content" hidden>
+<div class="workflow-tabs portal-tabs" role="tablist" aria-label="Driver Portal sections">
+<button type="button" id="portal-settings-tab" class="btn-secondary" role="tab" aria-controls="portal-settings-panel" aria-selected="true" tabindex="0">Driver Settings</button>
+<button type="button" id="portal-files-tab" class="btn-secondary" role="tab" aria-controls="portal-files-panel" aria-selected="false" tabindex="-1">Files</button>
+<button type="button" id="portal-schedule-tab" class="btn-secondary" role="tab" aria-controls="portal-schedule-panel" aria-selected="false" tabindex="-1">Weekly Schedule</button>
+<button type="button" id="portal-appeals-tab" class="btn-secondary" role="tab" aria-controls="portal-appeals-panel" aria-selected="false" tabindex="-1">Appeals</button>
+</div>
+<section id="portal-settings-panel" role="tabpanel" aria-labelledby="portal-settings-tab" class="card">
+<h2>Driver Settings</h2>
+<p>Official details remain unchanged until an authorized reviewer approves your request.</p>
+<dl id="portal-approved-profile" class="portal-profile">
+</dl>
+<p id="portal-profile-state" class="preview-note">No Pending Requests</p>
+<div id="portal-profile-requests">
+</div>
+<h3>Request Changes</h3>
+<form id="portal-settings-form" class="workflow-grid">
+<div class="form-group">
+<label for="portal-proposed-name">Proposed Name</label>
+<input id="portal-proposed-name" type="text" maxlength="150" autocomplete="name">
+</div>
+<div class="form-group">
+<label for="portal-phone-country">Country Calling Code</label>
+<input id="portal-phone-country" type="search" placeholder="Search country or calling code..." autocomplete="off">
+</div>
+<div class="form-group">
+<label for="portal-proposed-phone">National Phone Number</label>
+<input id="portal-proposed-phone" type="tel" autocomplete="tel-national" placeholder="Without country calling code">
+</div>
+<p class="wide preview-note">You may request a name change, a contact phone change, or both. A calling prefix does not verify phone ownership. A contact number change does not change account login details.</p>
+<button id="portal-request-changes" class="btn-primary" type="submit">Request Changes</button>
+</form>
+<p id="portal-settings-status" role="status" hidden>
+</p>
+</section>
+<section id="portal-files-panel" role="tabpanel" aria-labelledby="portal-files-tab" class="card" hidden>
+<h2>Files</h2>
+<p id="portal-files-empty">No documents assigned — document integration pending.</p>
+<div id="portal-files-list" class="portal-files">
+</div>
+</section>
+<section id="portal-schedule-panel" role="tabpanel" aria-labelledby="portal-schedule-tab" class="card" hidden>
+<h2>Weekly Schedule</h2>
+<p id="portal-schedule-empty">Your weekly schedule is not available yet.</p>
+<p id="portal-schedule-summary">
+</p>
+<p id="portal-schedule-version" class="preview-note">
+</p>
+<div id="portal-week" class="portal-week">
+</div>
+<button id="portal-download-schedule" type="button" class="btn-primary" disabled>Download Weekly Schedule</button>
+<p id="portal-schedule-status" role="status" hidden>
+</p>
+</section>
+<section id="portal-appeals-panel" role="tabpanel" aria-labelledby="portal-appeals-tab" class="card" hidden>
+<h2>Appeals</h2>
+<form id="portal-appeals-form">
+<div class="form-group">
+<label for="portal-appeal-description">Description</label>
+<textarea id="portal-appeal-description" rows="6" maxlength="10000" required>
+</textarea>
+</div>
+<button id="portal-submit-appeal" type="submit" class="btn-primary">Submit Appeal</button>
+</form>
+<p id="portal-appeals-status" role="status" hidden>
+</p>
+</section>
+</div>
+</div>
+</section>
+<div class="modal-overlay" id="portal-document-modal" aria-hidden="true">
+<div class="modal-content workflow-modal">
+<h2 id="portal-document-title">Document</h2>
+<p id="portal-document-version">
+</p>
+<div id="portal-document-viewer">
+</div>
+<p id="portal-document-status" role="status">
+</p>
+<div class="action-row">
+<button id="portal-document-reviewed" type="button" class="btn-secondary" disabled>I Have Viewed the Full Document</button>
+<button id="portal-document-sign" type="button" class="btn-primary" disabled>Confirm &amp; Sign</button>
+<button type="button" class="btn-secondary" data-people-close="portal-document-modal">Close</button>
+</div>
+</div>
+</div>
+<div class="modal-overlay" id="portal-sign-modal" aria-hidden="true">
+<div class="modal-content">
+<h2>Confirm Document</h2>
+<p>I confirm that I have viewed this full document and wish to acknowledge this exact version using my authenticated account.</p>
+<p>This is an Authenticated Account Confirmation. No certified electronic signature is created in this phase.</p>
+<div class="action-row">
+<button id="portal-confirm-sign" type="button" class="btn-primary">Confirm &amp; Sign</button>
+<button type="button" class="btn-secondary" data-people-close="portal-sign-modal">Cancel</button>
+</div>
+<p id="portal-sign-status" role="status" hidden>
+</p>
+</div>
+</div>

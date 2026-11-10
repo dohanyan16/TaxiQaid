@@ -2,7 +2,7 @@
 const TaxiQaidAppealsPreview = (() => {
   const $ = id=>document.getElementById(id), policy=TaxiQaidAppealsPolicy;
   const columns=['Appeal ID','Driver Name','Driver Iqama','Nationality','Appeal Type','Description','Status','Department'];
-  let records=[];
+  let records=[], approvedTypes=[];
   const search=setupSearchDropdown({input:'appeals-search',config:'appeals',getData:()=>records,apply:render});
   function render() {
     const start=$('appeals-start').value,end=$('appeals-end').value;
@@ -19,8 +19,10 @@ const TaxiQaidAppealsPreview = (() => {
       const label=input.closest('.form-group').querySelector('label').textContent;
       input.value=record?String(record[label]??''):'';
     });
+    $('appeal-detail-classification').value=approvedTypes.includes(record?.['Appeal Type'])?record['Appeal Type']:'';
     $('appeal-detail-status').value=record?.Status || 'Pending';
     $('appeal-detail-department').value=record?.Department || 'Pending';
+    $('appeals-form').querySelectorAll('select').forEach(select=>select.dataset.originalValue=select.value);
     openPreviewModal($('appeals-modal'));
   }
   $('appeals-preview').addEventListener('click',()=>openDetails());
@@ -30,5 +32,7 @@ const TaxiQaidAppealsPreview = (() => {
     $('appeals-save-status').hidden=false;
   });
   $('appeals-form').addEventListener('submit',event=>{event.preventDefault();$('appeals-save').click();});
-  return Object.freeze({setRecords(snapshot){records=snapshot.map(record=>({...record}));render();},openDetails});
+  return Object.freeze({setApprovedTypes(types){approvedTypes=[...new Set(types.filter(type=>typeof type==='string'&&type.trim()))];
+    for(const id of ['appeals-type','appeal-detail-classification']){const select=$(id);select.replaceChildren();const blank=document.createElement('option');blank.value='';blank.textContent=approvedTypes.length?'All / Unclassified':'Types pending configuration';select.append(blank);approvedTypes.forEach(type=>{const option=document.createElement('option');option.value=type;option.textContent=type;select.append(option);});select.disabled=id==='appeal-detail-classification'&&!approvedTypes.length;}
+  },setRecords(snapshot){records=snapshot.map(record=>({...record}));render();},openDetails});
 })();

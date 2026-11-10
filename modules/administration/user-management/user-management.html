@@ -1,0 +1,243 @@
+<section id="view-user-management" class="view-section">
+<div class="card">
+<h2>User Management</h2>
+<p>Manage accounts, departments and authorized application access.</p>
+<p class="preview-note">Account, permission and profile approval integration pending. No accounts or permissions are changed.</p>
+<div class="workflow-tabs" role="tablist" aria-label="User Management sections">
+<button type="button" id="um-users-tab" class="btn-secondary" role="tab" aria-selected="true" aria-controls="um-users-panel" tabindex="0">Users</button>
+<button type="button" id="um-access-tab" class="btn-secondary" role="tab" aria-selected="false" aria-controls="um-access-panel" tabindex="-1">Access &amp; Permissions</button>
+<button type="button" id="um-requests-tab" class="btn-secondary" role="tab" aria-selected="false" aria-controls="um-requests-panel" tabindex="-1">Driver Profile Requests</button>
+</div>
+</div>
+<section class="card" id="um-users-panel" role="tabpanel" aria-labelledby="um-users-tab">
+<div class="card-header-flex">
+<h2>Users</h2>
+<div class="button-group-row">
+<button id="um-create" type="button" class="btn-primary" >Create User</button>
+<button id="um-refresh" type="button" class="btn-secondary" >Refresh</button>
+</div>
+</div>
+<p id="um-users-status" role="status" hidden>
+</p>
+<div class="workflow-grid">
+<div class="form-group">
+<label for="um-user-search">Search Users</label>
+<input id="um-user-search" type="search" placeholder="Search User ID, name, login or Iqama..." autocomplete="off">
+</div>
+<div class="form-group">
+<label for="um-user-type">Account Type</label>
+<select id="um-user-type" >
+<option value="">All Account Types</option>
+<option value="Management">Management</option>
+<option value="Driver">Driver</option>
+</select>
+</div>
+<div class="form-group">
+<label for="um-user-status">Account Status</label>
+<select id="um-user-status" >
+<option value="">All Statuses</option>
+<option value="Active">Active</option>
+<option value="Disabled">Disabled</option>
+</select>
+</div>
+</div>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Um Users Table table">
+<table class="tracker-table" id="um-users-table">
+<thead>
+<tr>
+<th scope="col">User ID</th>
+<th scope="col">Display Name</th>
+<th scope="col">Account Type</th>
+<th scope="col">Email / Login</th>
+<th scope="col">Department</th>
+<th scope="col">Role</th>
+<th scope="col">Account Status</th>
+<th scope="col">Last Sign In</th>
+<th scope="col">Actions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="9">
+<span class="table-empty">No records available — database not connected</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section class="card" id="um-access-panel" role="tabpanel" aria-labelledby="um-access-tab" hidden>
+<h2>Access &amp; Permissions</h2>
+<p class="preview-note">Role templates are configurable proposals. Defaults are unconfigured. Unsaved drafts never grant runtime access.</p>
+<div class="workflow-grid">
+<div class="form-group">
+<label for="um-permission-user">Select User</label>
+<input id="um-permission-user" type="search" placeholder="Search authorized user by ID, name, login or Iqama..." autocomplete="off">
+</div>
+<div class="form-group">
+<label for="um-draft-type">Draft Account Type</label>
+<select id="um-draft-type" >
+<option value="Management">Management</option>
+<option value="Driver">Driver</option>
+</select>
+</div>
+<div class="form-group">
+<label for="um-role-template">Proposed Role Template</label>
+<select id="um-role-template" >
+<option value="">
+</option>
+<option value="Super Administrator">Super Administrator</option>
+<option value="Administrator">Administrator</option>
+<option value="Department Manager">Department Manager</option>
+<option value="Supervisor">Supervisor</option>
+<option value="Staff">Staff</option>
+<option value="Driver">Driver</option>
+</select>
+</div>
+</div>
+<p id="um-selected-user" role="status">No user selected. Unassigned demonstration draft only.</p>
+<div class="action-row">
+<button id="um-view-effective" type="button" class="btn-secondary" >View Effective Permissions</button>
+<button id="um-edit-modules" type="button" class="btn-secondary" >Edit Module Access</button>
+<button id="um-edit-actions" type="button" class="btn-secondary" >Edit Action Permissions</button>
+<button id="um-permissions-save" type="button" class="btn-primary" >Save Permissions</button>
+<button id="um-permissions-cancel" type="button" class="btn-secondary" >Cancel</button>
+</div>
+<p id="um-draft-status" role="status" hidden>
+</p>
+<div id="um-permission-matrix">
+</div>
+</section>
+<section class="card" id="um-requests-panel" role="tabpanel" aria-labelledby="um-requests-tab" hidden>
+<h2>Driver Profile Requests</h2>
+<div class="workflow-grid">
+<div class="form-group">
+<label for="um-request-search">Search Profile Requests</label>
+<input id="um-request-search" type="search" placeholder="Search reference, Iqama or name..." autocomplete="off">
+</div>
+<div class="form-group">
+<label for="um-request-status">Status</label>
+<select id="um-request-status" >
+<option value="">All Statuses</option>
+<option value="Pending">Pending</option>
+<option value="Approved">Approved</option>
+<option value="Rejected">Rejected</option>
+</select>
+</div>
+<div class="form-group">
+<label for="um-request-field">Requested Field</label>
+<select id="um-request-field" >
+<option value="">All Requested Fields</option>
+<option value="Name">Name</option>
+<option value="Phone">Phone</option>
+</select>
+</div>
+</div>
+<button id="um-request-preview" type="button" class="btn-secondary" >Preview Request Details</button>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Um Requests Table table">
+<table class="tracker-table" id="um-requests-table">
+<thead>
+<tr>
+<th scope="col">Request Reference</th>
+<th scope="col">Driver Iqama</th>
+<th scope="col">Driver Name</th>
+<th scope="col">Requested Field</th>
+<th scope="col">Current Value</th>
+<th scope="col">Requested Value</th>
+<th scope="col">Requested At</th>
+<th scope="col">Status</th>
+<th scope="col">Reviewed By</th>
+<th scope="col">Reviewed At</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="10">
+<span class="table-empty">No records available — database not connected</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<div class="modal-overlay" id="um-user-modal" aria-hidden="true">
+<div class="modal-content workflow-modal">
+<h2 id="um-user-modal-title">Create User</h2>
+<p class="preview-note">No password is collected. Provisioning, activation and recovery require a future secure backend.</p>
+<form id="um-user-form">
+<div class="workflow-grid">
+<div class="form-group">
+<label for="um-create-type">Account Type</label>
+<select id="um-create-type" >
+<option value="Management">Management</option>
+<option value="Driver">Driver</option>
+</select>
+</div>
+<div class="form-group">
+<label for="um-create-name">Display Name</label>
+<input id="um-create-name" type="text" required maxlength="150">
+</div>
+<div class="form-group">
+<label for="um-create-role">Role</label>
+<select id="um-create-role" required>
+<option value="">Select a proposed role</option>
+<option value="Super Administrator">Super Administrator</option>
+<option value="Administrator">Administrator</option>
+<option value="Department Manager">Department Manager</option>
+<option value="Supervisor">Supervisor</option>
+<option value="Staff">Staff</option>
+<option value="Driver">Driver</option>
+</select>
+</div>
+<div class="form-group">
+<label for="um-create-login">Email / Login</label>
+<input id="um-create-login" type="text" required autocomplete="off">
+</div>
+<div class="form-group">
+<label for="um-create-iqama">Driver Iqama</label>
+<input id="um-create-iqama" type="text" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" disabled>
+</div>
+<div class="form-group">
+<label for="um-create-status">Account Status</label>
+<select id="um-create-status" >
+<option value="Active">Active</option>
+<option value="Disabled">Disabled</option>
+</select>
+</div>
+<fieldset class="wide">
+<legend>Management Departments (multiple allowed)</legend>
+<div id="um-create-departments" class="um-departments">
+</div>
+</fieldset>
+</div>
+<p class="preview-note" id="um-create-login-note">Existing management username-to-email authentication remains unchanged. Login identity provisioning is not configured.</p>
+<div class="action-row">
+<button type="submit" class="btn-primary" id="um-create-submit">Create User</button>
+<button type="button" class="btn-secondary" data-people-close="um-user-modal">Cancel</button>
+</div>
+<p role="status" id="um-create-result" hidden>
+</p>
+</form>
+</div>
+</div>
+<div class="modal-overlay" id="um-request-modal" aria-hidden="true">
+<div class="modal-content workflow-modal">
+<h2>Driver Profile Request Details</h2>
+<dl id="um-request-detail" class="portal-profile">
+</dl>
+<div class="form-group">
+<label for="um-review-note">Review Note</label>
+<textarea id="um-review-note" rows="3" maxlength="2000">
+</textarea>
+</div>
+<p class="preview-note">Approve and Reject require separate explicit permissions. The driver source and request version will be checked by the future backend.</p>
+<div class="action-row">
+<button id="um-request-approve" type="button" class="btn-primary" >Approve</button>
+<button id="um-request-reject" type="button" class="btn-secondary" >Reject</button>
+<button type="button" class="btn-secondary" data-people-close="um-request-modal">Close</button>
+</div>
+<p id="um-review-result" role="status" hidden>
+</p>
+</div>
+</div>

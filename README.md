@@ -31,6 +31,8 @@ Version **1.2** — each screen has its own HTML, CSS, and JavaScript files.
 - `modules/customer/customer-care/`: complete 23-column case interface, sectioned form, optional SAR refund information and accessible 1–5/unrated rating previews.
 - `modules/customer/helpdesk/`: internal Create Ticket/Manage Tickets, confirmed email display and disconnected status/details interfaces; department access requires a future secure backend.
 - `modules/operations/fuel/`: Fuel overview, empty record details/editing and conditional fueling form previews.
+- `modules/driver-portal/`: separate driver login, four personal sections and read-only management preview; protected integrations pending.
+- `modules/administration/user-management/`: users, scoped permission drafts and driver profile approval previews.
 - `shared/`: navigation, layout, common CSS, Supabase configuration, general utilities, and data helpers.
 - `assets/`: images.
 - `docs/`: project guide, security instructions, and change history.
@@ -55,9 +57,13 @@ Operational databases are disconnected. Legacy spreadsheet and Apps Script endpo
 
 See [the workflow specification](docs/TAXIQAID_WORKFLOW_SPEC.md) for all field definitions, status options, future source/request/work-order relationships, identifier formats and KSA timestamp rules. No database schemas or migrations are included. Database integration remains a separate future phase. Validated changes are integrated into main following AGENTS.md and the repository owner’s authorization.
 
-## Future Driver Portal
+## Driver Portal and User Management
 
-The administrative app has 16 modules. Driver Weekly Schedule has been retired; published personal driver access belongs to the future Driver Portal → My Schedule. Administrators now have the separately authorized local Roster Management preview. My Profile, My Documents, My Signatures, My NCRs, My Appeals and My Training are also planned. The portal and its account/data connections are not implemented. See [the workflow specification](docs/TAXIQAID_WORKFLOW_SPEC.md#future-driver-portal--planned-only).
+The administrative app has 18 destinations, including Driver Portal Preview and User Management. Driver Weekly Schedule remains retired. The separate personal portal has exactly **Driver Settings, Files, Weekly Schedule and Appeals**. Use Driver Sign In on the login screen (or `#driver-portal`) to view the Iqama/password interface; driver authentication mapping is not configured. Signed-in management users can open **Administration → Driver Portal Preview → Preview Empty Layout** without accessing driver data.
+
+User Management prepares **Users, Access & Permissions and Driver Profile Requests**. Its central catalog covers all 18 modules and meaningful actions. Proposed role templates and unsaved target-user drafts never change production permissions. Account provisioning, private operational data, approvals, signing, appeals, schedule publication and permission saving remain pending. Existing management Supabase authentication and roles are preserved; no new databases, tables or operational storage are connected.
+
+See [the workflow specification](docs/TAXIQAID_WORKFLOW_SPEC.md#driver-portal--frontend-prepared-integration-pending) and [validation review](docs/DRIVER_PORTAL_REVIEW.md). Run `node tests/portal.browser.cjs` alongside the existing browser suites; all fixtures and generated personal PDFs stay in private output.
 
 ## Shared interface standards
 
@@ -65,7 +71,7 @@ The administrative app has 16 modules. Driver Weekly Schedule has been retired; 
 
 ## Validation
 
-Run `node --test tests/*.test.cjs` for the retained pure compatibility tests. With Playwright and Chromium available and a local HTTP server running, run `node tests/workflow.browser.cjs`, `node tests/ui.browser.cjs`, `node tests/people.browser.cjs`, `node tests/roster.browser.cjs` and `node tests/support.browser.cjs`. Set `TAXIQAID_URL`, `TAXIQAID_CHROMIUM` or `TAXIQAID_SCREENSHOTS` to override defaults. Browser checks use mocked authentication and never live credentials or operational data. Screenshots are written to `docs/screenshots/` by default.
+Run `node --test tests/*.test.cjs` for the retained pure compatibility tests. With Playwright and Chromium available and a local HTTP server running, run `node tests/workflow.browser.cjs`, `node tests/ui.browser.cjs`, `node tests/people.browser.cjs`, `node tests/roster.browser.cjs`, `node tests/support.browser.cjs` and `node tests/portal.browser.cjs`. Set `TAXIQAID_URL`, `TAXIQAID_CHROMIUM` or `TAXIQAID_SCREENSHOTS` to override defaults. Browser checks use mocked authentication and never live credentials or operational data. Screenshots are written to `docs/screenshots/` by default.
 
 The former spreadsheet persistence tests were replaced because spreadsheet reads/writes are intentionally retired. Live authentication must be verified separately with an existing authorized account.
 

@@ -1,7 +1,7 @@
 /** English-only vector schedule template. Source proper names are preserved as data. */
 const TaxiQaidRosterPdf = (() => {
   const labels=['Car','Starting Hour','Ending Hour','Starting Zone','Petrol Station'];
-  function create(driver,week,catalog,resources) {
+  function create(driver,week,catalog,resources,publication=null) {
     if (!driver || driver.assignments.length!==7 || driver.assignments.some((a,index)=>a.date!==week[index])) throw new Error('A complete validated personal week is required.');
     const model=TaxiQaidRosterModel;
     const doc=new resources.jsPDF({orientation:'landscape',unit:'mm',format:'a4',putOnlyUsedFonts:true,compress:true});
@@ -72,9 +72,10 @@ const TaxiQaidRosterPdf = (() => {
       });y+=row.height;
     });
     doc.setFontSize(7);doc.setFont('Roster','normal');
-    doc.text(driver.shift+' | Asia/Riyadh | Local preview - unpublished',width/2,y+5,{align:'center'});
+    const publicationLabel=publication?.version?'Published version: '+publication.version:'Local preview - unpublished';
+    doc.text(driver.shift+' | Asia/Riyadh | '+publicationLabel,width/2,y+5,{align:'center'});
     doc.text('Overnight shifts end the next calendar day. Unmapped locations retain the original text without a map link.',width/2,y+9,{align:'center'});
-    doc.setProperties({title:'TaxiQaid Weekly Schedule',subject:'Personal weekly schedule - local preview',author:'TaxiQaid',creator:'TaxiQaid Roster Management'});
+    doc.setProperties({title:'TaxiQaid Weekly Schedule',subject:publication?.version?'Personal weekly schedule - published version '+publication.version:'Personal weekly schedule - local preview',author:'TaxiQaid',creator:'TaxiQaid Roster Management'});
     return new Uint8Array(doc.output('arraybuffer'));
   }
   return Object.freeze({create});

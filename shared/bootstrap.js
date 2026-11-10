@@ -25,7 +25,9 @@ const FEATURE_MODULES = [
   {name: "driver-deductions", folder: "modules/people/driver-deductions"},
   {name: "driver-appeals", folder: "modules/people/driver-appeals"},
   {name: "helpdesk", folder: "modules/customer/helpdesk"},
-  {name: "roster", folder: "modules/people/roster"}
+  {name: "roster", folder: "modules/people/roster"},
+  {name: "driver-portal-preview", folder: "modules/driver-portal"},
+  {name: "user-management", folder: "modules/administration/user-management"}
 ];
 
 const SCRIPT_ORDER = [
@@ -38,6 +40,11 @@ const SCRIPT_ORDER = [
   "shared/workflow-options.js",
   "shared/frontend-preview.js",
   "shared/people-preview.js",
+  "shared/permission-catalog.js",
+  "shared/permission-model.js",
+  "shared/access-runtime.js",
+  "assets/vendor/phone/libphonenumber-max.js",
+  "modules/driver-portal/portal-policy.js",
   "modules/login/login.js",
   "shared/navigation.js",
   "modules/dashboard/dashboard.js",
@@ -62,7 +69,10 @@ const SCRIPT_ORDER = [
   "modules/people/driver-appeals/driver-appeals.js",
   "modules/customer/helpdesk/helpdesk.js",
   "modules/people/roster/roster-model.js",
-  "modules/people/roster/roster.js"
+  "modules/people/roster/roster.js",
+  "modules/driver-portal/driver-portal.js",
+  "modules/administration/user-management/user-management.js",
+  "shared/permission-bindings.js"
 ];
 
 async function getFragment(path) {
@@ -111,6 +121,10 @@ async function initializeApplication() {
       }
       views.appendChild(markup);
     }
+
+    const portalMarkup = await getFragment("modules/driver-portal/driver-portal.html");
+    for (const modal of Array.from(portalMarkup.querySelectorAll(".modal-overlay"))) overlays.appendChild(modal);
+    workspace.appendChild(portalMarkup);
 
     // Load classic scripts one by one to preserve cross-file global bindings.
     for (const path of SCRIPT_ORDER) await addScript(path);
