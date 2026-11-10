@@ -1,9 +1,389 @@
-<!-- Drivers Deduction: planned module, no business logic is implemented yet. -->
+<!-- Frontend-only interface. Records and actions require future authorized integration. -->
 <section class="view-section" id="view-driver-deductions">
-  <div class="card placeholder-card" aria-labelledby="driver-deductions-title">
-    <span class="placeholder-kicker">PLANNED MODULE</span>
-    <h2 id="driver-deductions-title">Drivers Deduction</h2>
-    <p>Driver deductions and adjustments.</p>
-    <div class="placeholder-state">Coming Soon</div>
-  </div>
+<div class="card">
+<h2>Drivers Deduction</h2>
+<p class="preview-note">Review authorized driver charges and applied deductions in SAR. Database integration pending.</p>
+<div class="workflow-tabs" role="tablist" aria-label="Deductions views">
+<button class="btn-secondary" type="button" id="deductions-balances-tab" role="tab" aria-selected="true" aria-controls="deductions-balances-panel" tabindex="0">Driver Balances</button>
+<button class="btn-secondary" type="button" id="deductions-expenses-tab" role="tab" aria-selected="false" aria-controls="deductions-expenses-panel" tabindex="-1">Driver Expenses</button>
+<button class="btn-secondary" type="button" id="deductions-applied-tab" role="tab" aria-selected="false" aria-controls="deductions-applied-panel" tabindex="-1">Applied Deductions</button>
+</div>
+</div>
+<section role="tabpanel" id="deductions-balances-panel" aria-labelledby="deductions-balances-tab" >
+<div class="card">
+<div class="card-header-flex">
+<div>
+<h2>Driver Balances</h2>
+<p class="preview-note">Authorized posted charges less applied deductions. Draft, rejected or disputed amounts are not collected.</p>
+</div>
+<div class="button-group-row">
+<button class="btn-secondary" type="button" data-people-pending>Refresh</button>
+<button class="btn-secondary" type="button" data-people-pending>Export Excel</button>
+</div>
+</div>
+<div class="workflow-grid">
+<div class="form-group wide">
+<label for="deductions-balances-search">Search Records</label>
+<input id="deductions-balances-search" type="search" placeholder="Search by Driver Iqama or Name..." autocomplete="off"/>
+</div>
+</div>
+<button id="deductions-preview-history" type="button" class="btn-secondary">Preview Driver History</button>
+<p class="preview-note">Empty history preview. Source expenses and related deductions will remain linked.</p>
+</div>
+<div class="card">
+<div class="card-header-flex">
+<h2>Driver Balances</h2>
+<span id="deductions-balances-table-count" role="status">0 records found</span>
+</div>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Driver Balances table">
+<table class="tracker-table" id="deductions-balances-table">
+<thead>
+<tr>
+<th scope="col">Driver Iqama</th>
+<th scope="col">Driver Name</th>
+<th scope="col">Total Charged (SAR)</th>
+<th scope="col">Total Deducted (SAR)</th>
+<th scope="col">Outstanding Balance (SAR)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="5">
+<span class="table-empty">No records available — database not connected</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </section>
+<section role="tabpanel" id="deductions-expenses-panel" aria-labelledby="deductions-expenses-tab" hidden>
+<div class="card">
+<div class="card-header-flex">
+<div>
+<h2>Driver Expenses</h2>
+<p class="preview-note">NCR points are not SAR. Fuel is chargeable only after an explicit authorized liability decision.</p>
+</div>
+<div class="button-group-row">
+<button id="deductions-add-expense" type="button" class="btn-primary" data-people-open="deductions-expense-modal">Add Expense</button>
+<button class="btn-secondary" type="button" data-people-pending>Refresh</button>
+<button class="btn-secondary" type="button" data-people-pending>Export Excel</button>
+</div>
+</div>
+<div class="workflow-grid">
+<div class="form-group wide">
+<label for="deductions-expenses-search">Search Records</label>
+<input id="deductions-expenses-search" type="search" placeholder="Search by Driver Iqama or Name..." autocomplete="off"/>
+</div>
+</div>
+</div>
+<div class="card">
+<div class="card-header-flex">
+<h2>Driver Expenses</h2>
+<span id="deductions-expenses-table-count" role="status">0 records found</span>
+</div>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Driver Expenses table">
+<table class="tracker-table" id="deductions-expenses-table">
+<thead>
+<tr>
+<th scope="col">Expense Reference</th>
+<th scope="col">Date</th>
+<th scope="col">Driver Iqama</th>
+<th scope="col">Driver Name</th>
+<th scope="col">Source Type</th>
+<th scope="col">Source Reference</th>
+<th scope="col">Description</th>
+<th scope="col">Original Amount (SAR)</th>
+<th scope="col">Amount Deducted (SAR)</th>
+<th scope="col">Outstanding Amount (SAR)</th>
+<th scope="col">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="11">
+<span class="table-empty">No records available — database not connected</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section role="tabpanel" id="deductions-applied-panel" aria-labelledby="deductions-applied-tab" hidden>
+<div class="card">
+<div class="card-header-flex">
+<div>
+<h2>Applied Deductions</h2>
+<p class="preview-note">Partial deductions retain the original expense reference and complete audit history.</p>
+</div>
+<div class="button-group-row">
+<button id="deductions-apply" type="button" class="btn-primary" data-people-open="deductions-apply-modal">Apply Deduction</button>
+<button class="btn-secondary" type="button" data-people-pending>Refresh</button>
+<button class="btn-secondary" type="button" data-people-pending>Export Excel</button>
+</div>
+</div>
+<div class="workflow-grid">
+<div class="form-group wide">
+<label for="deductions-applied-search">Search Records</label>
+<input id="deductions-applied-search" type="search" placeholder="Search by Driver Iqama or Name..." autocomplete="off"/>
+</div>
+</div>
+</div>
+<div class="card">
+<div class="card-header-flex">
+<h2>Applied Deductions</h2>
+<span id="deductions-applied-table-count" role="status">0 records found</span>
+</div>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Applied Deductions table">
+<table class="tracker-table" id="deductions-applied-table">
+<thead>
+<tr>
+<th scope="col">Deduction Reference</th>
+<th scope="col">Date</th>
+<th scope="col">Driver Iqama</th>
+<th scope="col">Driver Name</th>
+<th scope="col">Related Expense</th>
+<th scope="col">Deduction Amount (SAR)</th>
+<th scope="col">Remaining Outstanding (SAR)</th>
+<th scope="col">Deduction Method</th>
+<th scope="col">Applied By</th>
+<th scope="col">Remarks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="10">
+<span class="table-empty">No records available — database not connected</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+</section>
+<div class="modal-overlay" id="deductions-expense-modal" aria-hidden="true">
+<div class="modal-content workflow-modal">
+<h2>Add Expense</h2>
+<p class="preview-note">Interface preview — database integration pending. Nothing is saved.</p>
+<form id="deductions-expense-form">
+<div class="workflow-grid">
+<div class="form-group">
+<label for="expense-iqama">Driver Iqama</label>
+<input id="expense-iqama" type="text" required autocomplete="off" placeholder="Available after driver integration"/>
+</div>
+<div class="form-group">
+<label for="expense-name">Driver Name</label>
+<input id="expense-name" type="text" readonly placeholder="Derived from selected driver"/>
+</div>
+<div class="form-group">
+<label for="expense-date">Expense Date</label>
+<input id="expense-date" type="date" required/>
+</div>
+<div class="form-group">
+<label for="expense-source">Source Type</label>
+<select id="expense-source" required>
+<option value="">Select source type</option>
+<option value="NCR Financial Fine">NCR Financial Fine</option>
+<option value="Fuel Charge">Fuel Charge</option>
+<option value="Traffic Violation">Traffic Violation</option>
+<option value="Manual Expense">Manual Expense</option>
+</select>
+</div>
+<div class="form-group">
+<label for="expense-source-reference">Source Reference</label>
+<input id="expense-source-reference" type="text" placeholder="Original source identifier when applicable"/>
+</div>
+<div class="form-group wide">
+<label for="expense-description">Description</label>
+<textarea id="expense-description" rows="3" required>
+</textarea>
+</div>
+<div class="form-group">
+<label for="expense-amount">Amount (SAR)</label>
+<input id="expense-amount" type="text" required inputmode="decimal" placeholder="0.00"/>
+</div>
+<div class="form-group wide">
+<label for="expense-remarks">Remarks</label>
+<textarea id="expense-remarks" rows="3" >
+</textarea>
+</div>
+<div class="form-group">
+<label for="expense-created-by">Created By</label>
+<input id="expense-created-by" type="text" readonly placeholder="Assigned by the future backend"/>
+</div>
+<div class="form-group">
+<label for="expense-created-at">Created At</label>
+<input id="expense-created-at" type="text" readonly placeholder="Assigned by the future backend"/>
+</div>
+<div class="form-group">
+<label for="expense-modified-by">Last Modified By</label>
+<input id="expense-modified-by" type="text" readonly placeholder="Assigned by the future backend"/>
+</div>
+<div class="form-group">
+<label for="expense-modified-at">Last Modified At</label>
+<input id="expense-modified-at" type="text" readonly placeholder="Assigned by the future backend"/>
+</div>
+</div>
+<p class="preview-note">Only separately approved NCR financial fines, explicitly chargeable fuel and confirmed driver-liable traffic violations qualify. Points and liters never supply the financial amount.</p>
+<p id="expense-save-status" class="preview-note" role="status" hidden>
+</p>
+</form>
+<div class="action-row">
+<button class="btn-primary" type="button" id="expense-save">Save Expense</button>
+<button class="btn-secondary" type="button" data-people-close="deductions-expense-modal">Cancel</button>
+</div>
+</div>
+</div>
+<div class="modal-overlay" id="deductions-apply-modal" aria-hidden="true">
+<div class="modal-content workflow-modal">
+<h2>Apply Deduction</h2>
+<p class="preview-note">Interface preview — database integration pending. Nothing is saved.</p>
+<form id="deductions-apply-form">
+<div class="workflow-grid">
+<div class="form-group">
+<label for="deduction-iqama">Driver Iqama</label>
+<input id="deduction-iqama" type="text" required autocomplete="off" placeholder="Available after driver integration"/>
+</div>
+<div class="form-group">
+<label for="deduction-name">Driver Name</label>
+<input id="deduction-name" type="text" readonly placeholder="Derived from selected driver"/>
+</div>
+<div class="form-group">
+<label for="deduction-expense">Outstanding Expense</label>
+<select id="deduction-expense" required>
+<option value="">Available after authorized expense integration</option>
+</select>
+</div>
+<div class="form-group">
+<label for="deduction-original">Original Expense Amount (SAR)</label>
+<input id="deduction-original" type="text" readonly placeholder="Unavailable"/>
+</div>
+<div class="form-group">
+<label for="deduction-previous">Previously Deducted (SAR)</label>
+<input id="deduction-previous" type="text" readonly placeholder="Unavailable"/>
+</div>
+<div class="form-group">
+<label for="deduction-outstanding">Outstanding Amount (SAR)</label>
+<input id="deduction-outstanding" type="text" readonly placeholder="Unavailable"/>
+</div>
+<div class="form-group">
+<label for="deduction-amount">New Deduction Amount (SAR)</label>
+<input id="deduction-amount" type="text" required inputmode="decimal" placeholder="0.00"/>
+</div>
+<div class="form-group">
+<label for="deduction-remaining">Remaining Balance After Deduction (SAR)</label>
+<output id="deduction-remaining" aria-live="polite">Unavailable — select an expense</output>
+</div>
+<div class="form-group">
+<label for="deduction-date">Deduction Date</label>
+<input id="deduction-date" type="date" required/>
+</div>
+<div class="form-group">
+<label for="deduction-method">Deduction Method</label>
+<select id="deduction-method" required>
+<option value="">Methods pending approval</option>
+</select>
+</div>
+<div class="form-group wide">
+<label for="deduction-remarks">Remarks</label>
+<textarea id="deduction-remarks" rows="3" >
+</textarea>
+</div>
+</div>
+<p class="preview-note">Unsaved calculation only. The amount must be positive and cannot exceed the selected expense balance. No deduction is applied.</p>
+<p id="deduction-validation" class="preview-note" role="status">
+</p>
+<p id="deduction-save-status" class="preview-note" role="status" hidden>
+</p>
+</form>
+<div class="action-row">
+<button class="btn-primary" type="button" id="deduction-save">Apply Deduction</button>
+<button class="btn-secondary" type="button" data-people-close="deductions-apply-modal">Cancel</button>
+</div>
+</div>
+</div>
+<div class="modal-overlay" id="deductions-history-modal" aria-hidden="true">
+<div class="modal-content workflow-modal">
+<h2>Driver Financial History — Empty Preview</h2>
+<p class="preview-note">Interface preview — database integration pending. Nothing is saved.</p>
+<div class="workflow-grid">
+<div class="form-group">
+<label for="deductions-history-iqama">Driver Iqama</label>
+<input id="deductions-history-iqama" type="text" readonly placeholder="Unavailable"/>
+</div>
+<div class="form-group">
+<label for="deductions-history-name">Driver Name</label>
+<input id="deductions-history-name" type="text" readonly placeholder="Unavailable"/>
+</div>
+</div>
+<p class="preview-note">Full expense and deduction history will be supplied by an authorized backend, including original source references and reversal audit trails.</p>
+<div class="card">
+<div class="card-header-flex">
+<h2>Original Expenses</h2>
+<span id="deductions-history-expenses-count" role="status">0 records found</span>
+</div>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Original Expenses table">
+<table class="tracker-table" id="deductions-history-expenses">
+<thead>
+<tr>
+<th scope="col">Expense Reference</th>
+<th scope="col">Date</th>
+<th scope="col">Driver Iqama</th>
+<th scope="col">Driver Name</th>
+<th scope="col">Source Type</th>
+<th scope="col">Source Reference</th>
+<th scope="col">Description</th>
+<th scope="col">Original Amount (SAR)</th>
+<th scope="col">Amount Deducted (SAR)</th>
+<th scope="col">Outstanding Amount (SAR)</th>
+<th scope="col">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="11">
+<span class="table-empty">No records available — database not connected</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="card">
+<div class="card-header-flex">
+<h2>Related Deductions</h2>
+<span id="deductions-history-applied-count" role="status">0 records found</span>
+</div>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Related Deductions table">
+<table class="tracker-table" id="deductions-history-applied">
+<thead>
+<tr>
+<th scope="col">Deduction Reference</th>
+<th scope="col">Date</th>
+<th scope="col">Driver Iqama</th>
+<th scope="col">Driver Name</th>
+<th scope="col">Related Expense</th>
+<th scope="col">Deduction Amount (SAR)</th>
+<th scope="col">Remaining Outstanding (SAR)</th>
+<th scope="col">Deduction Method</th>
+<th scope="col">Applied By</th>
+<th scope="col">Remarks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="10">
+<span class="table-empty">No records available — database not connected</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="action-row">
+<button class="btn-secondary" type="button" data-people-close="deductions-history-modal">Cancel</button>
+</div>
+</div>
+</div>

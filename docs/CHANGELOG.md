@@ -1,6 +1,14 @@
 # TaxiQaid — Change History
 
-## Current — Sheet-backed workflows
+## Current — People operations frontend previews
+
+- Completed Driver Appeals with inclusive date/search filters, approved independent status/department controls and read-only source/audit details.
+- Completed Training Overview, Sessions and Attendance, including a 25-row picker with cross-page selection and explicit complete-dataset safeguards for 800+ drivers.
+- Completed Drivers Deduction balances, source-linked expense forms, history and exact partial-deduction previews in SAR; no NCR points or fuel quantities become automatic debts.
+- Documented future Driver Portal appeals/training, secure source relationships, financial permissions and reviewed/versioned Roster publication and personal PDFs. Roster stays a placeholder.
+- Kept all operational sources disconnected and existing Supabase authentication unchanged. Added people-policy and browser regressions alongside all 16-page navigation/UI checks.
+
+## Historical — Sheet-backed workflows (disconnected)
 
 - Renamed application titles, login branding, metadata and documentation to TaxiQaid.
 - Preserved the previous Fleet/Post-Trip date/time normalization, edit-mode refresh and Excel fixes.

@@ -319,6 +319,108 @@ Refresh will eventually read only the latest authorized source records and prese
 
 Pure `TaxiQaidPenalties` helpers prepare source-value formatting, inclusive filtering and safe read-only row construction. They do not connect an external source, import records, allocate IDs or store operational data. Synthetic fixtures used for unit/DOM regression tests are confined to tests and never ship as production records.
 
+## Driver Appeals — frontend and future workflow
+
+The administrative module receives appeals from drivers; it does not create them and has no Add Appeal action. Refresh and Export by Period are disconnected. The eight overview columns remain, in order: Appeal ID, Driver Name, Driver Iqama, Nationality, Appeal Type, Description, Status, Department. Submission Date and Submission Time belong to the underlying record and detail view, not extra overview columns. Start/End Date are inclusive date-only comparisons on the submission date in KSA. An inverted range returns no results and a validation message. Combined search matches Appeal ID, Driver Iqama or Driver Name alongside independent type/department/status filters.
+
+Future backend-generated IDs follow `APL-00001` (five-digit sequence); the browser never allocates them. **Approved status vocabulary:** Pending, In Progress, Done. **Approved department vocabulary:** Pending, Financial, Operation, Quality, IT. Both default independently to Pending when an appeal arrives. Assignment/reassignment never implies resolution. Appeal Type is configuration pending owner approval; no complaint categories are assumed.
+
+Details preserve read-only Appeal ID, driver identity/nationality, type, description, submission date/time, Assigned By/At and Last Updated By/At. Only administrative Status and Department controls are editable in the unsaved interface. Save Changes displays **“Database integration pending — changes not saved.”** The source snapshot is untouched. Future permission checks and an append-only assignment/status history must record authenticated actors and authoritative Asia/Riyadh timestamps; reassignment must preserve earlier decisions.
+
+Future workflow: driver logs in → My Appeals → selects an approved Appeal Type → enters description → submits → backend validates identity/ownership and allocates APL ID → Status Pending and Department Pending → administrative queue → authorized department assignment → department review → In Progress or Done → driver sees the latest permitted personal status. Name, Iqama and Nationality come from the authenticated account's verified driver-profile link, never arbitrary client identity fields. Drivers may read only their own authorized appeals. Administrative assignment/resolution permissions are separate from driver submission rights. Submission, export, audit storage and portal routes remain future work.
+
+## Training Tracker — frontend and future workflow
+
+Three tabs: **Training Overview**, **Training Sessions**, **Training Attendance**. All operational sources are disconnected; no training records, drivers, courses, references, lifecycle statuses or completion evidence are fabricated. Refresh, Save Session and Export Excel perform no operational writes or exports.
+
+### Overview and requirement policy
+
+Overview columns: Driver Name, Driver Iqama, Training Sessions Pending, Status. One shared Iqama/name search operates alongside Training Status and Training Session filters. Status choices are All Statuses, **On Day**, **Pending Training Sessions**. The future source must include every registered driver, including those without enrollments. Pending count is the number of unmet *applicable approved requirements*, not the number of scheduled classes. On Day means none remain outstanding; Pending Training Sessions means at least one remains unmet. Unknown applicability cannot be represented as compliant.
+
+Training definitions, requirement applicability, validity periods, retraining/expiry and completion criteria require separate approved configuration. Do not assume every driver needs every course. Enrollment/scheduling, an unverified confirmation or a simple attendance marker cannot by themselves complete a requirement. The pure preview helper accepts explicit applicability plus verified, still-valid completion decisions; production must derive these through an authorized policy and authoritative KSA time, not client claims.
+
+### Sessions and scalable selection
+
+Session overview columns: Session Reference, Training Name, Trainer, Session Date, Session Time, Location, Assigned Drivers, Confirmed Attendance, Session Status. **Reference format and lifecycle vocabulary remain unapproved.** Create Training Session prepares Training Name/Description, Trainer, Session Date, Start/End Time, Training Location, optional Capacity, Driver Selection and Additional Notes. Same-day preview times require End after Start; overnight/multiday semantics require later approval. Capacity, when supplied, is a positive whole number and cannot be below the unsaved selection count.
+
+The picker renders **25 drivers per page**, with shared Iqama/name matching, multiple selection, counts, Select All Filtered Drivers, Deselect Selected Drivers, individual removal and a separately paginated selected-driver summary before Use Selection. A stable driver-ID Set prevents duplicates and retains choices across searches/pages. The selection is transient and does not enroll anyone. An applicability-filter control is reserved for future approved requirements, and an adapter may supply an explicit eligible-driver ID set.
+
+Select All means the entire eligible filtered dataset, not the visible 25 rows. It is disabled until the adapter explicitly declares a complete eligible dataset. Partial remote pages must not be represented as complete. Production must either resolve a versioned selection criterion server-side or validate the complete selected driver-ID set, recheck eligibility/capacity/permissions and enforce unique `(session, driver)` enrollment. It must never silently drop off-page selections. Use server pagination/virtualization and scalable queries for 800+ drivers; the browser proof uses isolated synthetic fixtures, not deployed sample drivers. No data source is connected by the adapter methods; their default snapshots are empty.
+
+### Attendance, confirmation and completion
+
+Attendance view has a session selector and columns Training Session, Driver Name, Driver Iqama, Attendance Status, Driver Confirmation, Confirmation Date, Trainer Verification. Attendance facts, driver confirmation and trainer verification are distinct records. Their vocabularies and approved completion policy are pending; no guessed status options or live confirmation controls are implemented.
+
+Future workflow: trainer creates a session → selects eligible drivers → schedules it → assigned drivers see it in My Training → during/after class trainer opens the authorized confirmation window → driver opens their assigned session and confirms → backend validates the authenticated account and linked Iqama → records evidence and authoritative KSA timestamp → authorized trainer verifies attendance as required → approved policy creates a verified completion → Overview recalculates outstanding requirements. Trainer/driver histories remain preserved.
+
+A **code-based confirmation**, rather than a handwritten image, is planned. Exact verification method, challenge delivery, lifetime, replay protection and evidence policy require approval during portal implementation. Evidence binds authenticated user ID, stable Driver Iqama reference, Training Session reference, confirmation method, confirmation timestamp and attendance/acknowledgment record. Never store reusable plaintext signing codes in Sheets or browser storage. A simple click is not legally equivalent to a certified electronic signature. No confirmation service or code storage is implemented.
+
+### Separate future entities and full exports
+
+| Future concept | Responsibility and relationships |
+| --- | --- |
+| Training Definition | Approved course identity/content; no implied universal applicability |
+| Training Requirement | Configured applicability, validity/retraining and completion rules referencing a definition |
+| Training Session | A trainer-led occurrence, times/location/capacity and approved lifecycle |
+| Session Enrollment | Driver/session relationship; many drivers per session and many sessions per driver; unique assignment |
+| Attendance Confirmation | Authenticated driver acknowledgment/evidence tied to enrollment |
+| Trainer Verification | Independent authorized verification and audit trail |
+| Driver Training Completion | Approved verified completion satisfying a requirement, with retained validity/history |
+
+Full future exports must cover **every driver and every applicable requirement**, plus assigned sessions, attendance/verification, completion and pending state; never only the visible page. Two complementary numeric Excel datasets are planned: **Driver Compliance Summary**, one row per driver; **Detailed Training Status**, one row per driver and applicable requirement, including related session/completion information (with a documented approach for multiple attempts). Preserve history and avoid a separate column for every course. Export scope, access permissions and the handling of multiple attempts require backend approval. No export is generated now.
+
+## Drivers Deduction — frontend and future financial controls
+
+Three tabs: **Driver Balances**, **Driver Expenses**, **Applied Deductions**, using shared searches and orange design. Monetary values are **SAR with two decimal places**; pure preview arithmetic uses integer halalas and rejects nonfinite, zero/negative, excessive-precision and unsafe-range inputs. No balances or expenses are invented. Source snapshots and unsaved form drafts exist only in memory during the interface preview; no operational records are created, altered or persisted. Refresh and Export Excel remain pending.
+
+### Sources, liability and immutable references
+
+Approved source classifications are exactly **NCR Financial Fine**, **Fuel Charge**, **Traffic Violation**, **Manual Expense**. An original source reference is required for the three source-linked classifications; authorized manual entry may have an optional reference.
+
+- NCR penalties **−50, −25 and −10 are points, not SAR**. Only a separately defined, approved monetary fine may create an expense, retaining the original NCR ID and a distinct financial-fine reference. Point recovery must not silently reverse money and a financial payment must not alter NCR scoring.
+- Fuel records do not automatically create debt. Only explicitly classified, approved driver-chargeable fuel can create an expense, preserving the original Fuel Record ID and approved charged value; liters or total transaction value alone do not establish liability.
+- Traffic violations require an approved original source and driver-liability decision. A Penalties record and a Traffic Violation describing the same incident must not create two charges. Preserve the original incident/source identity and related penalty reference.
+- Manual Expense requires a separate financial permission and an authorized positive monetary entry, not inferred points/quantities.
+
+Future ingestion uses stable source type/ID, financial obligation identity and idempotency controls. Retries/repeated imports or source updates must not duplicate charges. A deliberately authorized separate obligation from the same source needs an explicit identity and audit trail; do not erase original references or use row numbers as permanent IDs. Source approval rules, fine amounts, driver liability, synchronization and update contracts are future decisions. No import or source integration is connected now.
+
+### Balances and expense records
+
+Driver Balances columns: Driver Iqama, Driver Name, Total Charged (SAR), Total Deducted (SAR), Outstanding Balance (SAR). **Outstanding Balance = total authorized posted charges − total applied deductions.** Only approved, posted financial transactions count. Draft, rejected, disputed or reversed transactions must not masquerade as collected payments. A complete authorized financial history is required before reporting a numeric balance; incomplete data displays unavailable. The selected-driver history interface preserves original expenses/source references and linked deductions, without editing completed transactions.
+
+Driver Expenses columns: Expense Reference, Date, Driver Iqama, Driver Name, Source Type, Source Reference, Description, Original Amount (SAR), Amount Deducted (SAR), Outstanding Amount (SAR), Status. Status vocabulary and expense/deduction reference formats are pending approval, not invented in this phase. Add Expense prepares linked Driver Iqama, derived read-only Driver Name, Expense Date, approved Source Type, Source Reference when applicable, Description, positive Amount (SAR), Remarks and read-only Created By/At, Last Modified By/At. Audit actors/times will be server-owned. No save creates a record.
+
+### Partial deductions and audit history
+
+Applied Deductions columns: Deduction Reference, Date, Driver Iqama, Driver Name, Related Expense, Deduction Amount (SAR), Remaining Outstanding (SAR), Deduction Method, Applied By, Remarks. Deduction Method is intentionally unconfigured: **no assumption of salary deduction or any other method**.
+
+Apply Deduction prepares driver identity, an authorized Outstanding Expense, read-only Original Expense Amount, Previously Deducted and Outstanding Amount, New Deduction Amount, live Remaining Balance After Deduction, Deduction Date, Deduction Method and Remarks. New amount must be positive, finite, at most two decimals and no more than the selected expense outstanding. The live preview rejects inconsistent original/deducted/outstanding source values and never applies a transaction. Multiple partial deductions preserve one original expense reference. Production must revalidate identity, liability, current outstanding, permission, idempotency and concurrent updates atomically on the backend; a client preview is not financial authority.
+
+Arithmetic examples exist **only in tests**: original charge SAR 500.00, deduction SAR 150.00 leaves SAR 350.00; another SAR 100.00 produces total deducted SAR 250.00 and remaining SAR 250.00. No corresponding production records are seeded.
+
+Future concepts are separate: authorized driver expense/charge, source financial approval/liability, applied deduction/payment, authorized reversal/adjustment and immutable financial audit event. The original expense remains linked to every deduction and reversal. Completed entries must not be quietly overwritten or deleted. Corrections require permission-controlled reversal/adjustment transactions, reasons, preserved old values and authenticated KSA audit timestamps. Exceptional over-balance adjustment policy is unapproved and not implemented.
+
+Future financial permissions must distinguish **view balances**, **add expenses**, **apply deductions**, **approve reversals/adjustments** and **export financial data**. An existing administrative role alone must not imply every financial write permission. Existing Supabase role checks are unchanged now; no operational permission service is implemented.
+
+## Roster — architecture only, implementation pending
+
+The current Roster placeholder, module files and navigation are deliberately unchanged. **The owner must first provide the existing roster PDF and source spreadsheet format for review** before a later implementation phase. This task does not implement uploads, imports, storage, spreadsheet/Drive structures, schedules or PDF generation; the current phase does not require those files to complete documentation. Do not invent a replacement PDF layout or assume a file schema.
+
+Proposed future workflow, subject to reviewed formats and authorization:
+
+1. An authorized administrator uploads the complete roster file.
+2. Backend validates the complete dataset against the reviewed format and authoritative KSA dates/times.
+3. Match stable Driver Iqama references to Drivers Management; report invalid/unmatched records.
+4. Detect duplicates, assignment overlaps and conflicts according to separately approved scheduling rules.
+5. Preview validation results and the complete proposed roster; require authorized approval before publishing.
+6. Publish one approved roster version with publication timestamp and audit metadata.
+7. Derive each driver's personal weekly shifts, working/rest days and vehicle assignments automatically from that version.
+8. My Schedule displays only the authenticated linked driver's authorized assignments and permits downloading that driver's weekly PDF.
+
+The personal PDF and portal schedule must come from the **same approved roster version**. Preserve historical versions/publication dates; corrections/replacements require controlled supersession so the displayed schedule and downloadable PDF cannot conflict. Do not expose the full-company roster through driver downloads or public file links.
+
+For 800+ drivers, use one validated dataset with personal projections, rather than manual per-driver source files. Generate PDFs on demand or cache by approved version/driver/week with ownership checks; avoid regenerating duplicated PDFs for every driver after every draft edit. Cache invalidation, retention, correction publication and PDF layout require approval after format review. A future approved file architecture may use Google Drive/Sheets, but no current permission exists to create structures, assume schemas or reconnect legacy endpoints.
+
 ## Future Driver Portal — planned only
 
 Driver Weekly Schedule is removed from the administrative sidebar, active module configuration, stylesheet/script imports and standalone placeholder files. There is no replacement administrative weekly schedule page. The administrative application now contains 16 modules. No schedule records or other operational data were deleted; the retired module contained only a Coming Soon placeholder.
@@ -328,10 +430,12 @@ Weekly schedules will be available exclusively to drivers through **Driver Porta
 | Planned section | Intended personal access |
 | --- | --- |
 | **My Profile** | Personal driver details from the linked Drivers Management record |
-| **My Schedule** | The driver's own weekly shifts, working days, rest days and vehicle assignments |
+| **My Schedule** | The driver's own weekly shifts, working days, rest days and vehicle assignments, plus a personal weekly PDF derived from the same approved roster version |
 | **My Documents** | The driver's own authorized documents, certificates and downloads |
 | **My Signatures** | Documents and inspections requiring that driver's confirmation |
 | **My NCRs** | The driver's personal NCR history, current points and expired NCR penalties, preserving the approved scoring/recovery rules and historical records |
+| **My Appeals** | Submit appeals and view their own permitted status; identity comes from the authenticated driver link |
+| **My Training** | View assigned sessions and requirements, and use an authorized confirmation workflow when opened |
 
 The portal will reuse the **existing Supabase authentication system**, project, sessions, profiles and permissions. Every driver account must have a verified link between its authenticated Supabase user ID and the corresponding stable driver record. A driver-entered Iqama, URL parameter or browser-side filter must not grant access to another driver's records.
 
@@ -340,6 +444,12 @@ The future backend must verify authenticated identity and record ownership for e
 Administrators with appropriate permissions will eventually manage schedule assignments through a permission-controlled administrative workflow, with authenticated audit information and authoritative KSA timestamps. That workflow is future work and does not reinstate a standalone administrative Driver Weekly Schedule page or expose other drivers' schedules through the personal portal.
 
 This section documents future functionality only. **No Driver Portal UI, login route, account mapping, schedule workflow, storage, Supabase tables, migrations, data connections or new databases are implemented.** No legacy spreadsheet or Apps Script integration is reconnected. All other administrative modules, standardized orange styling and existing Supabase authentication remain intact.
+
+## Proposed future infrastructure — no connections authorized now
+
+The proposed direction retains **Supabase authentication** for user/session identity. A secure backend would validate all module permissions, record ownership, source decisions and operational writes. Approved operational records may later use **Google Sheets or another approved system**; documents, attachments and generated PDFs may later use **Google Drive**. These are architectural options, not approval to create a database, spreadsheet, Apps Script project or Drive structure now.
+
+Private data cannot rely on public Sheets/Drive links, guessable identifiers or client filtering. The backend must verify Supabase identity and scope every read/write/download/export to authorized module permissions and driver ownership. Service-role keys, Google credentials and privileged source access belong only on the server; never expose them in static client files or URLs. Existing public Supabase configuration and connected authentication stay unchanged. Legacy Sheets and Apps Script endpoints remain retired and disconnected; a future approved architecture must not silently reactivate them.
 
 ## Future connection inventory
 
@@ -354,7 +464,11 @@ This section documents future functionality only. **No Driver Portal UI, login r
 - Fuel records with unique backend IDs, Fleet/Driver relationships, configured Depot tariffs, historical price snapshots and authorized edit auditing.
 - NCR records/unique IDs, all-driver summaries, authoritative 90-day KSA expiry, preserved historical penalties and independent TBT/action audit fields.
 - Authorized external Penalties source/refresh, source-supplied IDs, Fleet/Drivers references, confirmed Charged To/amount contracts and read-only filtered numeric Excel exports.
-- Future Driver Portal account-to-driver ownership mapping and authorized personal profile, schedule, documents, signatures and NCR access; permission-controlled administrative schedule assignments. No portal connections exist in this phase.
+- Future Driver Portal account-to-driver ownership mapping and authorized personal profile, schedule, documents, signatures, NCR, appeal and training access; permission-controlled administrative schedule assignments. No portal connections exist in this phase.
+- Driver Appeals with backend APL IDs, authenticated driver/profile origin, independent status/department assignment and audit history.
+- Training definitions/requirements, sessions/enrollments, confirmation evidence, trainer verification, valid completions and full all-driver compliance/detail exports.
+- Driver financial source approvals, stable/idempotent expense provenance, posted charges, partial deductions, reversal/adjustment audit trails and distinct financial permissions.
+- Reviewed/versioned Roster validation, approval, personal schedule projections and same-version weekly PDF access; existing formats still required before implementation.
 - Authorized date/search/filter reads and Excel/PDF export services using connected records.
 
 These are planned capabilities, not schema proposals or migrations.
@@ -366,3 +480,5 @@ Follow [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) for the centralized orange/neutral t
 ## Verification and review
 
 Run `node --test tests/*.test.cjs` for compatibility and scoring/expiry regression tests. Run `node tests/workflow.browser.cjs` and `node tests/ui.browser.cjs` against a local HTTP server for workflow, shared-search and responsive visual regression checks. Browser tests use mocked authentication and role responses, never a live user account or real operational records. Penalties rendering tests inject temporary synthetic DOM fixtures locally and remove them; the deployed module has no sample records. They cover all sidebar modules, date-only filters, shared location equality, forms, maintenance tabs/acceptance, mobile overflow, Fuel conditional fields/validation/approved Depot tariff/live totals/detail editing, both NCR views/retained filters/23 categories/automatic KSA preview rollover/TBT independence, read-only Penalties/combined search and date retention/long-text safety/detail keyboard access, pending controls and the absence of legacy requests, operational writes, downloads and uncaught errors. Live Supabase login/session behavior still requires review with an existing authorized account; no account credentials were supplied to this task.
+
+The people-operation regression suite (`node tests/people.browser.cjs`) checks appeal filters and independent assignments, training tabs and bounded cross-page selection above 800 drivers, and financial previews with original references and partial deductions. Its records are isolated test fixtures and cleared before screenshots; the deployed application starts empty. Pure people-policy tests verify inclusive dates, selection completeness/uniqueness, requirement completion boundaries, currency precision and source/posted-transaction controls.

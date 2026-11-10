@@ -1,1 +1,2 @@
-/* Driver Appeals: placeholder module. Shared styles live in shared/common.css. */
+/* Shared orange controls and responsive table layout are defined in shared/common.css. */
+#appeals-table td:nth-child(6) { white-space: normal; min-width: 15rem; max-width: 28rem; overflow-wrap: anywhere; }

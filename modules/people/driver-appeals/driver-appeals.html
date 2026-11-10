@@ -1,9 +1,170 @@
-<!-- Driver Appeals: planned module, no business logic is implemented yet. -->
+<!-- Frontend-only interface. Records and actions require future authorized integration. -->
 <section class="view-section" id="view-driver-appeals">
-  <div class="card placeholder-card" aria-labelledby="driver-appeals-title">
-    <span class="placeholder-kicker">PLANNED MODULE</span>
-    <h2 id="driver-appeals-title">Driver Appeals</h2>
-    <p>Driver appeals and outcomes.</p>
-    <div class="placeholder-state">Coming Soon</div>
-  </div>
+<div class="card">
+<div class="card-header-flex">
+<div>
+<h2>Driver Appeals</h2>
+<p class="preview-note">Review, assign and resolve appeals submitted by drivers.</p>
+</div>
+<div class="button-group-row">
+<button class="btn-secondary" type="button" data-people-pending>Refresh</button>
+<button class="btn-secondary" type="button" data-people-pending>Export by Period</button>
+</div>
+</div>
+<p class="preview-note">Database integration pending. Appeals will originate from the future Driver Portal.</p>
+<div class="workflow-grid">
+<div class="form-group wide">
+<label for="appeals-search">Search Records</label>
+<input id="appeals-search" type="search" placeholder="Search by Appeal ID, Iqama or Driver Name..." autocomplete="off"/>
+</div>
+<div class="form-group">
+<label for="appeals-start">Start Date</label>
+<input id="appeals-start" type="date" />
+</div>
+<div class="form-group">
+<label for="appeals-end">End Date</label>
+<input id="appeals-end" type="date" />
+</div>
+<div class="form-group">
+<label for="appeals-type">Appeal Type</label>
+<select id="appeals-type" >
+<option value="">Types pending configuration</option>
+</select>
+</div>
+<div class="form-group">
+<label for="appeals-department">Department</label>
+<select id="appeals-department" >
+<option value="">All Departments</option>
+<option value="Pending">Pending</option>
+<option value="Financial">Financial</option>
+<option value="Operation">Operation</option>
+<option value="Quality">Quality</option>
+<option value="IT">IT</option>
+</select>
+</div>
+<div class="form-group">
+<label for="appeals-status">Status</label>
+<select id="appeals-status" >
+<option value="">All Statuses</option>
+<option value="Pending">Pending</option>
+<option value="In Progress">In Progress</option>
+<option value="Done">Done</option>
+</select>
+</div>
+</div>
+<p id="appeals-date-error" class="preview-note" role="status" hidden>End Date must be on or after Start Date.</p>
+<button id="appeals-preview" type="button" class="btn-secondary">Preview Appeal Details</button>
+<p class="preview-note">Empty preview only. Administrative changes are limited to status and department.</p>
+</div>
+<div class="card">
+<div class="card-header-flex">
+<h2>Driver Appeals Overview</h2>
+<span id="appeals-table-count" role="status">0 records found</span>
+</div>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Driver Appeals Overview table">
+<table class="tracker-table" id="appeals-table">
+<thead>
+<tr>
+<th scope="col">Appeal ID</th>
+<th scope="col">Driver Name</th>
+<th scope="col">Driver Iqama</th>
+<th scope="col">Nationality</th>
+<th scope="col">Appeal Type</th>
+<th scope="col">Description</th>
+<th scope="col">Status</th>
+<th scope="col">Department</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="8">
+<span class="table-empty">No records available — database not connected</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </section>
+<div class="modal-overlay" id="appeals-modal" aria-hidden="true">
+<div class="modal-content workflow-modal">
+<h2>Appeal Details</h2>
+<p class="preview-note">Interface preview — database integration pending. Nothing is saved.</p>
+<form id="appeals-form">
+<div class="workflow-grid">
+<div class="form-group">
+<label for="appeal-detail-appeal-id">Appeal ID</label>
+<input id="appeal-detail-appeal-id" type="text" readonly placeholder="Unavailable — database not connected"/>
+</div>
+<div class="form-group">
+<label for="appeal-detail-driver-name">Driver Name</label>
+<input id="appeal-detail-driver-name" type="text" readonly placeholder="Unavailable — database not connected"/>
+</div>
+<div class="form-group">
+<label for="appeal-detail-driver-iqama">Driver Iqama</label>
+<input id="appeal-detail-driver-iqama" type="text" readonly placeholder="Unavailable — database not connected"/>
+</div>
+<div class="form-group">
+<label for="appeal-detail-nationality">Nationality</label>
+<input id="appeal-detail-nationality" type="text" readonly placeholder="Unavailable — database not connected"/>
+</div>
+<div class="form-group">
+<label for="appeal-detail-appeal-type">Appeal Type</label>
+<input id="appeal-detail-appeal-type" type="text" readonly placeholder="Unavailable — database not connected"/>
+</div>
+<div class="form-group wide">
+<label for="appeal-detail-description">Description</label>
+<textarea id="appeal-detail-description" rows="3" readonly placeholder="Unavailable — database not connected">
+</textarea>
+</div>
+<div class="form-group">
+<label for="appeal-detail-submission-date">Submission Date</label>
+<input id="appeal-detail-submission-date" type="text" readonly placeholder="Unavailable — database not connected"/>
+</div>
+<div class="form-group">
+<label for="appeal-detail-submission-time">Submission Time</label>
+<input id="appeal-detail-submission-time" type="text" readonly placeholder="Unavailable — database not connected"/>
+</div>
+<div class="form-group">
+<label for="appeal-detail-status">Status</label>
+<select id="appeal-detail-status" >
+<option value="Pending">Pending</option>
+<option value="In Progress">In Progress</option>
+<option value="Done">Done</option>
+</select>
+</div>
+<div class="form-group">
+<label for="appeal-detail-department">Department</label>
+<select id="appeal-detail-department" >
+<option value="Pending">Pending</option>
+<option value="Financial">Financial</option>
+<option value="Operation">Operation</option>
+<option value="Quality">Quality</option>
+<option value="IT">IT</option>
+</select>
+</div>
+<div class="form-group">
+<label for="appeal-detail-assigned-by">Assigned By</label>
+<input id="appeal-detail-assigned-by" type="text" readonly placeholder="Unavailable — database not connected"/>
+</div>
+<div class="form-group">
+<label for="appeal-detail-assigned-at">Assigned At</label>
+<input id="appeal-detail-assigned-at" type="text" readonly placeholder="Unavailable — database not connected"/>
+</div>
+<div class="form-group">
+<label for="appeal-detail-last-updated-by">Last Updated By</label>
+<input id="appeal-detail-last-updated-by" type="text" readonly placeholder="Unavailable — database not connected"/>
+</div>
+<div class="form-group">
+<label for="appeal-detail-last-updated-at">Last Updated At</label>
+<input id="appeal-detail-last-updated-at" type="text" readonly placeholder="Unavailable — database not connected"/>
+</div>
+</div>
+<p id="appeals-save-status" role="status" class="preview-note" hidden>Database integration pending — changes not saved.</p>
+</form>
+<div class="action-row">
+<button class="btn-primary" type="button" id="appeals-save">Save Changes</button>
+<button class="btn-secondary" type="button" data-people-close="appeals-modal">Cancel</button>
+</div>
+</div>
+</div>

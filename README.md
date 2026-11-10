@@ -24,6 +24,10 @@ Version **1.2** — each screen has its own HTML, CSS, and JavaScript files.
 - `modules/maintenance/`: Maintenance Requests and Maintenance Overview previews.
 - `modules/compliance/penalties/`: read-only Penalties overview, inclusive driver/date filters and record details; future external source pending.
 - `modules/compliance/ncr/`: Driver Scores, NCR Tracker and independently tested 90-day KSA scoring policy.
+- `modules/people/driver-appeals/`: driver-origin appeal queue, inclusive filters and unsaved administrative assignment/status controls.
+- `modules/people/training/`: compliance, sessions, attendance and bounded cross-page driver selection previews.
+- `modules/people/driver-deductions/`: balances, expenses and partial deduction previews; NCR points remain separate from SAR.
+- `modules/people/roster/`: retained placeholder; future reviewed/versioned roster and personal PDF architecture only.
 - `modules/operations/fuel/`: Fuel overview, empty record details/editing and conditional fueling form previews.
 - `shared/`: navigation, layout, common CSS, Supabase configuration, general utilities, and data helpers.
 - `assets/`: images.
@@ -51,7 +55,7 @@ See [the workflow specification](docs/TAXIQAID_WORKFLOW_SPEC.md) for all field d
 
 ## Future Driver Portal
 
-The administrative app has 16 modules. Driver Weekly Schedule has been retired; personal schedules belong exclusively to the future Driver Portal → My Schedule. My Profile, My Documents, My Signatures and My NCRs are also planned. The portal and its account/data connections are not implemented. See [the workflow specification](docs/TAXIQAID_WORKFLOW_SPEC.md#future-driver-portal--planned-only).
+The administrative app has 16 modules. Driver Weekly Schedule has been retired; personal schedules belong exclusively to the future Driver Portal → My Schedule. My Profile, My Documents, My Signatures, My NCRs, My Appeals and My Training are also planned. The portal and its account/data connections are not implemented. See [the workflow specification](docs/TAXIQAID_WORKFLOW_SPEC.md#future-driver-portal--planned-only).
 
 ## Shared interface standards
 
@@ -59,6 +63,6 @@ The administrative app has 16 modules. Driver Weekly Schedule has been retired; 
 
 ## Validation
 
-Run `node --test tests/*.test.cjs` for the retained pure compatibility tests. With Playwright and Chromium available and a local HTTP server running, run `node tests/workflow.browser.cjs` and `node tests/ui.browser.cjs`. Set `TAXIQAID_URL`, `TAXIQAID_CHROMIUM` or `TAXIQAID_SCREENSHOTS` to override defaults. Browser checks use mocked authentication and never live credentials or operational data. Screenshots are written to `docs/screenshots/` by default.
+Run `node --test tests/*.test.cjs` for the retained pure compatibility tests. With Playwright and Chromium available and a local HTTP server running, run `node tests/workflow.browser.cjs`, `node tests/ui.browser.cjs` and `node tests/people.browser.cjs`. Set `TAXIQAID_URL`, `TAXIQAID_CHROMIUM` or `TAXIQAID_SCREENSHOTS` to override defaults. Browser checks use mocked authentication and never live credentials or operational data. Screenshots are written to `docs/screenshots/` by default.
 
 The former spreadsheet persistence tests were replaced because spreadsheet reads/writes are intentionally retired. Live authentication must be verified separately with an existing authorized account.

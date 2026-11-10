@@ -11,6 +11,13 @@ const TaxiQaidSearch = (() => {
     ncr: {fields:['NCR ID','Driver Iqama','Driver Name'], id:'NCR ID'},
     scores: {fields:['Driver Iqama','Driver Name'], id:'Driver Iqama'},
     penalties: {fields:['ID','Driver Iqama','Driver Name',{key:'Car Plate',plate:true}], id:'ID'},
+    appeals: {fields:['Appeal ID','Driver Iqama','Driver Name'], id:'Appeal ID'},
+    trainingOverview: {fields:['Driver Iqama','Driver Name'], id:'Driver Iqama'},
+    trainingSessions: {fields:['Session Reference','Training Name','Trainer'], id:'Session Reference'},
+    trainingAttendance: {fields:['Driver Iqama','Driver Name','Training Session'], id:'Driver Iqama'},
+    driverBalances: {fields:['Driver Iqama','Driver Name'], id:'Driver Iqama'},
+    driverExpenses: {fields:['Expense Reference','Driver Iqama','Driver Name','Source Reference'], id:'Expense Reference'},
+    appliedDeductions: {fields:['Deduction Reference','Driver Iqama','Driver Name','Related Expense'], id:'Deduction Reference'},
     tripcheck: {fields:['Check ID',{key:'Car Plate',plate:true},'Driver Iqama','Driver Name'], id:'Check ID'}
   };
   Object.values(configs).forEach(config => { config.fields.forEach(field => { if(typeof field==='object') Object.freeze(field); }); Object.freeze(config.fields); Object.freeze(config); });

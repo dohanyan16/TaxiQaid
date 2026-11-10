@@ -52,6 +52,13 @@ Use a title, short description, actions, shared record search plus independent b
 | scores | Driver Iqama, Driver Name |
 | penalties | Penalty ID/ID, Driver Iqama, Driver Name, Car Plate |
 | tripcheck | Check ID, Car Plate, Driver Iqama, Driver Name |
+| appeals | Appeal ID, Driver Iqama, Driver Name |
+| trainingOverview | Driver Iqama, Driver Name |
+| trainingSessions | Session Reference, Training Name, Trainer |
+| trainingAttendance | Driver Iqama, Driver Name, Training Session |
+| driverBalances | Driver Iqama, Driver Name |
+| driverExpenses | Expense Reference, Driver Iqama, Driver Name, Source Reference |
+| appliedDeductions | Deduction Reference, Driver Iqama, Driver Name, Related Expense |
 
 Matching trims/collapses whitespace, normalizes case and supports partial text. Only plate fields also ignore spaces, hyphens, underscores and periods. Aliases handle existing Fleet/Drivers field names; numeric zero is preserved. A field description below the control remains readable on narrow screens even when the placeholder is clipped.
 
@@ -65,6 +72,6 @@ Preserve its 27-step wizard, 24 questions, inspection scoring, signature canvas,
 
 ## Validation
 
-Run `node --test tests/*.test.cjs`, the existing `tests/workflow.browser.cjs` and `tests/ui.browser.cjs` against a local HTTP server. The UI audit checks all 16 administrative pages at 320, 375, 768, 1024 and 1440px, and 200% text scaling at 768px. It checks label/control separation, natural button growth, page/modal overflow, long selected text, shared search keyboard/selection behavior and exact Trip Check PDF source preservation.
+Run `node --test tests/*.test.cjs`, the `tests/workflow.browser.cjs`, `tests/ui.browser.cjs` and `tests/people.browser.cjs` against a local HTTP server. The UI audit checks all 16 administrative pages at 320, 375, 768, 1024 and 1440px, and 200% text scaling at 768px. It checks label/control separation, natural button growth, page/modal overflow, long selected text, shared search keyboard/selection behavior and exact Trip Check PDF source preservation.
 
-Review desktop/mobile screenshots for Dashboard, Fleet, Drivers, Accident, Breakdown, Maintenance, Fuel, NCR, Penalties and Trip Check, plus enlarged-text form examples. Synthetic test records are isolated to local test harnesses and removed afterwards; they are never production fixtures or database records.
+Review desktop/mobile screenshots for Dashboard, Fleet, Drivers, Accident, Breakdown, Maintenance, Fuel, NCR, Penalties, Trip Check, Appeals, Training and Drivers Deduction, plus enlarged-text form examples. The people suite audits all internal tabs and dialogs, including the bounded driver picker and financial history. Synthetic test records are isolated to local test harnesses and removed afterwards; they are never production fixtures or database records.

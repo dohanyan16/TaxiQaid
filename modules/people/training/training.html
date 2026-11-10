@@ -1,9 +1,302 @@
-<!-- Training Tracker: planned module, no business logic is implemented yet. -->
+<!-- Frontend-only interface. Records and actions require future authorized integration. -->
 <section class="view-section" id="view-training">
-  <div class="card placeholder-card" aria-labelledby="training-title">
-    <span class="placeholder-kicker">PLANNED MODULE</span>
-    <h2 id="training-title">Training Tracker</h2>
-    <p>Driver training and certifications.</p>
-    <div class="placeholder-state">Coming Soon</div>
-  </div>
+<div class="card">
+<h2>Training Tracker</h2>
+<p class="preview-note">Manage training requirements, sessions and attendance. Database integration pending.</p>
+<div class="workflow-tabs" role="tablist" aria-label="Training views">
+<button class="btn-secondary" type="button" id="training-overview-tab" role="tab" aria-selected="true" aria-controls="training-overview-panel" tabindex="0">Training Overview</button>
+<button class="btn-secondary" type="button" id="training-sessions-tab" role="tab" aria-selected="false" aria-controls="training-sessions-panel" tabindex="-1">Training Sessions</button>
+<button class="btn-secondary" type="button" id="training-attendance-tab" role="tab" aria-selected="false" aria-controls="training-attendance-panel" tabindex="-1">Training Attendance</button>
+</div>
+</div>
+<section role="tabpanel" id="training-overview-panel" aria-labelledby="training-overview-tab" >
+<div class="card">
+<div class="card-header-flex">
+<div>
+<h2>Training Overview</h2>
+<p class="preview-note">All-driver compliance will be calculated from approved applicable requirements and verified completions.</p>
+</div>
+<div class="button-group-row">
+<button class="btn-secondary" type="button" data-people-pending>Refresh</button>
+<button class="btn-secondary" type="button" data-people-pending>Export Excel</button>
+</div>
+</div>
+<div class="workflow-grid">
+<div class="form-group wide">
+<label for="training-overview-search">Search Records</label>
+<input id="training-overview-search" type="search" placeholder="Search by Driver Iqama or Name..." autocomplete="off"/>
+</div>
+<div class="form-group">
+<label for="training-status">Training Status</label>
+<select id="training-status" >
+<option value="">All Statuses</option>
+<option value="On Day">On Day</option>
+<option value="Pending Training Sessions">Pending Training Sessions</option>
+</select>
+</div>
+<div class="form-group">
+<label for="training-requirement-filter">Training Session</label>
+<select id="training-requirement-filter" >
+<option value="">Sessions pending integration</option>
+</select>
+</div>
+</div>
+<p class="preview-note">Enrollment and scheduling do not count as completion. Applicable requirements and validity rules await approval.</p>
+</div>
+<div class="card">
+<div class="card-header-flex">
+<h2>Training Overview</h2>
+<span id="training-overview-table-count" role="status">0 records found</span>
+</div>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Training Overview table">
+<table class="tracker-table" id="training-overview-table">
+<thead>
+<tr>
+<th scope="col">Driver Name</th>
+<th scope="col">Driver Iqama</th>
+<th scope="col">Training Sessions Pending</th>
+<th scope="col">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="4">
+<span class="table-empty">No records available — database not connected</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </section>
+<section role="tabpanel" id="training-sessions-panel" aria-labelledby="training-sessions-tab" hidden>
+<div class="card">
+<div class="card-header-flex">
+<div>
+<h2>Training Sessions</h2>
+<p class="preview-note">Plan sessions and select eligible drivers across the complete result set.</p>
+</div>
+<div class="button-group-row">
+<button id="training-create" type="button" class="btn-primary" data-people-open="training-session-modal">Create Training Session</button>
+<button class="btn-secondary" type="button" data-people-pending>Refresh</button>
+<button class="btn-secondary" type="button" data-people-pending>Export Excel</button>
+</div>
+</div>
+<div class="workflow-grid">
+<div class="form-group wide">
+<label for="training-sessions-search">Search Records</label>
+<input id="training-sessions-search" type="search" placeholder="Search by Session Reference, Training Name or Trainer..." autocomplete="off"/>
+</div>
+</div>
+</div>
+<div class="card">
+<div class="card-header-flex">
+<h2>Training Sessions</h2>
+<span id="training-sessions-table-count" role="status">0 records found</span>
+</div>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Training Sessions table">
+<table class="tracker-table" id="training-sessions-table">
+<thead>
+<tr>
+<th scope="col">Session Reference</th>
+<th scope="col">Training Name</th>
+<th scope="col">Trainer</th>
+<th scope="col">Session Date</th>
+<th scope="col">Session Time</th>
+<th scope="col">Location</th>
+<th scope="col">Assigned Drivers</th>
+<th scope="col">Confirmed Attendance</th>
+<th scope="col">Session Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="9">
+<span class="table-empty">No records available — database not connected</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section role="tabpanel" id="training-attendance-panel" aria-labelledby="training-attendance-tab" hidden>
+<div class="card">
+<div class="card-header-flex">
+<div>
+<h2>Training Attendance</h2>
+<p class="preview-note">Attendance, driver confirmation and trainer verification are separate evidence.</p>
+</div>
+<div class="button-group-row">
+<button class="btn-secondary" type="button" data-people-pending>Refresh</button>
+<button class="btn-secondary" type="button" data-people-pending>Export Excel</button>
+</div>
+</div>
+<div class="workflow-grid">
+<div class="form-group wide">
+<label for="training-attendance-search">Search Records</label>
+<input id="training-attendance-search" type="search" placeholder="Search by Driver Iqama, Name or Training Session..." autocomplete="off"/>
+</div>
+<div class="form-group">
+<label for="training-attendance-session">Training Session</label>
+<select id="training-attendance-session" >
+<option value="">Sessions pending integration</option>
+</select>
+</div>
+</div>
+<p class="preview-note">Future authorized confirmation and trainer verification are required. No live confirmation service is available.</p>
+</div>
+<div class="card">
+<div class="card-header-flex">
+<h2>Training Attendance</h2>
+<span id="training-attendance-table-count" role="status">0 records found</span>
+</div>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Training Attendance table">
+<table class="tracker-table" id="training-attendance-table">
+<thead>
+<tr>
+<th scope="col">Training Session</th>
+<th scope="col">Driver Name</th>
+<th scope="col">Driver Iqama</th>
+<th scope="col">Attendance Status</th>
+<th scope="col">Driver Confirmation</th>
+<th scope="col">Confirmation Date</th>
+<th scope="col">Trainer Verification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="7">
+<span class="table-empty">No records available — database not connected</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+</section>
+<div class="modal-overlay" id="training-session-modal" aria-hidden="true">
+<div class="modal-content workflow-modal">
+<h2>Create Training Session</h2>
+<p class="preview-note">Interface preview — database integration pending. Nothing is saved.</p>
+<form id="training-session-form">
+<div class="workflow-grid">
+<div class="form-group">
+<label for="training-name">Training Name</label>
+<input id="training-name" type="text" required/>
+</div>
+<div class="form-group wide">
+<label for="training-description">Training Description</label>
+<textarea id="training-description" rows="3" >
+</textarea>
+</div>
+<div class="form-group">
+<label for="training-trainer">Trainer</label>
+<input id="training-trainer" type="text" required/>
+</div>
+<div class="form-group">
+<label for="training-date">Session Date</label>
+<input id="training-date" type="date" required/>
+</div>
+<div class="form-group">
+<label for="training-start">Start Time</label>
+<input id="training-start" type="time" required/>
+</div>
+<div class="form-group">
+<label for="training-end">End Time</label>
+<input id="training-end" type="time" required/>
+</div>
+<div class="form-group">
+<label for="training-location">Training Location</label>
+<input id="training-location" type="text" required/>
+</div>
+<div class="form-group">
+<label for="training-capacity">Capacity (optional)</label>
+<input id="training-capacity" type="number" min="1" step="1"/>
+</div>
+<div class="form-group wide">
+<label for="training-notes">Additional Notes</label>
+<textarea id="training-notes" rows="3" >
+</textarea>
+</div>
+</div>
+<h3>Driver Selection</h3>
+<p id="training-assigned-count" role="status">0 drivers selected — unsaved</p>
+<button id="training-select-drivers" type="button" class="btn-secondary" data-people-open="training-drivers-modal">Select Drivers</button>
+<p class="preview-note">Review the selected-driver summary in the picker before confirmation. Session references and lifecycle statuses will follow approved backend configuration.</p>
+<p id="training-session-status" role="status" class="preview-note" hidden>
+</p>
+</form>
+<div class="action-row">
+<button class="btn-primary" type="button" id="training-session-save">Save Session</button>
+<button class="btn-secondary" type="button" data-people-close="training-session-modal">Cancel</button>
+</div>
+</div>
+</div>
+<div class="modal-overlay" id="training-drivers-modal" aria-hidden="true">
+<div class="modal-content workflow-modal">
+<h2>Select Drivers</h2>
+<p class="preview-note">Interface preview — database integration pending. Nothing is saved.</p>
+<div class="workflow-grid">
+<div class="form-group wide">
+<label for="training-picker-search">Search Drivers</label>
+<input id="training-picker-search" type="search" placeholder="Search by Driver Iqama or Name..." autocomplete="off"/>
+</div>
+<div class="form-group">
+<label for="training-picker-requirement">Applicable Training Requirement</label>
+<select id="training-picker-requirement" disabled>
+<option value="">Requirements pending configuration</option>
+</select>
+</div>
+</div>
+<p class="preview-note">25 drivers per page. Selections are kept across pages and searches. Select All requires a complete eligible source; future remote results require server-resolved selection.</p>
+<div class="button-group-row">
+<button class="btn-secondary" type="button" id="training-select-filtered" disabled>Select All Filtered Drivers</button>
+<button class="btn-secondary" type="button" id="training-deselect-all">Deselect Selected Drivers</button>
+</div>
+<p id="training-picker-count" role="status">0 drivers selected</p>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Available drivers">
+<table class="tracker-table" id="training-picker-table">
+<thead>
+<tr>
+<th scope="col">Select</th>
+<th scope="col">Driver Iqama</th>
+<th scope="col">Driver Name</th>
+</tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+</div>
+<div class="action-row">
+<button class="btn-secondary" type="button" id="training-picker-prev">Previous</button>
+<span id="training-picker-page" role="status">Page 1 of 1</span>
+<button class="btn-secondary" type="button" id="training-picker-next">Next</button>
+</div>
+<h3>Selected Drivers Summary</h3>
+<p class="preview-note">Review and remove individual drivers here before using this unsaved selection.</p>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Selected drivers summary">
+<table class="tracker-table" id="training-selected-table">
+<thead>
+<tr>
+<th scope="col">Driver Iqama</th>
+<th scope="col">Driver Name</th>
+<th scope="col">Action</th>
+</tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+</div>
+<div class="action-row">
+<button class="btn-secondary" type="button" id="training-selected-prev">Previous Selected</button>
+<span id="training-selected-page" role="status" tabindex="-1">Page 1 of 1</span>
+<button class="btn-secondary" type="button" id="training-selected-next">Next Selected</button>
+</div>
+<div class="action-row">
+<button class="btn-primary" type="button" id="training-use-selection">Use Selection — Unsaved</button>
+<button class="btn-secondary" type="button" data-people-close="training-drivers-modal">Cancel</button>
+</div>
+</div>
+</div>
