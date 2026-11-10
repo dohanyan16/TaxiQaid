@@ -1,6 +1,6 @@
 # Dedicated identity database baseline — owner-verified columns
 
-The owner performed a read-only inspection of the real `taxiqaid_private` schema and supplied the following exact columns and types. This is a verified column inventory, not a complete DDL export or an agent-run live connection test. Existing indexes, constraints, RLS policies, grants and the deployed function still need their own review. Do not recreate or rename any table.
+The owner performed a read-only inspection of the real `taxiqaid_private` schema and supplied the following exact columns and types. This is a verified column inventory, not a complete DDL export or an agent-run live connection test. The owner has also verified that all six tables have RLS enabled and that neither `anon` nor `authenticated` has direct schema/table access. Remaining index/constraint details, the backend connection role and deployed function execution still need their own live review. Do not recreate or rename any table.
 
 | Existing table | Verified columns |
 | --- | --- |
