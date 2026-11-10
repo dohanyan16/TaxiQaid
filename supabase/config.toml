@@ -1,0 +1,9 @@
+project_id = "taxiqaid-dedicated-auth-review"
+
+# Public password broker performs private resolution, Auth verification and distributed rate limiting itself.
+[functions.login-with-identifier]
+verify_jwt = false
+
+# Retain JWT verification and the authenticated-user wrapper. Never weaken it to clear a 401.
+[functions.get-my-access]
+verify_jwt = true

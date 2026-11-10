@@ -1,0 +1,34 @@
+{
+  "user_accounts": {
+    "uid": null,
+    "username": null,
+    "fullName": null,
+    "type": null,
+    "role": null,
+    "status": null,
+    "iqama": null,
+    "driverRecordRef": null
+  },
+  "departments": {
+    "id": null,
+    "code": null
+  },
+  "user_departments": {
+    "uid": null,
+    "departmentId": null
+  },
+  "permissions": {
+    "id": null,
+    "key": null
+  },
+  "role_permissions": {
+    "role": null,
+    "permissionId": null,
+    "allowed": null
+  },
+  "user_permission_overrides": {
+    "uid": null,
+    "permissionId": null,
+    "effect": null
+  }
+}

@@ -17,8 +17,8 @@ const TaxiQaidHelpdesk = (() => {
     });});
   }
   function updateIdentity(user) {
-    email=policy.verifiedEmail(user);$('helpdesk-email').value=email;
-    $('helpdesk-identity-note').textContent=email?'Verified email from your authenticated account. Your profile department is pending integration.':'Account information pending. Your verified account email will appear here.';
+    email=window.TAXIQAID_DEDICATED_AUTH?'':policy.verifiedEmail(user);$('helpdesk-email').value=email;
+    $('helpdesk-identity-note').textContent=window.TAXIQAID_DEDICATED_AUTH?'Identity comes from your verified TaxiQaid account. Internal authentication emails are not displayed.':email?'Verified email from your authenticated account. Your profile department is pending integration.':'Account information pending. Your verified account email will appear here.';
     // User-editable account metadata is not a department membership or authorization source.
     $('helpdesk-own-department').value='';
   }

@@ -8,6 +8,16 @@ Supabase URL, public key, password login, existing sessions, user profiles, role
 
 The shared sidebar, static module paths, existing styling, Fleet/Driver profiles and Trip Check wizard/editor/PDF source remain in place. Customer Care, Helpdesk, User Management and Driver Portal now provide disconnected interfaces; authenticated driver onboarding and all new operational services remain future work. Do not implement persistence until the interfaces and future database design are approved.
 
+## Dedicated identity migration — prepared, not activated
+
+The dedicated Supabase authentication migration is isolated from production until genuine testing and explicit owner cutover approval. See [SUPABASE_AUTH_MIGRATION.md](SUPABASE_AUTH_MIGRATION.md) for the approved public configuration, protected username/Iqama broker, `get-my-access` contract, baseline, security controls, tests, missing live verification and rollback. The old project remains untouched, and ordinary production login stays on the existing configuration during development.
+
+The approved new project is `https://mqkflwsvnzcaylxtvsje.supabase.co`. It owns identity/security information only; Google Sheets remains a future private operational source. The existing private schema and reported 107 definitions/101 Master grants must be inspected and preserved without blind recreation. No operational tables, real account provisioning, permission writes or migration deployments are performed now. Quality is consolidated into canonical `qhse`; Finance and Financial stay separate; nine approved identity departments support multiple memberships without automatic record rights.
+
+The disabled staging entry is `auth-migration-preview.html`. New access resolves the verified UID, active account, approved full name, role defaults, overrides, module/nested dependencies and explicit scope. Management receives no driver self-service capabilities. Driver login remains UID → stable driver reference → Iqama, with exactly the same four personal sections. AAL1 is valid; no mandatory MFA or additional login verification is introduced. Every future backend operation independently checks identity/status/capability/scope and records authoritative UID/full-name snapshot/UTC time with Asia/Riyadh display.
+
+The server candidates use direct, TLS-verified PostgreSQL while the Data API stays disabled. They require an inspected schema mapping, distributed atomic abuse controls, trusted ingress and a reviewed session-transport/hosting approach. Standard Supabase browser session claims can reveal the signed-in account's Auth email; strict internal-email secrecy needs a server-held session solution. The new hostname is currently blocked by the workspace allowlist, and no secure project/test credentials are configured. Therefore no genuine authentication, private query or Master verification is claimed, and production cutover is not authorized by passing mocked tests alone.
+
 ## Identifier and timestamp contracts
 
 | Entity | Future identifier | Ownership |

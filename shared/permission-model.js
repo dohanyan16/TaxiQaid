@@ -20,6 +20,7 @@ const TaxiQaidPermissionModel = (() => {
     return {allowed:true,source:own==='allow'?'Explicit allow':'Inherited role default'};
   }
   function decision(context,key,resource={}) {
+    if(context?.expiresAt!==undefined&&context.expiresAt<=Date.now())return {allowed:false,source:'Access context expired'};
     if(!context||context.verified!==true||context.source!=='authorized-backend'||!context.uid||context.accountStatus!=='Active')return {allowed:false,source:'Verified active account permissions unavailable'};
     const result=draftDecision(key,context);if(!result.allowed)return result;
     const permission=catalog.BY_KEY[key],scope=context.scope||{};
@@ -34,9 +35,10 @@ const TaxiQaidPermissionModel = (() => {
     }
     if(permission.scope==='authorized-departments'&&!scope.departments?.length)return {allowed:false,source:'Explicit cross-department scope unavailable'};
     if(permission.scope==='department') {
-      const department=resource.assignedDepartment;
-      const member=department?context.departments?.includes(department):key==='helpdesk.view-department'&&Boolean(context.departments?.length);
-      const cross=department&&scope.departments?.includes(department)&&draftDecision('helpdesk.view-all',context).allowed;
+      const normalize=value=>{const raw=String(value||'').trim().toLowerCase().replace(/[ -]+/g,'_');return ({quality:'qhse',customer_care:'customer_service'})[raw]||raw;};
+      const department=resource.assignedDepartment&&normalize(resource.assignedDepartment);
+      const member=department?context.departments?.map(normalize).includes(department):key==='helpdesk.view-department'&&Boolean(context.departments?.length);
+      const cross=department&&scope.departments?.map(normalize).includes(department)&&draftDecision('helpdesk.view-all',context).allowed;
       if(!member&&!cross)return {allowed:false,source:'Assigned department outside authorized scope'};
     }
     return result;

@@ -1,0 +1,847 @@
+{
+  "version": 1,
+  "definitions": [
+    {
+      "key": "dashboard.view",
+      "module": "dashboard",
+      "audience": "Management",
+      "requires": []
+    },
+    {
+      "key": "fleet.view",
+      "module": "fleet",
+      "audience": "Management",
+      "requires": []
+    },
+    {
+      "key": "fleet.edit",
+      "module": "fleet",
+      "audience": "Management",
+      "requires": [
+        "fleet.view"
+      ]
+    },
+    {
+      "key": "fleet.export",
+      "module": "fleet",
+      "audience": "Management",
+      "requires": [
+        "fleet.view"
+      ]
+    },
+    {
+      "key": "drivers.view",
+      "module": "drivers",
+      "audience": "Management",
+      "requires": []
+    },
+    {
+      "key": "drivers.edit",
+      "module": "drivers",
+      "audience": "Management",
+      "requires": [
+        "drivers.view"
+      ]
+    },
+    {
+      "key": "drivers.export",
+      "module": "drivers",
+      "audience": "Management",
+      "requires": [
+        "drivers.view"
+      ]
+    },
+    {
+      "key": "tripcheck.view",
+      "module": "tripcheck",
+      "audience": "Management",
+      "requires": []
+    },
+    {
+      "key": "tripcheck.create",
+      "module": "tripcheck",
+      "audience": "Management",
+      "requires": [
+        "tripcheck.view"
+      ]
+    },
+    {
+      "key": "tripcheck.edit",
+      "module": "tripcheck",
+      "audience": "Management",
+      "requires": [
+        "tripcheck.view"
+      ]
+    },
+    {
+      "key": "tripcheck.sign",
+      "module": "tripcheck",
+      "audience": "Management",
+      "requires": [
+        "tripcheck.view"
+      ]
+    },
+    {
+      "key": "tripcheck.export",
+      "module": "tripcheck",
+      "audience": "Management",
+      "requires": [
+        "tripcheck.view"
+      ]
+    },
+    {
+      "key": "tripcheck.generate-pdf",
+      "module": "tripcheck",
+      "audience": "Management",
+      "requires": [
+        "tripcheck.view"
+      ]
+    },
+    {
+      "key": "accidents.view",
+      "module": "accidents",
+      "audience": "Management",
+      "requires": []
+    },
+    {
+      "key": "accidents.create",
+      "module": "accidents",
+      "audience": "Management",
+      "requires": [
+        "accidents.view"
+      ]
+    },
+    {
+      "key": "accidents.edit",
+      "module": "accidents",
+      "audience": "Management",
+      "requires": [
+        "accidents.view"
+      ]
+    },
+    {
+      "key": "accidents.delete",
+      "module": "accidents",
+      "audience": "Management",
+      "requires": [
+        "accidents.view"
+      ]
+    },
+    {
+      "key": "accidents.export",
+      "module": "accidents",
+      "audience": "Management",
+      "requires": [
+        "accidents.view"
+      ]
+    },
+    {
+      "key": "accidents.send-maintenance",
+      "module": "accidents",
+      "audience": "Management",
+      "requires": [
+        "accidents.view"
+      ]
+    },
+    {
+      "key": "breakdowns.view",
+      "module": "breakdowns",
+      "audience": "Management",
+      "requires": []
+    },
+    {
+      "key": "breakdowns.create",
+      "module": "breakdowns",
+      "audience": "Management",
+      "requires": [
+        "breakdowns.view"
+      ]
+    },
+    {
+      "key": "breakdowns.edit",
+      "module": "breakdowns",
+      "audience": "Management",
+      "requires": [
+        "breakdowns.view"
+      ]
+    },
+    {
+      "key": "breakdowns.delete",
+      "module": "breakdowns",
+      "audience": "Management",
+      "requires": [
+        "breakdowns.view"
+      ]
+    },
+    {
+      "key": "breakdowns.export",
+      "module": "breakdowns",
+      "audience": "Management",
+      "requires": [
+        "breakdowns.view"
+      ]
+    },
+    {
+      "key": "breakdowns.send-maintenance",
+      "module": "breakdowns",
+      "audience": "Management",
+      "requires": [
+        "breakdowns.view"
+      ]
+    },
+    {
+      "key": "maintenance.view",
+      "module": "maintenance",
+      "audience": "Management",
+      "requires": []
+    },
+    {
+      "key": "maintenance.requests.view",
+      "module": "maintenance",
+      "audience": "Management",
+      "requires": [
+        "maintenance.view"
+      ]
+    },
+    {
+      "key": "maintenance.requests.edit",
+      "module": "maintenance",
+      "audience": "Management",
+      "requires": [
+        "maintenance.view",
+        "maintenance.requests.view"
+      ]
+    },
+    {
+      "key": "maintenance.requests.export",
+      "module": "maintenance",
+      "audience": "Management",
+      "requires": [
+        "maintenance.view",
+        "maintenance.requests.view"
+      ]
+    },
+    {
+      "key": "maintenance.accept",
+      "module": "maintenance",
+      "audience": "Management",
+      "requires": [
+        "maintenance.view",
+        "maintenance.requests.view"
+      ]
+    },
+    {
+      "key": "maintenance.overview.view",
+      "module": "maintenance",
+      "audience": "Management",
+      "requires": [
+        "maintenance.view"
+      ]
+    },
+    {
+      "key": "maintenance.edit",
+      "module": "maintenance",
+      "audience": "Management",
+      "requires": [
+        "maintenance.view",
+        "maintenance.overview.view"
+      ]
+    },
+    {
+      "key": "maintenance.export",
+      "module": "maintenance",
+      "audience": "Management",
+      "requires": [
+        "maintenance.view",
+        "maintenance.overview.view"
+      ]
+    },
+    {
+      "key": "fuel.view",
+      "module": "fuel",
+      "audience": "Management",
+      "requires": []
+    },
+    {
+      "key": "fuel.create",
+      "module": "fuel",
+      "audience": "Management",
+      "requires": [
+        "fuel.view"
+      ]
+    },
+    {
+      "key": "fuel.edit",
+      "module": "fuel",
+      "audience": "Management",
+      "requires": [
+        "fuel.view"
+      ]
+    },
+    {
+      "key": "fuel.export",
+      "module": "fuel",
+      "audience": "Management",
+      "requires": [
+        "fuel.view"
+      ]
+    },
+    {
+      "key": "ncr.view",
+      "module": "ncr",
+      "audience": "Management",
+      "requires": []
+    },
+    {
+      "key": "ncr.scores.view",
+      "module": "ncr",
+      "audience": "Management",
+      "requires": [
+        "ncr.view"
+      ]
+    },
+    {
+      "key": "ncr.records.view",
+      "module": "ncr",
+      "audience": "Management",
+      "requires": [
+        "ncr.view"
+      ]
+    },
+    {
+      "key": "ncr.create",
+      "module": "ncr",
+      "audience": "Management",
+      "requires": [
+        "ncr.view",
+        "ncr.records.view"
+      ]
+    },
+    {
+      "key": "ncr.edit",
+      "module": "ncr",
+      "audience": "Management",
+      "requires": [
+        "ncr.view",
+        "ncr.records.view"
+      ]
+    },
+    {
+      "key": "ncr.delete",
+      "module": "ncr",
+      "audience": "Management",
+      "requires": [
+        "ncr.view",
+        "ncr.records.view"
+      ]
+    },
+    {
+      "key": "ncr.export",
+      "module": "ncr",
+      "audience": "Management",
+      "requires": [
+        "ncr.view",
+        "ncr.records.view"
+      ]
+    },
+    {
+      "key": "ncr.scores.export",
+      "module": "ncr",
+      "audience": "Management",
+      "requires": [
+        "ncr.view",
+        "ncr.scores.view"
+      ]
+    },
+    {
+      "key": "penalties.view",
+      "module": "penalties",
+      "audience": "Management",
+      "requires": []
+    },
+    {
+      "key": "penalties.export",
+      "module": "penalties",
+      "audience": "Management",
+      "requires": [
+        "penalties.view"
+      ]
+    },
+    {
+      "key": "training.view",
+      "module": "training",
+      "audience": "Management",
+      "requires": []
+    },
+    {
+      "key": "training.overview.view",
+      "module": "training",
+      "audience": "Management",
+      "requires": [
+        "training.view"
+      ]
+    },
+    {
+      "key": "training.sessions.view",
+      "module": "training",
+      "audience": "Management",
+      "requires": [
+        "training.view"
+      ]
+    },
+    {
+      "key": "training.attendance.view",
+      "module": "training",
+      "audience": "Management",
+      "requires": [
+        "training.view"
+      ]
+    },
+    {
+      "key": "training.create-session",
+      "module": "training",
+      "audience": "Management",
+      "requires": [
+        "training.view",
+        "training.sessions.view"
+      ]
+    },
+    {
+      "key": "training.manage-enrollment",
+      "module": "training",
+      "audience": "Management",
+      "requires": [
+        "training.view",
+        "training.sessions.view"
+      ]
+    },
+    {
+      "key": "training.verify-attendance",
+      "module": "training",
+      "audience": "Management",
+      "requires": [
+        "training.view",
+        "training.attendance.view"
+      ]
+    },
+    {
+      "key": "training.export",
+      "module": "training",
+      "audience": "Management",
+      "requires": [
+        "training.view"
+      ]
+    },
+    {
+      "key": "customer-care.view",
+      "module": "customer-care",
+      "audience": "Management",
+      "requires": []
+    },
+    {
+      "key": "customer-care.create",
+      "module": "customer-care",
+      "audience": "Management",
+      "requires": [
+        "customer-care.view"
+      ]
+    },
+    {
+      "key": "customer-care.edit",
+      "module": "customer-care",
+      "audience": "Management",
+      "requires": [
+        "customer-care.view"
+      ]
+    },
+    {
+      "key": "customer-care.assign",
+      "module": "customer-care",
+      "audience": "Management",
+      "requires": [
+        "customer-care.view"
+      ]
+    },
+    {
+      "key": "customer-care.close",
+      "module": "customer-care",
+      "audience": "Management",
+      "requires": [
+        "customer-care.view"
+      ]
+    },
+    {
+      "key": "customer-care.export",
+      "module": "customer-care",
+      "audience": "Management",
+      "requires": [
+        "customer-care.view"
+      ]
+    },
+    {
+      "key": "driver-deductions.view",
+      "module": "driver-deductions",
+      "audience": "Management",
+      "requires": []
+    },
+    {
+      "key": "driver-deductions.expenses.view",
+      "module": "driver-deductions",
+      "audience": "Management",
+      "requires": [
+        "driver-deductions.view"
+      ]
+    },
+    {
+      "key": "driver-deductions.deductions.view",
+      "module": "driver-deductions",
+      "audience": "Management",
+      "requires": [
+        "driver-deductions.view"
+      ]
+    },
+    {
+      "key": "driver-deductions.add-expense",
+      "module": "driver-deductions",
+      "audience": "Management",
+      "requires": [
+        "driver-deductions.view",
+        "driver-deductions.expenses.view"
+      ]
+    },
+    {
+      "key": "driver-deductions.apply-deduction",
+      "module": "driver-deductions",
+      "audience": "Management",
+      "requires": [
+        "driver-deductions.view",
+        "driver-deductions.deductions.view"
+      ]
+    },
+    {
+      "key": "driver-deductions.approve-reversal",
+      "module": "driver-deductions",
+      "audience": "Management",
+      "requires": [
+        "driver-deductions.view"
+      ]
+    },
+    {
+      "key": "driver-deductions.export",
+      "module": "driver-deductions",
+      "audience": "Management",
+      "requires": [
+        "driver-deductions.view"
+      ]
+    },
+    {
+      "key": "driver-appeals.view",
+      "module": "driver-appeals",
+      "audience": "Management",
+      "requires": []
+    },
+    {
+      "key": "driver-appeals.assign",
+      "module": "driver-appeals",
+      "audience": "Management",
+      "requires": [
+        "driver-appeals.view"
+      ]
+    },
+    {
+      "key": "driver-appeals.classify",
+      "module": "driver-appeals",
+      "audience": "Management",
+      "requires": [
+        "driver-appeals.view"
+      ]
+    },
+    {
+      "key": "driver-appeals.update-status",
+      "module": "driver-appeals",
+      "audience": "Management",
+      "requires": [
+        "driver-appeals.view"
+      ]
+    },
+    {
+      "key": "driver-appeals.export",
+      "module": "driver-appeals",
+      "audience": "Management",
+      "requires": [
+        "driver-appeals.view"
+      ]
+    },
+    {
+      "key": "helpdesk.view",
+      "module": "helpdesk",
+      "audience": "Management",
+      "requires": []
+    },
+    {
+      "key": "helpdesk.create",
+      "module": "helpdesk",
+      "audience": "Management",
+      "requires": [
+        "helpdesk.view"
+      ]
+    },
+    {
+      "key": "helpdesk.view-department",
+      "module": "helpdesk",
+      "audience": "Management",
+      "requires": [
+        "helpdesk.view"
+      ]
+    },
+    {
+      "key": "helpdesk.view-all",
+      "module": "helpdesk",
+      "audience": "Management",
+      "requires": [
+        "helpdesk.view"
+      ]
+    },
+    {
+      "key": "helpdesk.update-status",
+      "module": "helpdesk",
+      "audience": "Management",
+      "requires": [
+        "helpdesk.view"
+      ]
+    },
+    {
+      "key": "roster.view",
+      "module": "roster",
+      "audience": "Management",
+      "requires": []
+    },
+    {
+      "key": "roster.import",
+      "module": "roster",
+      "audience": "Management",
+      "requires": [
+        "roster.view"
+      ]
+    },
+    {
+      "key": "roster.generate-pdf",
+      "module": "roster",
+      "audience": "Management",
+      "requires": [
+        "roster.view"
+      ]
+    },
+    {
+      "key": "roster.download-pdf",
+      "module": "roster",
+      "audience": "Management",
+      "requires": [
+        "roster.view"
+      ]
+    },
+    {
+      "key": "roster.download-zip",
+      "module": "roster",
+      "audience": "Management",
+      "requires": [
+        "roster.view"
+      ]
+    },
+    {
+      "key": "roster.manage-stops",
+      "module": "roster",
+      "audience": "Management",
+      "requires": [
+        "roster.view"
+      ]
+    },
+    {
+      "key": "roster.catalog-import",
+      "module": "roster",
+      "audience": "Management",
+      "requires": [
+        "roster.view"
+      ]
+    },
+    {
+      "key": "roster.catalog-export",
+      "module": "roster",
+      "audience": "Management",
+      "requires": [
+        "roster.view"
+      ]
+    },
+    {
+      "key": "roster.whatsapp-config",
+      "module": "roster",
+      "audience": "Management",
+      "requires": [
+        "roster.view"
+      ]
+    },
+    {
+      "key": "roster.whatsapp-send",
+      "module": "roster",
+      "audience": "Management",
+      "requires": [
+        "roster.view"
+      ]
+    },
+    {
+      "key": "driver-portal.view",
+      "module": "driver-portal",
+      "audience": "Both",
+      "requires": []
+    },
+    {
+      "key": "driver-portal.preview",
+      "module": "driver-portal",
+      "audience": "Management",
+      "requires": [
+        "driver-portal.view"
+      ]
+    },
+    {
+      "key": "driver-portal.preview-documents",
+      "module": "driver-portal",
+      "audience": "Management",
+      "requires": [
+        "driver-portal.view",
+        "driver-portal.preview"
+      ]
+    },
+    {
+      "key": "driver-portal.preview-schedule",
+      "module": "driver-portal",
+      "audience": "Management",
+      "requires": [
+        "driver-portal.view",
+        "driver-portal.preview"
+      ]
+    },
+    {
+      "key": "driver-portal.preview-download",
+      "module": "driver-portal",
+      "audience": "Management",
+      "requires": [
+        "driver-portal.view",
+        "driver-portal.preview-schedule"
+      ]
+    },
+    {
+      "key": "driver-portal.request-changes",
+      "module": "driver-portal",
+      "audience": "Driver",
+      "requires": [
+        "driver-portal.view"
+      ]
+    },
+    {
+      "key": "driver-portal.files.view",
+      "module": "driver-portal",
+      "audience": "Driver",
+      "requires": [
+        "driver-portal.view"
+      ]
+    },
+    {
+      "key": "driver-portal.sign",
+      "module": "driver-portal",
+      "audience": "Driver",
+      "requires": [
+        "driver-portal.view",
+        "driver-portal.files.view"
+      ]
+    },
+    {
+      "key": "driver-portal.schedule.view",
+      "module": "driver-portal",
+      "audience": "Driver",
+      "requires": [
+        "driver-portal.view"
+      ]
+    },
+    {
+      "key": "driver-portal.schedule.download",
+      "module": "driver-portal",
+      "audience": "Driver",
+      "requires": [
+        "driver-portal.view",
+        "driver-portal.schedule.view"
+      ]
+    },
+    {
+      "key": "driver-portal.submit-appeal",
+      "module": "driver-portal",
+      "audience": "Driver",
+      "requires": [
+        "driver-portal.view"
+      ]
+    },
+    {
+      "key": "user-management.view",
+      "module": "user-management",
+      "audience": "Management",
+      "requires": []
+    },
+    {
+      "key": "user-management.create-user",
+      "module": "user-management",
+      "audience": "Management",
+      "requires": [
+        "user-management.view"
+      ]
+    },
+    {
+      "key": "user-management.edit-user",
+      "module": "user-management",
+      "audience": "Management",
+      "requires": [
+        "user-management.view"
+      ]
+    },
+    {
+      "key": "user-management.change-status",
+      "module": "user-management",
+      "audience": "Management",
+      "requires": [
+        "user-management.view"
+      ]
+    },
+    {
+      "key": "user-management.manage-permissions",
+      "module": "user-management",
+      "audience": "Management",
+      "requires": [
+        "user-management.view"
+      ]
+    },
+    {
+      "key": "user-management.profile-requests.view",
+      "module": "user-management",
+      "audience": "Management",
+      "requires": [
+        "user-management.view"
+      ]
+    },
+    {
+      "key": "driver-profile.approve",
+      "module": "user-management",
+      "audience": "Management",
+      "requires": [
+        "user-management.view",
+        "user-management.profile-requests.view"
+      ]
+    },
+    {
+      "key": "driver-profile.reject",
+      "module": "user-management",
+      "audience": "Management",
+      "requires": [
+        "user-management.view",
+        "user-management.profile-requests.view"
+      ]
+    }
+  ]
+}

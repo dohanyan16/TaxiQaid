@@ -1,6 +1,10 @@
 /** TaxiQaid: legacy transport is disabled; existing authorization is preserved. */
 
 async function requireAuthorizedUser() {
+  if(window.TAXIQAID_DEDICATED_AUTH){
+    const context=await TaxiQaidDedicatedLogin.auth.refresh();
+    return {id:context.uid,fullName:context.fullName};
+  }
   const { data: userData, error: userError } = await supabaseClient.auth.getUser();
   if (userError || !userData || !userData.user) {
     throw new Error("Sign in again before updating records.");

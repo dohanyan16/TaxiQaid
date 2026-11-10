@@ -42,10 +42,12 @@ const SCRIPT_ORDER = [
   "shared/people-preview.js",
   "shared/permission-catalog.js",
   "shared/permission-model.js",
+  "shared/auth-contract.js",
+  "shared/auth-client.js",
   "shared/access-runtime.js",
   "assets/vendor/phone/libphonenumber-max.js",
   "modules/driver-portal/portal-policy.js",
-  "modules/login/login.js",
+  window.TAXIQAID_DEDICATED_AUTH ? "modules/login/login-dedicated.js" : "modules/login/login.js",
   "shared/navigation.js",
   "modules/dashboard/dashboard.js",
   "modules/drivers/drivers.js",
@@ -129,6 +131,7 @@ async function initializeApplication() {
     // Load classic scripts one by one to preserve cross-file global bindings.
     for (const path of SCRIPT_ORDER) await addScript(path);
     initializeFrontendPreview();
+    document.dispatchEvent(new CustomEvent("taxiqaid:app-ready"));
 
     workspace.hidden = false;
     bootStatus.remove();
