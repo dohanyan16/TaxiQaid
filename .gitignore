@@ -1,0 +1,7 @@
+
+# Private roster sources and generated personal documents must never be published.
+*.xlsx
+*.xls
+*.pdf
+*.zip
+roster-private/

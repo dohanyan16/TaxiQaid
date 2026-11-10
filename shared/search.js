@@ -18,6 +18,9 @@ const TaxiQaidSearch = (() => {
     driverBalances: {fields:['Driver Iqama','Driver Name'], id:'Driver Iqama'},
     driverExpenses: {fields:['Expense Reference','Driver Iqama','Driver Name','Source Reference'], id:'Expense Reference'},
     appliedDeductions: {fields:['Deduction Reference','Driver Iqama','Driver Name','Related Expense'], id:'Deduction Reference'},
+    roster: {fields:['Driver Name','Driver Iqama',{key:'Car Plate',plate:true}], id:'Driver Iqama'},
+    rosterDriver: {fields:['Driver Name','Driver Iqama'], id:'Driver Iqama'},
+    rosterLocations: {fields:['Stop Name','Aliases'], id:'Stop Name'},
     tripcheck: {fields:['Check ID',{key:'Car Plate',plate:true},'Driver Iqama','Driver Name'], id:'Check ID'}
   };
   Object.values(configs).forEach(config => { config.fields.forEach(field => { if(typeof field==='object') Object.freeze(field); }); Object.freeze(config.fields); Object.freeze(config); });
@@ -108,7 +111,7 @@ const TaxiQaidSearch = (() => {
     });
     inp.addEventListener('blur',()=>setTimeout(()=>{if(!wrapper.contains(document.activeElement))close();},0));
     button.addEventListener('click',()=>{if(list.style.display==='block')close();else show();inp.focus({preventScroll:true});});
-    const controller={input:inp,close,show,clear(){selected=null;inp.value='';close();apply();},
+    const controller={input:inp,close,show,clear(){selected=null;items=[];list.replaceChildren();inp.value='';close();apply();},
       matches(record){return selected ? identify(record)===identify(selected) : matches(record,searchable,inp.value);}};
     controllers.set(inp.id,controller);close();return controller;
   }

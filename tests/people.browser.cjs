@@ -147,8 +147,8 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
     await page.keyboard.press('Escape');
    }
   }
-  await page.evaluate(()=>document.documentElement.style.fontSize='');await nav('roster');assert.match(await page.locator('#view-roster').innerText(),/Coming Soon/);assert.equal(await page.locator('#view-roster input[type=file]').count(),0);
+  await page.evaluate(()=>document.documentElement.style.fontSize='');await nav('roster');assert.match(await page.locator('#view-roster').innerText(),/Roster Management/);assert.equal(await page.locator('#view-roster [role=tab]').count(),5);assert.match(await page.locator('#roster-active-week').innerText(),/No validated roster/);
   assert.deepEqual(await page.evaluate(()=>operationalStorageWrites),[]);assert.deepEqual(errors,[]);assert.deepEqual(legacy,[]);assert.deepEqual(writes,[]);assert.deepEqual(downloads,[]);
-  console.log(JSON.stringify({result:'PASS',modules:['Driver Appeals','Training Tracker','Drivers Deduction'],syntheticDrivers:900,maximumPickerRows:25,viewports:[320,375,768,1024,1440],textScaling:'200%',roster:'unchanged placeholder',errors,legacy,writes,downloads,storageWrites:[],screenshots:output},null,2));
+  console.log(JSON.stringify({result:'PASS',modules:['Driver Appeals','Training Tracker','Drivers Deduction'],syntheticDrivers:900,maximumPickerRows:25,viewports:[320,375,768,1024,1440],textScaling:'200%',roster:'empty local import interface',errors,legacy,writes,downloads,storageWrites:[],screenshots:output},null,2));
  }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

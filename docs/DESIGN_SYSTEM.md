@@ -51,6 +51,9 @@ Use a title, short description, actions, shared record search plus independent b
 | ncr | NCR ID, Driver Iqama, Driver Name |
 | scores | Driver Iqama, Driver Name |
 | penalties | Penalty ID/ID, Driver Iqama, Driver Name, Car Plate |
+| roster | Driver Name, Driver Iqama, Car Plate |
+| rosterDriver | Driver Name, Driver Iqama |
+| rosterLocations | Stop Name, Aliases |
 | tripcheck | Check ID, Car Plate, Driver Iqama, Driver Name |
 | appeals | Appeal ID, Driver Iqama, Driver Name |
 | trainingOverview | Driver Iqama, Driver Name |
@@ -72,6 +75,8 @@ Preserve its 27-step wizard, 24 questions, inspection scoring, signature canvas,
 
 ## Validation
 
-Run `node --test tests/*.test.cjs`, the `tests/workflow.browser.cjs`, `tests/ui.browser.cjs` and `tests/people.browser.cjs` against a local HTTP server. The UI audit checks all 16 administrative pages at 320, 375, 768, 1024 and 1440px, and 200% text scaling at 768px. It checks label/control separation, natural button growth, page/modal overflow, long selected text, shared search keyboard/selection behavior and exact Trip Check PDF source preservation.
+Run `node --test tests/*.test.cjs`, the `tests/workflow.browser.cjs`, `tests/ui.browser.cjs` and `tests/people.browser.cjs` and `tests/roster.browser.cjs` against a local HTTP server. The UI audit checks all 16 administrative pages at 320, 375, 768, 1024 and 1440px, and 200% text scaling at 768px. It checks label/control separation, natural button growth, page/modal overflow, long selected text, shared search keyboard/selection behavior and exact Trip Check PDF source preservation.
 
 Review desktop/mobile screenshots for Dashboard, Fleet, Drivers, Accident, Breakdown, Maintenance, Fuel, NCR, Penalties, Trip Check, Appeals, Training and Drivers Deduction, plus enlarged-text form examples. The people suite audits all internal tabs and dialogs, including the bounded driver picker and financial history. Synthetic test records are isolated to local test harnesses and removed afterwards; they are never production fixtures or database records.
+
+Roster uses the same shared search, controls, tabs and responsive tables. Its approved geographic catalog is visible from startup; private assignments remain empty until local imports validate. Read-only configuration provenance distinguishes supplied coordinates from local edits/additions. Real local PDF/ZIP/JSON downloads are explicitly authorized for Roster only. Its landscape PDF follows the reviewed company reference with English labels and separate measured text layout. No other module export behavior changes.

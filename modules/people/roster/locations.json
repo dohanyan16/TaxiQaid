@@ -1,0 +1,387 @@
+{
+  "schemaVersion": 1,
+  "description": "TaxiQaid Roster approved named locations, supplied by the owner; latitude/longitude WGS84 decimal degrees.",
+  "coordinateOrder": "latitude,longitude",
+  "locations": [
+    {
+      "name": "Ajyad",
+      "latitude": 21.420468645263693,
+      "longitude": 39.82772033521422
+    },
+    {
+      "name": "Shubaikah",
+      "latitude": 21.42183412054823,
+      "longitude": 39.821499545461215
+    },
+    {
+      "name": "Ryi Bakhsh",
+      "latitude": 21.41541824167116,
+      "longitude": 39.827361111111095
+    },
+    {
+      "name": "Ummul Al Qura University",
+      "latitude": 21.331372520589007,
+      "longitude": 39.95292244354535
+    },
+    {
+      "name": "Al-Awali 407",
+      "latitude": 21.35858092717482,
+      "longitude": 39.87397743299552
+    },
+    {
+      "name": "Al-Awali 423",
+      "latitude": 21.35868581061964,
+      "longitude": 39.910730832262296
+    },
+    {
+      "name": "Jamarat",
+      "latitude": 21.423166666666667,
+      "longitude": 39.860388888888885
+    },
+    {
+      "name": "Mahbas Al-Jin 2",
+      "latitude": 21.421555909136075,
+      "longitude": 39.85125
+    },
+    {
+      "name": "Qatari Mosque",
+      "latitude": 21.417916313077342,
+      "longitude": 39.85463964852687
+    },
+    {
+      "name": "Makkah Mall",
+      "latitude": 21.390864760244582,
+      "longitude": 39.883620417964124
+    },
+    {
+      "name": "Saudi National Hospital",
+      "latitude": 21.409343822702244,
+      "longitude": 39.86920148789644
+    },
+    {
+      "name": "King Abdulaziz Sports City",
+      "latitude": 21.48731427493932,
+      "longitude": 39.97522428589567
+    },
+    {
+      "name": "Primary Health Care Center",
+      "latitude": 21.51526556619013,
+      "longitude": 40.06387137167103
+    },
+    {
+      "name": "Umm Al Qura University Zaher",
+      "latitude": 21.440199054175558,
+      "longitude": 39.807369235613436
+    },
+    {
+      "name": "Ayed Hotel",
+      "latitude": 21.43311445611666,
+      "longitude": 39.799688538049985
+    },
+    {
+      "name": "Masjid Al-Sayyidah Aisha",
+      "latitude": 21.467869090976162,
+      "longitude": 39.79995631519355
+    },
+    {
+      "name": "Hira Hospital",
+      "latitude": 21.48650435306226,
+      "longitude": 39.79033333333332
+    },
+    {
+      "name": "Medicine Kingdom Complex",
+      "latitude": 21.446226323813995,
+      "longitude": 39.76383448385521
+    },
+    {
+      "name": "Al-Bushri Medical – Batha Quraysh",
+      "latitude": 21.368415091155974,
+      "longitude": 39.83730386374437
+    },
+    {
+      "name": "Al Waha Mall",
+      "latitude": 21.388395921689597,
+      "longitude": 39.80888343882352
+    },
+    {
+      "name": "Dates Mubaraka",
+      "latitude": 21.368845857371007,
+      "longitude": 39.805046752868584
+    },
+    {
+      "name": "Masar Park",
+      "latitude": 21.416185013979174,
+      "longitude": 39.80726396905531
+    },
+    {
+      "name": "Saudi German Hospital",
+      "latitude": 21.281932948216163,
+      "longitude": 39.82368236752335
+    },
+    {
+      "name": "Al Haram Mosque Parking",
+      "latitude": 21.436401456127342,
+      "longitude": 39.830650833000526
+    },
+    {
+      "name": "Ancien Maison Culturel",
+      "latitude": 21.440917779239584,
+      "longitude": 39.83454613158524
+    },
+    {
+      "name": "Sharaie Mall",
+      "latitude": 21.45992316004894,
+      "longitude": 39.949024196716024
+    },
+    {
+      "name": "Middle Yard Mall",
+      "latitude": 21.48112138865472,
+      "longitude": 39.92737487766047
+    },
+    {
+      "name": "Al-Mansour 43",
+      "latitude": 21.399119640413215,
+      "longitude": 39.80985407825154
+    },
+    {
+      "name": "Al Hashmeih Tower",
+      "latitude": 21.40967252267184,
+      "longitude": 39.80281808942553
+    },
+    {
+      "name": "Al-Shisha",
+      "latitude": 21.429570647370376,
+      "longitude": 39.85426944444445
+    },
+    {
+      "name": "King Faisal Hospital",
+      "latitude": 21.435187566224123,
+      "longitude": 39.854478604044516
+    },
+    {
+      "name": "Harmain Train Station",
+      "latitude": 21.41509549305695,
+      "longitude": 39.78694708867522
+    },
+    {
+      "name": "Aljaroushi Boulevard",
+      "latitude": 21.403263529336314,
+      "longitude": 39.789022380046404
+    },
+    {
+      "name": "Ghurra Makkah",
+      "latitude": 21.38714053050525,
+      "longitude": 39.70355555555556
+    },
+    {
+      "name": "Al-Zaidi’s Parking",
+      "latitude": 21.39144586468537,
+      "longitude": 39.70910208761896
+    },
+    {
+      "name": "Bishri Hospital",
+      "latitude": 21.362965486087983,
+      "longitude": 39.79599851525873
+    },
+    {
+      "name": "Muhammad Saleh Basharahil Hospital",
+      "latitude": 21.538044049295888,
+      "longitude": 39.78042410841793
+    },
+    {
+      "name": "Al Nawariah",
+      "latitude": 21.575895725001935,
+      "longitude": 39.76058822030042
+    },
+    {
+      "name": "Al Jazaer Parking",
+      "latitude": 21.44836717113732,
+      "longitude": 39.820614928836164
+    },
+    {
+      "name": "Abdullah Bin Abi Bakr Primary School",
+      "latitude": 21.352300374257393,
+      "longitude": 39.828353540604994
+    },
+    {
+      "name": "Al-Noor Hospital",
+      "latitude": 21.3863071308737,
+      "longitude": 39.8610243941554
+    },
+    {
+      "name": "Al-Naseem",
+      "latitude": 21.377413515838956,
+      "longitude": 39.8756128029223
+    },
+    {
+      "name": "Al-Hijaz Mall",
+      "latitude": 21.42488888888889,
+      "longitude": 39.78622391403341
+    },
+    {
+      "name": "Pyramid Spectrum",
+      "latitude": 21.439235665490475,
+      "longitude": 39.78858374435062
+    },
+    {
+      "name": "Al-Sail Road",
+      "latitude": 21.48105712985133,
+      "longitude": 39.91652946958897
+    },
+    {
+      "name": "Maala Smart Parking",
+      "latitude": 21.433171918520415,
+      "longitude": 39.82726792288717
+    },
+    {
+      "name": "Al Khindama, As Sulaymaniyyah Parking",
+      "latitude": 21.430698981710805,
+      "longitude": 39.8335519959754
+    },
+    {
+      "name": "Al-Shoqiyah",
+      "latitude": 21.379831757945492,
+      "longitude": 39.78894613625563
+    },
+    {
+      "name": "Paradise Land",
+      "latitude": 21.45220000529888,
+      "longitude": 39.809188402826194
+    },
+    {
+      "name": "Al-Zahir",
+      "latitude": 21.44091509193725,
+      "longitude": 39.80285772748873
+    },
+    {
+      "name": "Alhokair Time",
+      "latitude": 21.44747641075627,
+      "longitude": 39.80783469731812
+    },
+    {
+      "name": "Al Mansur Parking",
+      "latitude": 21.428333747995786,
+      "longitude": 39.80640007034034
+    },
+    {
+      "name": "Prince Mansour Mosque",
+      "latitude": 21.424034907835615,
+      "longitude": 39.80108547842724
+    },
+    {
+      "name": "Cultural Center in Hira",
+      "latitude": 21.455831758764973,
+      "longitude": 39.869553863744365
+    },
+    {
+      "name": "Hotel Zahrat Al Saad 6",
+      "latitude": 21.443933378603887,
+      "longitude": 39.85975816527932
+    },
+    {
+      "name": "Misfilah Haram Parking",
+      "latitude": 21.410391892822833,
+      "longitude": 39.820804685162564
+    },
+    {
+      "name": "Al-Hafair Mosque",
+      "latitude": 21.4241928695346,
+      "longitude": 39.81439058070009
+    },
+    {
+      "name": "SAPTCO",
+      "latitude": 21.42988712108718,
+      "longitude": 39.81730555555556
+    },
+    {
+      "name": "Al-Biban",
+      "latitude": 21.428775,
+      "longitude": 39.811893
+    },
+    {
+      "name": "Al-Otaibiyah 1",
+      "latitude": 21.438885739386265,
+      "longitude": 39.818720530411035
+    },
+    {
+      "name": "Kuday 1",
+      "latitude": 21.394314596181754,
+      "longitude": 39.826034852609304
+    },
+    {
+      "name": "Mina Train Station 3",
+      "latitude": 21.418639959513687,
+      "longitude": 39.871360557777635
+    },
+    {
+      "name": "Mina Train Station 1",
+      "latitude": 21.398375951854273,
+      "longitude": 39.89720909157453
+    },
+    {
+      "name": "Maternity and Children Hospital",
+      "latitude": 21.375661032661576,
+      "longitude": 39.879844097050274
+    },
+    {
+      "name": "Muzdalifa Train Station",
+      "latitude": 21.384315587646807,
+      "longitude": 39.906144618639345
+    },
+    {
+      "name": "Arafat Parking 3",
+      "latitude": 21.381541336794292,
+      "longitude": 39.988537586251965
+    },
+    {
+      "name": "Arafat Parking 4",
+      "latitude": 21.332165700662895,
+      "longitude": 39.98828479912061
+    },
+    {
+      "name": "Arafat Parking 1",
+      "latitude": 21.331282681876527,
+      "longitude": 39.961980300810225
+    },
+    {
+      "name": "Arafat Parking 2",
+      "latitude": 21.35583978265487,
+      "longitude": 39.97016470737772
+    },
+    {
+      "name": "Al-Noor Station Mosque Masjid",
+      "latitude": 21.345711862724936,
+      "longitude": 39.753048081851084
+    },
+    {
+      "name": "Haton Tower",
+      "latitude": 21.454229895907126,
+      "longitude": 39.847013297265576
+    },
+    {
+      "name": "Al Hajj Street",
+      "latitude": 21.470565738595347,
+      "longitude": 39.84331873644615
+    },
+    {
+      "name": "Diouf Al Maqam Hotel",
+      "latitude": 21.447006457804896,
+      "longitude": 39.837661543114876
+    },
+    {
+      "name": "Ghazza",
+      "latitude": 21.428833333333333,
+      "longitude": 39.829166666666666
+    },
+    {
+      "name": "Sasco Station",
+      "latitude": 21.390823247372502,
+      "longitude": 39.70602880321192
+    },
+    {
+      "name": "DEPOT",
+      "latitude": 21.340459729677285,
+      "longitude": 39.62585445210181
+    }
+  ]
+}

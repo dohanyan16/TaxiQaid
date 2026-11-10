@@ -1,9 +1,661 @@
-<!-- Roster: planned module, no business logic is implemented yet. -->
+<!-- Roster files are selected by the administrator and processed locally in memory. -->
 <section class="view-section" id="view-roster">
-  <div class="card placeholder-card" aria-labelledby="roster-title">
-    <span class="placeholder-kicker">PLANNED MODULE</span>
-    <h2 id="roster-title">Roster</h2>
-    <p>Staff and shift roster.</p>
-    <div class="placeholder-state">Coming Soon</div>
-  </div>
+<div class="card">
+<div class="card-header-flex">
+<div>
+<h2>Roster Management</h2>
+<p class="preview-note">Import weekly rosters, manage driver schedules, and generate personal weekly schedules.</p>
+</div>
+</div>
+<div class="button-group-row">
+<button type="button" class="btn-primary" id="roster-upload-day" >Upload Day Shift Excel</button>
+<button type="button" class="btn-primary" id="roster-upload-night" >Upload Night Shift Excel</button>
+<button type="button" class="btn-primary" id="roster-validate" >Validate Roster</button>
+<button type="button" class="btn-primary" id="roster-generate-all" disabled>Generate All PDFs</button>
+<button type="button" class="btn-secondary" id="roster-download-zip" disabled>Download ZIP</button>
+<button type="button" class="btn-secondary" id="roster-whatsapp" >WhatsApp Delivery</button>
+<button type="button" class="btn-primary" id="roster-add-stop" >Add New Stop</button>
+<button type="button" class="btn-secondary" id="roster-manage-stops" >Manage Stops</button>
+</div>
+<p class="preview-note">Selected files are processed locally in memory. Nothing is uploaded or published. Download PDFs, ZIPs or the location catalog to keep a local copy; unsaved changes are lost when the session ends.</p>
+<p id="roster-active-week" role="status">No validated roster loaded.</p>
+<p id="roster-action-status" role="status" class="preview-note">
+</p>
+<input id="roster-day-file" type="file" accept=".xlsx" hidden/>
+<input id="roster-night-file" type="file" accept=".xlsx" hidden/>
+<input id="roster-location-file" type="file" accept=".json,application/json" hidden/>
+<div class="workflow-tabs" role="tablist" aria-label="Roster views">
+<button type="button" class="btn-secondary" role="tab" id="roster-daily-tab" aria-selected="true" tabindex="0" aria-controls="roster-daily-panel">Daily Overview</button>
+<button type="button" class="btn-secondary" role="tab" id="roster-weekly-tab" aria-selected="false" tabindex="-1" aria-controls="roster-weekly-panel">Weekly Roster</button>
+<button type="button" class="btn-secondary" role="tab" id="roster-personal-tab" aria-selected="false" tabindex="-1" aria-controls="roster-personal-panel">Driver Schedule &amp; PDF</button>
+<button type="button" class="btn-secondary" role="tab" id="roster-import-tab" aria-selected="false" tabindex="-1" aria-controls="roster-import-panel">Roster Import</button>
+<button type="button" class="btn-secondary" role="tab" id="roster-locations-tab" aria-selected="false" tabindex="-1" aria-controls="roster-locations-panel">Stops &amp; Locations</button>
+</div>
+</div>
+<section role="tabpanel" id="roster-daily-panel" aria-labelledby="roster-daily-tab" >
+<div class="card">
+<h2>Daily Overview</h2>
+<div class="workflow-grid">
+<div class="form-group">
+<label for="roster-daily-search">Search Records</label>
+<input id="roster-daily-search" type="search" autocomplete="off" placeholder="Search by Driver Name, Iqama or Car Plate..."/>
+</div>
+<div class="form-group">
+<label for="roster-date">Date</label>
+<select id="roster-date" >
+<option value="">Import a validated week</option>
+</select>
+</div>
+<div class="form-group">
+<label for="roster-daily-shift">Shift Type</label>
+<select id="roster-daily-shift" >
+<option value="">All Shifts</option>
+<option value="Day Shift">Day Shift</option>
+<option value="Night Shift">Night Shift</option>
+</select>
+</div>
+<div class="form-group">
+<label for="roster-duty">Duty Status</label>
+<select id="roster-duty" >
+<option value="">All Statuses</option>
+<option value="Working">Working</option>
+<option value="Rest Day">Rest Day</option>
+</select>
+</div>
+<div class="form-group">
+<label for="roster-zone">Starting Zone</label>
+<select id="roster-zone" >
+<option value="">All Zones</option>
+</select>
+</div>
+<div class="form-group">
+<label for="roster-stop">Assigned Stop</label>
+<select id="roster-stop" >
+<option value="">All Stops</option>
+</select>
+</div>
+</div>
+<p id="roster-daily-count" role="status">0 assignments · 0 working · 0 on Rest Day</p>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Daily assignments">
+<table class="tracker-table" id="roster-daily-table">
+<thead>
+<tr>
+<th scope="col">Driver Name</th>
+<th scope="col">Driver Iqama</th>
+<th scope="col">Date</th>
+<th scope="col">Shift Type</th>
+<th scope="col">Duty Status</th>
+<th scope="col">Starting Time</th>
+<th scope="col">Ending Time</th>
+<th scope="col">Car Plate</th>
+<th scope="col">Starting Zone</th>
+<th scope="col">Assigned Stop</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="10">
+<span class="table-empty">Import and validate both shift files to view assignments.</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="action-row">
+<button type="button" class="btn-secondary" id="roster-daily-previous" disabled>Previous</button>
+<span id="roster-daily-page" role="status">Page 1 of 1</span>
+<button type="button" class="btn-secondary" id="roster-daily-next" disabled>Next</button>
+</div>
+</div>
 </section>
+<section role="tabpanel" id="roster-weekly-panel" aria-labelledby="roster-weekly-tab" hidden>
+<div class="card">
+<h2>Weekly Roster</h2>
+<div class="workflow-grid">
+<div class="form-group">
+<label for="roster-weekly-search">Search Records</label>
+<input id="roster-weekly-search" type="search" autocomplete="off" placeholder="Search by Driver Name, Iqama or Car Plate..."/>
+</div>
+<div class="form-group">
+<label for="roster-week">Week</label>
+<select id="roster-week" >
+<option value="">No validated week</option>
+</select>
+</div>
+<div class="form-group">
+<label for="roster-weekly-shift">Shift Type</label>
+<select id="roster-weekly-shift" >
+<option value="">All Shifts</option>
+<option value="Day Shift">Day Shift</option>
+<option value="Night Shift">Night Shift</option>
+</select>
+</div>
+</div>
+<p id="roster-weekly-count" role="status">0 drivers found</p>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Weekly roster">
+<table class="tracker-table" id="roster-weekly-table">
+<thead>
+<tr>
+<th scope="col">Driver Name</th>
+<th scope="col">Driver Iqama</th>
+<th scope="col">Shift Type</th>
+<th scope="col">Sunday</th>
+<th scope="col">Monday</th>
+<th scope="col">Tuesday</th>
+<th scope="col">Wednesday</th>
+<th scope="col">Thursday</th>
+<th scope="col">Friday</th>
+<th scope="col">Saturday</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="10">
+<span class="table-empty">No validated roster loaded. Missing assignments are never classified as Rest Days.</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="action-row">
+<button type="button" class="btn-secondary" id="roster-weekly-previous" disabled>Previous</button>
+<span id="roster-weekly-page" role="status">Page 1 of 1</span>
+<button type="button" class="btn-secondary" id="roster-weekly-next" disabled>Next</button>
+</div>
+</div>
+</section>
+<section role="tabpanel" id="roster-personal-panel" aria-labelledby="roster-personal-tab" hidden>
+<div class="card">
+<h2>Driver Schedule &amp; PDF</h2>
+<div class="workflow-grid">
+<div class="form-group">
+<label for="roster-personal-search">Search Records</label>
+<input id="roster-personal-search" type="search" autocomplete="off" placeholder="Search by Driver Name or Iqama..."/>
+</div>
+<div class="form-group">
+<label for="roster-personal-name">Driver Name</label>
+<input id="roster-personal-name" type="text" readonly placeholder="Select an imported driver"/>
+</div>
+<div class="form-group">
+<label for="roster-personal-iqama">Driver Iqama</label>
+<input id="roster-personal-iqama" type="text" readonly/>
+</div>
+<div class="form-group">
+<label for="roster-personal-week">Selected Week</label>
+<input id="roster-personal-week" type="text" readonly/>
+</div>
+<div class="form-group">
+<label for="roster-personal-shift">Shift Type</label>
+<input id="roster-personal-shift" type="text" readonly/>
+</div>
+</div>
+<div class="button-group-row">
+<button type="button" class="btn-secondary" id="roster-preview-pdf" disabled>Preview Weekly PDF</button>
+<button type="button" class="btn-primary" id="roster-download-pdf" disabled>Download Weekly PDF</button>
+</div>
+<p class="preview-note">Times use Asia/Riyadh. Overnight shifts show the ending calendar date. Unmatched locations remain visible without a guessed link.</p>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Personal weekly schedule">
+<table class="tracker-table" id="roster-personal-table">
+<thead>
+<tr>
+<th scope="col">Day</th>
+<th scope="col">Date</th>
+<th scope="col">Duty Status</th>
+<th scope="col">Car Plate</th>
+<th scope="col">Starting Hour</th>
+<th scope="col">Ending Hour</th>
+<th scope="col">Starting Zone</th>
+<th scope="col">Assigned Stop</th>
+<th scope="col">Petrol Station</th>
+<th scope="col">Petrol Station Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="10">
+<span class="table-empty">Select a driver from the validated roster.</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3>Petrol Station Configuration</h3>
+<p class="preview-note">Per-driver station schedules require future approval. No station time is inferred from the reference PDF.</p>
+<div class="workflow-grid">
+<div class="form-group">
+<label for="roster-station-config">Petrol Station</label>
+<select id="roster-station-config" disabled>
+<option value="">Not Configured</option>
+</select>
+</div>
+<div class="form-group">
+<label for="roster-station-time-config">Petrol Station Time</label>
+<input id="roster-station-time-config" type="time" disabled/>
+</div>
+</div>
+</div>
+</section>
+<section role="tabpanel" id="roster-import-panel" aria-labelledby="roster-import-tab" hidden>
+<div class="card">
+<h2>Roster Import</h2>
+<p class="preview-note">Select both files for the same Sunday–Saturday week. Worksheet Roster uses B for Driver Name, C for Driver Iqama and D–J for seven dates in row 2. Each driver has one assignment row and one vehicle row. Maximum 10 MiB per workbook and 10,000 drivers per shift.</p>
+<dl class="roster-metrics">
+<div>
+<dt>Day Shift File</dt>
+<dd id="roster-day-name">Not selected</dd>
+</div>
+<div>
+<dt>Night Shift File</dt>
+<dd id="roster-night-name">Not selected</dd>
+</div>
+<div>
+<dt>Day Shift Drivers</dt>
+<dd id="roster-day-count">0</dd>
+</div>
+<div>
+<dt>Night Shift Drivers</dt>
+<dd id="roster-night-count">0</dd>
+</div>
+<div>
+<dt>Total Unique Drivers</dt>
+<dd id="roster-total-count">0</dd>
+</div>
+</dl>
+<p id="roster-validation-status" role="status">No files validated. A failed import leaves the previous validated preview intact.</p>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Import validation">
+<table class="tracker-table" id="roster-validation-table">
+<thead>
+<tr>
+<th scope="col">Severity</th>
+<th scope="col">Source</th>
+<th scope="col">Row</th>
+<th scope="col">Column</th>
+<th scope="col">Message</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="5">
+<span class="table-empty">No validation results yet.</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="action-row">
+<button type="button" class="btn-secondary" id="roster-validation-previous" disabled>Previous</button>
+<span id="roster-validation-page" role="status">Page 1 of 1</span>
+<button type="button" class="btn-secondary" id="roster-validation-next" disabled>Next</button>
+</div>
+<h3>PDF and ZIP Generation</h3>
+<p class="preview-note">One personal PDF per unique driver in the active validated week, across both shifts. Unknown stops are reported and remain unlinked. ZIP download is enabled only after every PDF succeeds. Catalog edits and successful roster replacement invalidate prior downloads.</p>
+<dl class="roster-metrics">
+<div>
+<dt>Total Drivers</dt>
+<dd id="roster-batch-total">0</dd>
+</div>
+<div>
+<dt>Generated PDFs</dt>
+<dd id="roster-batch-generated">0</dd>
+</div>
+<div>
+<dt>Remaining PDFs</dt>
+<dd id="roster-batch-remaining">0</dd>
+</div>
+<div>
+<dt>Generation Errors</dt>
+<dd id="roster-batch-errors">0</dd>
+</div>
+<div>
+<dt>Progress Percentage</dt>
+<dd id="roster-batch-percent">0</dd>
+</div>
+</dl>
+<label for="roster-batch-progress">Generation Progress</label>
+<progress id="roster-batch-progress" value="0" max="100">0%</progress>
+<p id="roster-batch-status" role="status">No PDFs generated.</p>
+<button type="button" class="btn-secondary" id="roster-cancel-batch" disabled>Cancel Generation</button>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="PDF generation errors">
+<table class="tracker-table" id="roster-generation-errors">
+<thead>
+<tr>
+<th scope="col">Driver Iqama</th>
+<th scope="col">Error</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="2">
+<span class="table-empty">No generation errors.</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section role="tabpanel" id="roster-locations-panel" aria-labelledby="roster-locations-tab" hidden>
+<div class="card">
+<h2>Stops &amp; Locations</h2>
+<p class="preview-note">Approved reference coordinates plus changes made in this session. Local changes are not permanently saved. Stops and explicit zone mappings are separate; stop coordinates never imply a zone destination.</p>
+<div class="button-group-row">
+<button type="button" class="btn-primary" id="roster-locations-add" >Add New Stop</button>
+<button type="button" class="btn-secondary" id="roster-location-edit" disabled>Edit Stop</button>
+<button type="button" class="btn-secondary" id="roster-location-map" disabled>View on Google Maps</button>
+<button type="button" class="btn-secondary" id="roster-location-export" >Export Location Catalog JSON</button>
+<button type="button" class="btn-secondary" id="roster-location-import" >Import Location Catalog JSON</button>
+</div>
+<div class="workflow-grid">
+<div class="form-group">
+<label for="roster-location-search">Search Records</label>
+<input id="roster-location-search" type="search" autocomplete="off" placeholder="Search by Stop Name or Alias..."/>
+</div>
+</div>
+<p id="roster-location-selection" role="status">Select a stop to edit or view it.</p>
+<dl class="roster-metrics">
+<div>
+<dt>Total Approved Locations</dt>
+<dd id="roster-mapping-approved">0</dd>
+</div>
+<div>
+<dt>Current Catalog Locations</dt>
+<dd id="roster-mapping-current">0</dd>
+</div>
+<div>
+<dt>Stops Used in Roster</dt>
+<dd id="roster-mapping-used">0</dd>
+</div>
+<div>
+<dt>Matched Stops</dt>
+<dd id="roster-mapping-matched">0</dd>
+</div>
+<div>
+<dt>Unmatched Stops</dt>
+<dd id="roster-mapping-unmatched">0</dd>
+</div>
+<div>
+<dt>Missing Coordinates</dt>
+<dd id="roster-mapping-missing">0</dd>
+</div>
+<div>
+<dt>Alias Conflicts</dt>
+<dd id="roster-mapping-conflicts">0</dd>
+</div>
+</dl>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Stops and locations">
+<table class="tracker-table" id="roster-locations-table">
+<thead>
+<tr>
+<th scope="col">Stop Name</th>
+<th scope="col">Latitude</th>
+<th scope="col">Longitude</th>
+<th scope="col">Google Maps Link</th>
+<th scope="col">Aliases</th>
+<th scope="col">Mapping Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="6">
+<span class="table-empty">Loading approved location configuration...</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="action-row">
+<button type="button" class="btn-secondary" id="roster-locations-previous" disabled>Previous</button>
+<span id="roster-locations-page" role="status">Page 1 of 1</span>
+<button type="button" class="btn-secondary" id="roster-locations-next" disabled>Next</button>
+</div>
+<h3>Unmatched Stops</h3>
+<p class="preview-note">Original names are preserved. Adding coordinates updates mapping results and subsequent PDFs without reimporting the roster.</p>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Unmatched stops">
+<table class="tracker-table" id="roster-unmatched-table">
+<thead>
+<tr>
+<th scope="col">Stop Name</th>
+<th scope="col">Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="2">
+<span class="table-empty">No unmatched stops in the current preview.</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+</section>
+<div class="modal-overlay" id="roster-stop-modal" aria-hidden="true">
+<div class="modal-content workflow-modal">
+<h2>Add New Stop</h2>
+<form id="roster-stop-form">
+<div class="workflow-grid">
+<div class="form-group">
+<label for="roster-stop-name">Stop Name</label>
+<input id="roster-stop-name" type="text" required maxlength="256"/>
+</div>
+<div class="form-group">
+<label for="roster-stop-latitude">Latitude</label>
+<input id="roster-stop-latitude" type="number" required min="-90" max="90" step="any"/>
+</div>
+<div class="form-group">
+<label for="roster-stop-longitude">Longitude</label>
+<input id="roster-stop-longitude" type="number" required min="-180" max="180" step="any"/>
+</div>
+<div class="form-group">
+<label for="roster-stop-url">Google Maps Link</label>
+<input id="roster-stop-url" type="text" readonly/>
+</div>
+<div class="form-group">
+<label for="roster-stop-aliases">Stop Aliases</label>
+<textarea id="roster-stop-aliases" rows="3" placeholder="One alternative name per line">
+</textarea>
+</div>
+<div class="form-group">
+<label for="roster-stop-remarks">Remarks</label>
+<textarea id="roster-stop-remarks" rows="3" maxlength="4096">
+</textarea>
+</div>
+</div>
+<p id="roster-stop-similar" role="status" class="preview-note">
+</p>
+<p id="roster-stop-impact" role="status" class="preview-note">
+</p>
+<div id="roster-stop-confirm-group" hidden>
+<label class="roster-check-label">
+<input id="roster-stop-confirm" type="checkbox"/>I reviewed the name, aliases and coordinate changes for this preview.</label>
+</div>
+<p id="roster-stop-error" role="alert" class="preview-note">
+</p>
+</form>
+<div class="action-row">
+<button type="button" class="btn-secondary" id="roster-stop-preview" disabled>Preview on Google Maps</button>
+<button type="button" class="btn-primary" id="roster-stop-save" >Add Stop</button>
+<button class="btn-secondary" type="button" data-people-close="roster-stop-modal">Cancel</button>
+</div>
+</div>
+</div>
+<div class="modal-overlay" id="roster-catalog-modal" aria-hidden="true">
+<div class="modal-content workflow-modal">
+<h2>Review Location Catalog Import</h2>
+<p id="roster-catalog-review" class="preview-note">
+</p>
+<label class="roster-check-label">
+<input type="checkbox" id="roster-catalog-confirm"/>I reviewed the replacement catalog and mapping impact.</label>
+<p class="preview-note">This replaces only the current in-memory catalog. No database or permanent configuration is changed.</p>
+<div class="action-row">
+<button type="button" class="btn-primary" id="roster-catalog-apply" >Replace Current Preview Catalog</button>
+<button class="btn-secondary" type="button" data-people-close="roster-catalog-modal">Close</button>
+</div>
+</div>
+</div>
+<div class="modal-overlay" id="roster-pdf-modal" aria-hidden="true">
+<div class="modal-content workflow-modal">
+<h2>Weekly PDF Preview</h2>
+<p class="preview-note">Private local PDF preview. This document is unpublished and has no public schedule URL.</p>
+<iframe id="roster-pdf-frame" title="Personal weekly PDF preview">
+</iframe>
+<p id="roster-pdf-status" role="status">
+</p>
+<div class="action-row">
+<button type="button" class="btn-secondary" id="roster-pdf-open" >Open Local PDF in New Tab</button>
+<button class="btn-secondary" type="button" data-people-close="roster-pdf-modal">Close</button>
+</div>
+</div>
+</div>
+<div class="modal-overlay" id="roster-whatsapp-modal" aria-hidden="true">
+<div class="modal-content workflow-modal">
+<h2>Weekly Schedule WhatsApp Delivery</h2>
+<div class="workflow-grid">
+<div class="form-group">
+<label for="roster-whatsapp-week">Selected Week</label>
+<input id="roster-whatsapp-week" type="text" readonly/>
+</div>
+<div class="form-group">
+<label for="roster-whatsapp-total">Total Drivers</label>
+<input id="roster-whatsapp-total" type="text" readonly/>
+</div>
+<div class="form-group">
+<label for="roster-whatsapp-phones">Drivers With Phone Numbers</label>
+<input id="roster-whatsapp-phones" type="text" readonly/>
+</div>
+<div class="form-group">
+<label for="roster-whatsapp-no-phones">Drivers Without Phone Numbers</label>
+<input id="roster-whatsapp-no-phones" type="text" readonly/>
+</div>
+<div class="form-group">
+<label for="roster-whatsapp-eligible">Eligible Recipients</label>
+<input id="roster-whatsapp-eligible" type="text" readonly/>
+</div>
+<div class="form-group">
+<label for="roster-whatsapp-ineligible">Ineligible Recipients</label>
+<input id="roster-whatsapp-ineligible" type="text" readonly/>
+</div>
+<div class="form-group">
+<label for="roster-whatsapp-pdfs">PDFs Ready</label>
+<input id="roster-whatsapp-pdfs" type="text" readonly/>
+</div>
+<div class="form-group">
+<label for="roster-whatsapp-connection">WhatsApp Connection Status</label>
+<input id="roster-whatsapp-connection" type="text" readonly/>
+</div>
+</div>
+<div class="button-group-row">
+<button type="button" class="btn-secondary" id="roster-whatsapp-settings" >WhatsApp Settings</button>
+<button type="button" class="btn-secondary" id="roster-whatsapp-preview" >Preview Message</button>
+<button type="button" class="btn-secondary" id="roster-whatsapp-recipients" >Review Recipients</button>
+<button type="button" class="btn-primary" id="roster-whatsapp-send" disabled aria-describedby="roster-whatsapp-status">Send Weekly Schedules</button>
+</div>
+<p id="roster-whatsapp-status" class="preview-note" role="status">WhatsApp integration pending — no messages have been sent.</p>
+<p id="roster-whatsapp-message" class="roster-message" hidden>Hello {{driver_name}}, your TaxiQaid weekly schedule for {{week_start}} to {{week_end}} is available. Please review your assigned shifts and rest days. Your personal weekly schedule is attached.</p>
+<p class="preview-note">Proposed English template only; provider approval and secure integration are pending. No real sending is available.</p>
+<h3>Future Delivery History</h3>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Future delivery history">
+<table class="tracker-table" id="roster-delivery-table">
+<thead>
+<tr>
+<th scope="col">Driver Iqama</th>
+<th scope="col">Driver Name</th>
+<th scope="col">Phone Number</th>
+<th scope="col">Roster Week</th>
+<th scope="col">Roster Version</th>
+<th scope="col">Delivery Status</th>
+<th scope="col">Sent At</th>
+<th scope="col">Delivered At</th>
+<th scope="col">Failure Reason</th>
+<th scope="col">Provider Message Reference</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="10">
+<span class="table-empty">No delivery history — WhatsApp integration pending.</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="action-row">
+<button class="btn-secondary" type="button" data-people-close="roster-whatsapp-modal">Close</button>
+</div>
+</div>
+</div>
+<div class="modal-overlay" id="roster-whatsapp-settings-modal" aria-hidden="true">
+<div class="modal-content workflow-modal">
+<h2>WhatsApp Settings</h2>
+<p class="preview-note">Unsaved configuration preview. Credentials belong only on a future secure backend.</p>
+<div class="workflow-grid">
+<div class="form-group">
+<label for="roster-whatsapp-account">WhatsApp Business Account Reference</label>
+<input id="roster-whatsapp-account" type="text" />
+</div>
+<div class="form-group">
+<label for="roster-whatsapp-phone-id">WhatsApp Phone Number ID</label>
+<input id="roster-whatsapp-phone-id" type="text" />
+</div>
+<div class="form-group">
+<label for="roster-whatsapp-template">Approved Message Template</label>
+<input id="roster-whatsapp-template" type="text" placeholder="Not configured"/>
+</div>
+<div class="form-group">
+<label for="roster-whatsapp-language">Template Language</label>
+<input id="roster-whatsapp-language" type="text" readonly value="English"/>
+</div>
+<div class="form-group">
+<label for="roster-whatsapp-attachment">Document Attachment Mode</label>
+<select id="roster-whatsapp-attachment" disabled>
+<option value="">Available after secure integration</option>
+</select>
+</div>
+<div class="form-group">
+<label for="roster-whatsapp-config-status">Connection Status</label>
+<input id="roster-whatsapp-config-status" type="text" readonly value="Not Configured"/>
+</div>
+</div>
+<p class="preview-note">Use the official WhatsApp Business Platform or an authorized provider. Consent, verified personal recipients, approved templates, permission checks and an explicitly confirmed batch are future requirements.</p>
+<div class="action-row">
+<button class="btn-secondary" type="button" data-people-close="roster-whatsapp-settings-modal">Close</button>
+</div>
+</div>
+</div>
+<div class="modal-overlay" id="roster-recipients-modal" aria-hidden="true">
+<div class="modal-content workflow-modal">
+<h2>Review Recipients</h2>
+<p class="preview-note">Imported driver identities only. Phone numbers, consent, approved roster version and recipient eligibility require future verified Drivers Management and backend integration. No driver receives the company-wide ZIP.</p>
+<div class="tracker-table-container" tabindex="0" role="region" aria-label="Future recipient review">
+<table class="tracker-table" id="roster-recipients-table">
+<thead>
+<tr>
+<th scope="col">Driver Iqama</th>
+<th scope="col">Driver Name</th>
+<th scope="col">Phone Number</th>
+<th scope="col">Roster Week</th>
+<th scope="col">Roster Version</th>
+<th scope="col">Personal PDF</th>
+<th scope="col">Eligibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td colspan="7">
+<span class="table-empty">No validated roster loaded.</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="action-row">
+<button type="button" class="btn-secondary" id="roster-recipients-previous" disabled>Previous</button>
+<span id="roster-recipients-page" role="status">Page 1 of 1</span>
+<button type="button" class="btn-secondary" id="roster-recipients-next" disabled>Next</button>
+</div>
+<div class="action-row">
+<button class="btn-secondary" type="button" data-people-close="roster-recipients-modal">Close</button>
+</div>
+</div>
+</div>

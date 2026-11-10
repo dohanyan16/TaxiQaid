@@ -1,6 +1,14 @@
 # TaxiQaid — Change History
 
-## Current — People operations frontend previews
+## Current — Local Roster Management
+
+- Replaced Roster with five views, paired Day/Night Excel validation, dynamic driver counts, overnight conflict checks and atomic same-week replacement.
+- Added shared roster searches, paginated schedules, the approved 76-location catalog, validated local stop/alias management and JSON import/export.
+- Added English-only landscape personal PDFs with actual Maps annotations and complete worker-based PDF/ZIP batches. Unknown locations remain unlinked; no reference station time is inferred.
+- Added disconnected WhatsApp settings/message/recipient/history interfaces; sending, publication, portal accounts and persistent data remain future work.
+- Preserved authentication, all other modules and Trip Check source. Added privacy exclusions, Roster regressions and PDF artifact verification; private references/outputs are not committed.
+
+## People operations frontend previews
 
 - Completed Driver Appeals with inclusive date/search filters, approved independent status/department controls and read-only source/audit details.
 - Completed Training Overview, Sessions and Attendance, including a 25-row picker with cross-page selection and explicit complete-dataset safeguards for 800+ drivers.

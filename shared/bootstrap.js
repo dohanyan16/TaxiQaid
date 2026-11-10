@@ -60,6 +60,7 @@ const SCRIPT_ORDER = [
   "modules/people/driver-appeals/appeals-policy.js",
   "modules/people/driver-appeals/driver-appeals.js",
   "modules/customer/helpdesk/helpdesk.js",
+  "modules/people/roster/roster-model.js",
   "modules/people/roster/roster.js"
 ];
 

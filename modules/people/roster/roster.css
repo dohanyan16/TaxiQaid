@@ -1,1 +1,21 @@
-/* Roster: placeholder module. Shared styles live in shared/common.css. */
+/* Roster reuses the orange controls, cards, grids and dialogs from shared/common.css. */
+.roster-metrics { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,12rem),1fr)); gap: var(--layout-gap); margin: 1rem 0; }
+.roster-metrics div { padding: .875rem; border: 1px solid var(--border-color); border-radius: var(--control-radius); min-width: 0; }
+.roster-metrics dt { color: var(--text-muted); font-size: var(--font-small); }
+.roster-metrics dd { margin: .4rem 0 0; font-weight: var(--weight-bold); overflow-wrap: anywhere; }
+#view-roster .tracker-table td { white-space: normal; overflow-wrap: anywhere; min-width: 7rem; max-width: 24rem; }
+#roster-weekly-table td:nth-child(n+4) { min-width: 13rem; max-width: 19rem; }
+.roster-day-description { margin: 0; display: grid; gap: .35rem; }
+.roster-day-description dt { color: var(--text-muted); font-size: var(--font-small); }
+.roster-day-description dd { margin: 0 0 .35rem; }
+.roster-rest, #view-roster .roster-rest:hover { background: #E5F3D6; }
+.roster-check-label { display: flex; gap: .75rem; align-items: center; min-height: var(--control-height); padding: .5rem 0; }
+.roster-check-label input { width: 1.25rem; height: 1.25rem; flex: 0 0 1.25rem; accent-color: var(--primary); }
+#roster-batch-progress { display: block; width: 100%; height: 1.25rem; accent-color: var(--primary); margin: .75rem 0; }
+#roster-pdf-frame { width: 100%; height: 65dvh; border: 1px solid var(--border-color); border-radius: var(--control-radius); }
+#roster-pdf-modal .workflow-modal { max-width: 75rem; }
+.roster-message { border-left: .25rem solid var(--primary); padding: 1rem; background: var(--readonly-bg); overflow-wrap: anywhere; line-height: 1.6; }
+#roster-locations-table a, #roster-personal-table a, #roster-daily-table a { color: var(--text-main); text-underline-offset: .2rem; }
+#roster-stop-url { overflow-wrap: anywhere; }
+
+#roster-weekly-table th small { display: block; font-weight: var(--weight-normal); margin-top: .25rem; }

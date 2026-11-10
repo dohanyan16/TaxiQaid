@@ -27,7 +27,7 @@ Version **1.2** — each screen has its own HTML, CSS, and JavaScript files.
 - `modules/people/driver-appeals/`: driver-origin appeal queue, inclusive filters and unsaved administrative assignment/status controls.
 - `modules/people/training/`: compliance, sessions, attendance and bounded cross-page driver selection previews.
 - `modules/people/driver-deductions/`: balances, expenses and partial deduction previews; NCR points remain separate from SAR.
-- `modules/people/roster/`: retained placeholder; future reviewed/versioned roster and personal PDF architecture only.
+- `modules/people/roster/`: local Day/Night Excel validation, daily/weekly/personal schedules, stop catalog editing and English interactive PDF/ZIP generation; WhatsApp and publication remain disconnected.
 - `modules/operations/fuel/`: Fuel overview, empty record details/editing and conditional fueling form previews.
 - `shared/`: navigation, layout, common CSS, Supabase configuration, general utilities, and data helpers.
 - `assets/`: images.
@@ -49,13 +49,13 @@ GitHub Pages access is not private just because the application displays a login
 
 ## Frontend preparation phase
 
-Operational databases are disconnected. Legacy spreadsheet and Apps Script endpoints are disabled. All operational views start empty, and backend-dependent actions explain that database integration is pending. No operational records are saved locally or remotely. Fuel Tracker includes Depot/Outside Depot form conditions and live SAR totals with the approved 2.18 SAR/L Depot tariff and manual Outside Depot pricing. Existing Supabase authentication and roles remain on the same project.
+Operational databases are disconnected. Legacy spreadsheet and Apps Script endpoints are disabled. All operational views start empty, and backend-dependent actions explain that database integration is pending. No operational records are saved locally or remotely. The owner-authorized Roster exception processes selected Excel files in memory and permits real local PDF/ZIP and non-personal location JSON downloads. Fuel Tracker includes Depot/Outside Depot form conditions and live SAR totals with the approved 2.18 SAR/L Depot tariff and manual Outside Depot pricing. Existing Supabase authentication and roles remain on the same project.
 
 See [the workflow specification](docs/TAXIQAID_WORKFLOW_SPEC.md) for all field definitions, status options, future source/request/work-order relationships, identifier formats and KSA timestamp rules. No database schemas or migrations are included. Database integration remains a separate future phase. Validated changes are integrated into main following AGENTS.md and the repository owner’s authorization.
 
 ## Future Driver Portal
 
-The administrative app has 16 modules. Driver Weekly Schedule has been retired; personal schedules belong exclusively to the future Driver Portal → My Schedule. My Profile, My Documents, My Signatures, My NCRs, My Appeals and My Training are also planned. The portal and its account/data connections are not implemented. See [the workflow specification](docs/TAXIQAID_WORKFLOW_SPEC.md#future-driver-portal--planned-only).
+The administrative app has 16 modules. Driver Weekly Schedule has been retired; published personal driver access belongs to the future Driver Portal → My Schedule. Administrators now have the separately authorized local Roster Management preview. My Profile, My Documents, My Signatures, My NCRs, My Appeals and My Training are also planned. The portal and its account/data connections are not implemented. See [the workflow specification](docs/TAXIQAID_WORKFLOW_SPEC.md#future-driver-portal--planned-only).
 
 ## Shared interface standards
 
@@ -63,6 +63,14 @@ The administrative app has 16 modules. Driver Weekly Schedule has been retired; 
 
 ## Validation
 
-Run `node --test tests/*.test.cjs` for the retained pure compatibility tests. With Playwright and Chromium available and a local HTTP server running, run `node tests/workflow.browser.cjs`, `node tests/ui.browser.cjs` and `node tests/people.browser.cjs`. Set `TAXIQAID_URL`, `TAXIQAID_CHROMIUM` or `TAXIQAID_SCREENSHOTS` to override defaults. Browser checks use mocked authentication and never live credentials or operational data. Screenshots are written to `docs/screenshots/` by default.
+Run `node --test tests/*.test.cjs` for the retained pure compatibility tests. With Playwright and Chromium available and a local HTTP server running, run `node tests/workflow.browser.cjs`, `node tests/ui.browser.cjs`, `node tests/people.browser.cjs` and `node tests/roster.browser.cjs`. Set `TAXIQAID_URL`, `TAXIQAID_CHROMIUM` or `TAXIQAID_SCREENSHOTS` to override defaults. Browser checks use mocked authentication and never live credentials or operational data. Screenshots are written to `docs/screenshots/` by default.
 
 The former spreadsheet persistence tests were replaced because spreadsheet reads/writes are intentionally retired. Live authentication must be verified separately with an existing authorized account.
+
+## Roster local file workflows
+
+Choose the Day Shift and Night Shift `.xlsx` files, then Validate Roster. A successful same-week validation replaces the current preview; errors preserve the previous week. Imported information stays in memory. Review daily/weekly assignments and unmatched stops, select a driver for a personal PDF, or Generate All PDFs followed by Download ZIP. Phone matching, WhatsApp sending, versioned publication and Driver Portal access require future secure integration.
+
+The supplied location catalog is public non-personal configuration. Add/Edit Stop changes only the current preview; download the updated JSON to retain it. A reviewed full catalog import requires explicit replacement confirmation. No station time is inferred from the sample PDF.
+
+Keep private workbooks, personal PDFs/ZIPs and private screenshots outside this repository. For tests, set `TAXIQAID_ROSTER_OUTPUT` to a private directory. The Roster browser suite generates isolated synthetic artifacts there; run `python tests/verify-roster-pdfs.py <that-directory>` with PyMuPDF installed to inspect all generated synthetic PDFs and their map annotations. Optional `TAXIQAID_DAY_FILE` and `TAXIQAID_NIGHT_FILE` paths exercise the private reference workbooks without committing them. Local browser tests require Playwright/Chromium; XLSX and ZIP helpers are vendored. See [the Roster review](docs/ROSTER_REVIEW.md) for validation evidence and [the full workflow](docs/TAXIQAID_WORKFLOW_SPEC.md#roster-management--implemented-local-frontend).
