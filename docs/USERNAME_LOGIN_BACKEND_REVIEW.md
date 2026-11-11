@@ -236,3 +236,7 @@ tests/identity-mapping.test.cjs
 tests/roster.browser.cjs
 tests/username-broker.test.cjs
 ```
+
+## Separate restricted pooler diagnostic preparation
+
+The owner reports the broker is manually deployed with its three activation flags false, the restricted DB URL configured and privilege checks passed. A [separate temporary pooler diagnostic](POOLER_CONNECTIVITY_DIAGNOSTIC.md) is now prepared for review, without changing this broker or its access/mapping functions. Its administrator authorization precedes all metadata-only database work; strict TLS, actual role identity/SET authority and cleanup are checked. It is not deployed or enabled by this preparation, and a connectivity result is not a username-login or production-cutover result.

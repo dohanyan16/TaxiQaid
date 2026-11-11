@@ -68,3 +68,9 @@ Future Google Sheets access remains a separate protected API: verified Supabase 
 ## Earlier direct-Auth diagnostic
 
 The [local-only technical form](LOCAL_MASTER_SMOKE_TEST.md) remains an optional developer diagnostic. The owner reports the genuine direct-Auth/access test passed. It does not activate the username broker, and the current owner workflow uses the installation-free browser plan instead of a local server or CLI.
+
+## Owner-reported disabled broker deployment and proposed pooler diagnostic
+
+The owner now reports that `login-with-identifier` was manually deployed, all three activation flags remain false, `TAXIQAID_BROKER_DB_URL` is configured and the existing SQL privilege checks passed. These owner-side actions supersede earlier undeployed status; they are not agent-run deployment/connectivity evidence. This preparation performs no deployment, database/role change, activation or main integration.
+
+A separate [temporary administrator-authorized pooler diagnostic](POOLER_CONNECTIVITY_DIAGNOSTIC.md) is prepared for review. It verifies a genuine project-user JWT against a protected, owner-issued short-lived administrator UID grant before reading the connection secret. It checks strict TLS, actual restricted login/backend identities, existing SET LOCAL ROLE authority, rollback/reset and closure using metadata only. It calls neither login-with-identifier nor get-my-access and returns only PASS/FAIL. Exact Dashboard/browser-only steps and teardown are documented; genuine hosted connectivity remains pending separate approval and owner execution. The existing public login stays disabled.

@@ -1,5 +1,5 @@
 {
   "compilerOptions": {"checkJs": false, "strict": true},
   "lock": "deno.lock",
-  "tasks": {"check": "deno check functions/login-with-identifier/index.ts functions/get-my-access/index.ts functions/_shared/authorization.ts functions/_shared/broker-store.ts dashboard/login-with-identifier.ts"}
+  "tasks": {"check": "deno check functions/login-with-identifier/index.ts functions/get-my-access/index.ts functions/_shared/authorization.ts functions/_shared/broker-store.ts dashboard/login-with-identifier.ts functions/check-broker-pooler/index.ts functions/_diagnostics/pooler-db.ts dashboard/check-broker-pooler.ts"}
 }

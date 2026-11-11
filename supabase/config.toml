@@ -7,3 +7,7 @@ verify_jwt = false
 # Retain JWT verification and the authenticated-user wrapper. Never weaken it to clear a 401.
 [functions.get-my-access]
 verify_jwt = true
+
+# Review-only temporary administrator diagnostic. No broker activation; no deploy is performed by this file.
+[functions.check-broker-pooler]
+verify_jwt = true
