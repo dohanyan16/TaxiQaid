@@ -32,38 +32,46 @@ REVOKE ALL ON FUNCTION taxiqaid_auth_api.consume_login_counters(text,text,text) 
 GRANT EXECUTE ON FUNCTION taxiqaid_auth_api.consume_login_counters(text,text,text) TO taxiqaid_auth_lookup_owner;
 
 CREATE FUNCTION taxiqaid_auth_api.begin_login_attempt(p_identifier text,p_ip text,p_account text,p_global text)
-RETURNS TABLE(allowed boolean,uid uuid,email text,status text)
+RETURNS TABLE(allowed boolean,uid uuid,email text,status text,mapping_revision bigint)
 LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = pg_catalog,pg_temp SET row_security = on AS $$
-DECLARE match_count integer; match_uid uuid; match_email text; match_status text;
+DECLARE match_count integer; match_uid uuid; match_email text; match_status text; match_revision bigint;
 BEGIN
  -- There is no separately callable unthrottled identifier/email lookup for the runtime role.
  IF NOT taxiqaid_auth_api.consume_login_counters(p_ip,p_account,p_global) THEN
-  RETURN QUERY SELECT false,NULL::uuid,NULL::text,NULL::text; RETURN;
+  RETURN QUERY SELECT false,NULL::uuid,NULL::text,NULL::text,NULL::bigint; RETURN;
  END IF;
  -- Numeric Iqamas cannot resolve an identity until separately approved provisioning exists.
  IF p_identifier IS NULL OR p_identifier !~ '^[a-z][a-z0-9]{1,47}$' THEN
-  RETURN QUERY SELECT true,NULL::uuid,NULL::text,NULL::text; RETURN;
+  RETURN QUERY SELECT true,NULL::uuid,NULL::text,NULL::text,NULL::bigint; RETURN;
  END IF;
- SELECT count(*),(pg_catalog.array_agg(m.user_id))[1],(pg_catalog.array_agg(m.email))[1],(pg_catalog.array_agg(m.status))[1]
- INTO match_count,match_uid,match_email,match_status
- FROM (SELECT a.user_id,u.email,a.status FROM taxiqaid_private.user_accounts AS a JOIN auth.users AS u ON u.id=a.user_id
-  WHERE a.username=p_identifier AND a.account_type='management' AND a.status='active' LIMIT 2) AS m;
- IF match_count<>1 THEN RETURN QUERY SELECT true,NULL::uuid,NULL::text,NULL::text; RETURN; END IF;
- IF match_uid IS NULL OR match_email IS NULL OR match_email='' THEN
-  RETURN QUERY SELECT true,NULL::uuid,NULL::text,NULL::text; RETURN;
+ -- Resolve exactly one management username first, including disabled duplicates; no Auth table read occurs.
+ SELECT count(*),(pg_catalog.array_agg(a.user_id))[1],(pg_catalog.array_agg(a.status))[1]
+ INTO match_count,match_uid,match_status
+ FROM (SELECT a.user_id,a.status FROM taxiqaid_private.user_accounts AS a
+  WHERE a.username=p_identifier AND a.account_type='management' LIMIT 2) AS a;
+ IF match_count<>1 OR match_status IS DISTINCT FROM 'active' THEN
+  RETURN QUERY SELECT true,NULL::uuid,NULL::text,NULL::text,NULL::bigint; RETURN;
  END IF;
- RETURN QUERY SELECT true,match_uid,match_email,match_status;
+ SELECT count(*),(pg_catalog.array_agg(m.technical_email))[1],(pg_catalog.array_agg(m.revision))[1]
+ INTO match_count,match_email,match_revision
+ FROM (SELECT m.technical_email,m.revision FROM taxiqaid_private.auth_login_identities AS m
+  WHERE m.user_id=match_uid AND m.is_enabled=true LIMIT 2) AS m;
+ IF match_count<>1 OR match_email IS NULL OR match_email='' OR match_revision IS NULL OR match_revision<1 THEN
+  RETURN QUERY SELECT true,NULL::uuid,NULL::text,NULL::text,NULL::bigint; RETURN;
+ END IF;
+ RETURN QUERY SELECT true,match_uid,match_email,match_status,match_revision;
 END $$;
 ALTER FUNCTION taxiqaid_auth_api.begin_login_attempt(text,text,text,text) OWNER TO taxiqaid_auth_lookup_owner;
 REVOKE ALL ON FUNCTION taxiqaid_auth_api.begin_login_attempt(text,text,text,text) FROM PUBLIC,anon,authenticated,taxiqaid_auth_login;
 GRANT EXECUTE ON FUNCTION taxiqaid_auth_api.begin_login_attempt(text,text,text,text) TO taxiqaid_auth_backend;
 
-CREATE FUNCTION taxiqaid_auth_api.get_management_access(p_uid uuid)
+CREATE FUNCTION taxiqaid_auth_api.get_management_access(p_uid uuid,p_mapping_revision bigint)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER
 SET search_path = pg_catalog,pg_temp SET row_security = on AS $$
 DECLARE profile record; memberships jsonb; defaults jsonb; effects jsonb;
 BEGIN
+ IF p_mapping_revision IS NULL OR p_mapping_revision<1 OR NOT EXISTS(SELECT FROM taxiqaid_private.auth_login_identities AS m WHERE m.user_id=p_uid AND m.is_enabled=true AND m.revision=p_mapping_revision) THEN RAISE EXCEPTION 'Access unavailable.' USING ERRCODE='28000'; END IF;
  SELECT a.user_id,a.username,a.full_name,a.account_type,a.role_key,a.status INTO STRICT profile
  FROM taxiqaid_private.user_accounts AS a WHERE a.user_id=p_uid AND a.status='active' AND a.account_type='management';
  IF profile.full_name IS NULL OR pg_catalog.btrim(profile.full_name)='' THEN RAISE EXCEPTION 'Access unavailable.' USING ERRCODE='28000'; END IF;
@@ -84,9 +92,9 @@ BEGIN
   'scope',pg_catalog.jsonb_build_object('departments','[]'::jsonb,'driverRecordRefs','[]'::jsonb,'documentIds','[]'::jsonb),
   'validUntil',pg_catalog.floor(EXTRACT(epoch FROM pg_catalog.statement_timestamp())*1000)+60000);
 END $$;
-ALTER FUNCTION taxiqaid_auth_api.get_management_access(uuid) OWNER TO taxiqaid_auth_access_owner;
-REVOKE ALL ON FUNCTION taxiqaid_auth_api.get_management_access(uuid) FROM PUBLIC,anon,authenticated,taxiqaid_auth_login;
-GRANT EXECUTE ON FUNCTION taxiqaid_auth_api.get_management_access(uuid) TO taxiqaid_auth_backend;
+ALTER FUNCTION taxiqaid_auth_api.get_management_access(uuid,bigint) OWNER TO taxiqaid_auth_access_owner;
+REVOKE ALL ON FUNCTION taxiqaid_auth_api.get_management_access(uuid,bigint) FROM PUBLIC,anon,authenticated,taxiqaid_auth_login;
+GRANT EXECUTE ON FUNCTION taxiqaid_auth_api.get_management_access(uuid,bigint) TO taxiqaid_auth_backend;
 
 CREATE FUNCTION taxiqaid_auth_api.prune_login_counters(p_limit integer DEFAULT 1000)
 RETURNS integer LANGUAGE plpgsql SECURITY DEFINER
@@ -101,6 +109,48 @@ END $$;
 ALTER FUNCTION taxiqaid_auth_api.prune_login_counters(integer) OWNER TO taxiqaid_auth_rate_owner;
 REVOKE ALL ON FUNCTION taxiqaid_auth_api.prune_login_counters(integer) FROM PUBLIC,anon,authenticated,taxiqaid_auth_backend,taxiqaid_auth_login;
 GRANT EXECUTE ON FUNCTION taxiqaid_auth_api.prune_login_counters(integer) TO postgres;
+-- Private administrative provisioning only. No grants/policies/triggers are added on managed auth.users.
+CREATE FUNCTION taxiqaid_auth_api.synchronize_management_identity(p_uid uuid,p_expected_username text,p_expected_revision bigint)
+RETURNS boolean LANGUAGE plpgsql SECURITY INVOKER
+SET search_path = pg_catalog,pg_temp SET row_security = on AS $$
+DECLARE source_email text; matches integer; existing record;
+BEGIN
+ IF p_uid IS NULL OR p_expected_username IS NULL OR p_expected_username !~ '^[a-z][a-z0-9]{1,47}$' OR p_expected_revision IS NULL OR p_expected_revision<0 THEN RAISE EXCEPTION 'Identity synchronization unavailable.'; END IF;
+ SELECT count(*) INTO matches FROM taxiqaid_private.user_accounts AS a WHERE a.username=p_expected_username AND a.account_type='management';
+ IF matches<>1 OR NOT EXISTS(SELECT FROM taxiqaid_private.user_accounts AS a WHERE a.user_id=p_uid AND a.username=p_expected_username AND a.account_type='management' AND a.status='active') THEN RAISE EXCEPTION 'Identity synchronization unavailable.'; END IF;
+ -- Reads authoritative columns under the Dashboard administrator's existing authority, never metadata or a supplied email.
+ SELECT u.email INTO STRICT source_email FROM auth.users AS u WHERE u.id=p_uid;
+ IF source_email IS NULL OR source_email='' THEN RAISE EXCEPTION 'Identity synchronization unavailable.'; END IF;
+ SELECT m.* INTO existing FROM taxiqaid_private.auth_login_identities AS m WHERE m.user_id=p_uid FOR UPDATE;
+ IF NOT FOUND THEN
+  IF p_expected_revision<>0 THEN RAISE EXCEPTION 'Identity synchronization unavailable.'; END IF;
+  INSERT INTO taxiqaid_private.auth_login_identities(user_id,technical_email,is_enabled,revision,updated_by_db_role)
+  VALUES(p_uid,source_email,true,1,session_user);
+ ELSE
+  IF existing.revision<>p_expected_revision OR existing.revision=9223372036854775807 OR (existing.is_enabled AND existing.technical_email IS DISTINCT FROM source_email) THEN RAISE EXCEPTION 'Identity synchronization unavailable.'; END IF;
+  UPDATE taxiqaid_private.auth_login_identities SET technical_email=source_email,is_enabled=true,revision=existing.revision+1,synchronized_at=pg_catalog.clock_timestamp(),updated_by_db_role=session_user WHERE user_id=p_uid;
+ END IF;
+ RETURN true;
+EXCEPTION WHEN OTHERS THEN
+ -- Do not echo an email/UID through constraint error DETAIL or a result. The transaction/subtransaction rolls back.
+ RAISE EXCEPTION 'Identity synchronization unavailable.' USING ERRCODE='P0001';
+END $$;
+REVOKE ALL ON FUNCTION taxiqaid_auth_api.synchronize_management_identity(uuid,text,bigint) FROM PUBLIC,anon,authenticated,taxiqaid_auth_login,taxiqaid_auth_backend,taxiqaid_auth_lookup_owner,taxiqaid_auth_access_owner,taxiqaid_auth_rate_owner;
+GRANT EXECUTE ON FUNCTION taxiqaid_auth_api.synchronize_management_identity(uuid,text,bigint) TO postgres;
+
+CREATE FUNCTION taxiqaid_auth_api.suspend_management_identity(p_uid uuid,p_expected_revision bigint)
+RETURNS boolean LANGUAGE plpgsql SECURITY INVOKER
+SET search_path = pg_catalog,pg_temp SET row_security = on AS $$
+BEGIN
+ IF p_expected_revision IS NULL OR p_expected_revision<1 OR p_expected_revision=9223372036854775807 THEN RAISE EXCEPTION 'Identity suspension unavailable.'; END IF;
+ UPDATE taxiqaid_private.auth_login_identities SET is_enabled=false,revision=revision+1,synchronized_at=pg_catalog.clock_timestamp(),updated_by_db_role=session_user WHERE user_id=p_uid AND revision=p_expected_revision;
+ IF NOT FOUND THEN RAISE EXCEPTION 'Identity suspension unavailable.'; END IF;
+ RETURN true;
+EXCEPTION WHEN OTHERS THEN RAISE EXCEPTION 'Identity suspension unavailable.' USING ERRCODE='P0001';
+END $$;
+REVOKE ALL ON FUNCTION taxiqaid_auth_api.suspend_management_identity(uuid,bigint) FROM PUBLIC,anon,authenticated,taxiqaid_auth_login,taxiqaid_auth_backend,taxiqaid_auth_lookup_owner,taxiqaid_auth_access_owner,taxiqaid_auth_rate_owner;
+GRANT EXECUTE ON FUNCTION taxiqaid_auth_api.suspend_management_identity(uuid,bigint) TO postgres;
+
 REVOKE CREATE ON SCHEMA taxiqaid_auth_api FROM taxiqaid_auth_lookup_owner,taxiqaid_auth_access_owner,taxiqaid_auth_rate_owner;
 REVOKE taxiqaid_auth_lookup_owner,taxiqaid_auth_access_owner,taxiqaid_auth_rate_owner FROM postgres;
 COMMIT;

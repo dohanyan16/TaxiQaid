@@ -53,13 +53,14 @@ function createLoginHandler(deps){
    if(!attempt||typeof attempt.allowed!=='boolean')throw new Error('attempt');
    if(!attempt.allowed)return response(429,{error:FAILURE},origin);
    const account=attempt.account;
+   if(account&&(typeof account.mappingRevision!=='string'||!/^[1-9][0-9]{0,18}$/.test(account.mappingRevision)||BigInt(account.mappingRevision)>9223372036854775807n))throw new Error('mapping-not-verified');
    // Reserved .invalid domain is a server-only timing equalizer, never a provisioned identity or browser mapping.
    phase='auth';const result=await deps.passwordSignIn(account?.email||'unavailable@taxiqaid.invalid',input.password);input.password='';
    signedIn=Boolean(result?.session);
    if(result?.error){const status=Number(result.error.status);return response(status===429?429:status>=500||status===0?503:401,{error:FAILURE},origin);}
    phase='credentials';
    if(!result?.user?.id||!account||result.user.id!==account.uid||account.status!=='active'||!signedIn)throw new Error('credentials');
-   phase='database';const access=await deps.loadAccess(result.user.id);
+   phase='database';const access=await deps.loadAccess(result.user.id,account.mappingRevision);
    if(access?.uid!==account.uid||access.account?.status!=='active'||access.account?.type!=='management')throw new Error('access');
    phase='session';const body=safeTokenSession(result.session);const outgoing=response(200,body,origin);signedIn=false;return outgoing;
   }catch{
@@ -85,6 +86,7 @@ function createAccessHandler(deps){
 /** Restricted broker SQL API. No direct identity/Auth table reads or broad connection identities. */
 const projectRef='mqkflwsvnzcaylxtvsje';
 type Sql=ReturnType<typeof postgres>;
+const validRevision=(value:unknown):value is string=>typeof value==='string'&&/^[1-9][0-9]{0,18}$/.test(value)&&BigInt(value)<=9223372036854775807n;
 function brokerConnectionOptions(connection:string,ca?:string){
  let target:URL;try{target=new URL(connection);}catch{throw new Error('Restricted broker connection required.');}
  const pooler=target.hostname.endsWith('.pooler.supabase.com');
@@ -109,17 +111,17 @@ function createBrokerStore(sql:Sql){
  }
  async function beginAttempt(identifier:string,keys:string[]){
   if(keys.length!==3||keys.some(key=>!/^[0-9a-f]{64}$/.test(key))||new Set(keys).size!==3)throw new Error('Invalid attempt buckets.');
-  const rows=await transaction(false,async tx=>await tx`SELECT allowed,uid,email,status FROM taxiqaid_auth_api.begin_login_attempt(${identifier},${keys[0]},${keys[1]},${keys[2]})`);
+  const rows=await transaction(false,async tx=>await tx`SELECT allowed,uid,email,status,mapping_revision::text AS mapping_revision FROM taxiqaid_auth_api.begin_login_attempt(${identifier},${keys[0]},${keys[1]},${keys[2]})`);
   if(rows.length!==1||typeof rows[0].allowed!=='boolean')throw new Error('Login unavailable.');
   const row=rows[0];
   if(!row.allowed)return {allowed:false,account:null};
   if(row.uid===null&&row.email===null)return {allowed:true,account:null};
-  if(typeof row.uid!=='string'||typeof row.email!=='string'||!row.email||row.status!=='active')throw new Error('Login unavailable.');
-  return {allowed:true,account:{uid:row.uid,email:row.email,status:row.status}};
+  if(typeof row.uid!=='string'||typeof row.email!=='string'||!row.email||row.status!=='active'||!validRevision(row.mapping_revision))throw new Error('Login unavailable.');
+  return {allowed:true,account:{uid:row.uid,email:row.email,status:row.status,mappingRevision:row.mapping_revision}};
  }
- async function loadAccess(uid:string){
-  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid))throw new Error('Access unavailable.');
-  const rows=await transaction(true,async tx=>await tx`SELECT taxiqaid_auth_api.get_management_access(${uid}::uuid) AS access`);
+ async function loadAccess(uid:string,mappingRevision:string){
+  if(!validRevision(mappingRevision)||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid))throw new Error('Access unavailable.');
+  const rows=await transaction(true,async tx=>await tx`SELECT taxiqaid_auth_api.get_management_access(${uid}::uuid,${mappingRevision}::bigint) AS access`);
   const raw=rows.length===1?rows[0].access:null;
   if(raw?.version!==1||raw.uid!==uid||raw.account?.uid!==uid||raw.account?.status!=='active'||raw.account?.type!=='management'||!raw.account?.fullName||!Array.isArray(raw.permissions?.roleDefaults)||!raw.permissions?.overrides)throw new Error('Access unavailable.');
   return raw;
@@ -144,7 +146,7 @@ Deno.serve(request=>{
  const auth=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false,debug:false},global:{fetch:(input,init)=>fetch(input,{...init,redirect:'error',signal:AbortSignal.timeout(10000)})}});
  return createLoginHandler({origins,ready:Boolean(configured&&store),rateSecret:secret,
   clientIp:(req:Request)=>trustedClientIp(req,header,env('TAXIQAID_TRUSTED_IP_HEADER_VERIFIED')==='true'),
-  beginAttempt:(identifier:string,keys:string[])=>store!.beginAttempt(identifier,keys),loadAccess:(uid:string)=>store!.loadAccess(uid),
+  beginAttempt:(identifier:string,keys:string[])=>store!.beginAttempt(identifier,keys),loadAccess:(uid:string,revision:string)=>store!.loadAccess(uid,revision),
   passwordSignIn:async(email:string,password:string)=>{const {data,error}=await auth.auth.signInWithPassword({email,password});return {...data,error:error?{status:error.status||0}:null};},
   signOut:()=>auth.auth.signOut({scope:'local'})})(request);
 });

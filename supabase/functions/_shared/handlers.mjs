@@ -14,13 +14,14 @@ export function createLoginHandler(deps){
    if(!attempt||typeof attempt.allowed!=='boolean')throw new Error('attempt');
    if(!attempt.allowed)return response(429,{error:FAILURE},origin);
    const account=attempt.account;
+   if(account&&(typeof account.mappingRevision!=='string'||!/^[1-9][0-9]{0,18}$/.test(account.mappingRevision)||BigInt(account.mappingRevision)>9223372036854775807n))throw new Error('mapping-not-verified');
    // Reserved .invalid domain is a server-only timing equalizer, never a provisioned identity or browser mapping.
    phase='auth';const result=await deps.passwordSignIn(account?.email||'unavailable@taxiqaid.invalid',input.password);input.password='';
    signedIn=Boolean(result?.session);
    if(result?.error){const status=Number(result.error.status);return response(status===429?429:status>=500||status===0?503:401,{error:FAILURE},origin);}
    phase='credentials';
    if(!result?.user?.id||!account||result.user.id!==account.uid||account.status!=='active'||!signedIn)throw new Error('credentials');
-   phase='database';const access=await deps.loadAccess(result.user.id);
+   phase='database';const access=await deps.loadAccess(result.user.id,account.mappingRevision);
    if(access?.uid!==account.uid||access.account?.status!=='active'||access.account?.type!=='management')throw new Error('access');
    phase='session';const body=safeTokenSession(result.session);const outgoing=response(200,body,origin);signedIn=false;return outgoing;
   }catch{

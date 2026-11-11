@@ -2,6 +2,7 @@
 import postgres from 'npm:postgres@4.1.0';
 const projectRef='mqkflwsvnzcaylxtvsje';
 type Sql=ReturnType<typeof postgres>;
+const validRevision=(value:unknown):value is string=>typeof value==='string'&&/^[1-9][0-9]{0,18}$/.test(value)&&BigInt(value)<=9223372036854775807n;
 export function brokerConnectionOptions(connection:string,ca?:string){
  let target:URL;try{target=new URL(connection);}catch{throw new Error('Restricted broker connection required.');}
  const pooler=target.hostname.endsWith('.pooler.supabase.com');
@@ -26,17 +27,17 @@ export function createBrokerStore(sql:Sql){
  }
  async function beginAttempt(identifier:string,keys:string[]){
   if(keys.length!==3||keys.some(key=>!/^[0-9a-f]{64}$/.test(key))||new Set(keys).size!==3)throw new Error('Invalid attempt buckets.');
-  const rows=await transaction(false,async tx=>await tx`SELECT allowed,uid,email,status FROM taxiqaid_auth_api.begin_login_attempt(${identifier},${keys[0]},${keys[1]},${keys[2]})`);
+  const rows=await transaction(false,async tx=>await tx`SELECT allowed,uid,email,status,mapping_revision::text AS mapping_revision FROM taxiqaid_auth_api.begin_login_attempt(${identifier},${keys[0]},${keys[1]},${keys[2]})`);
   if(rows.length!==1||typeof rows[0].allowed!=='boolean')throw new Error('Login unavailable.');
   const row=rows[0];
   if(!row.allowed)return {allowed:false,account:null};
   if(row.uid===null&&row.email===null)return {allowed:true,account:null};
-  if(typeof row.uid!=='string'||typeof row.email!=='string'||!row.email||row.status!=='active')throw new Error('Login unavailable.');
-  return {allowed:true,account:{uid:row.uid,email:row.email,status:row.status}};
+  if(typeof row.uid!=='string'||typeof row.email!=='string'||!row.email||row.status!=='active'||!validRevision(row.mapping_revision))throw new Error('Login unavailable.');
+  return {allowed:true,account:{uid:row.uid,email:row.email,status:row.status,mappingRevision:row.mapping_revision}};
  }
- async function loadAccess(uid:string){
-  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid))throw new Error('Access unavailable.');
-  const rows=await transaction(true,async tx=>await tx`SELECT taxiqaid_auth_api.get_management_access(${uid}::uuid) AS access`);
+ async function loadAccess(uid:string,mappingRevision:string){
+  if(!validRevision(mappingRevision)||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uid))throw new Error('Access unavailable.');
+  const rows=await transaction(true,async tx=>await tx`SELECT taxiqaid_auth_api.get_management_access(${uid}::uuid,${mappingRevision}::bigint) AS access`);
   const raw=rows.length===1?rows[0].access:null;
   if(raw?.version!==1||raw.uid!==uid||raw.account?.uid!==uid||raw.account?.status!=='active'||raw.account?.type!=='management'||!raw.account?.fullName||!Array.isArray(raw.permissions?.roleDefaults)||!raw.permissions?.overrides)throw new Error('Access unavailable.');
   return raw;

@@ -21,9 +21,12 @@ SELECT r.role_name,t.table_name,
 FROM (VALUES('anon'),('authenticated'),('taxiqaid_auth_backend')) r(role_name)
 CROSS JOIN (VALUES('user_accounts'),('departments'),('user_departments'),('permissions'),('role_permissions'),('user_permission_overrides'),('login_attempt_counters')) t(table_name);
 -- Expect 107,101,0,9,1; no duplicates/browser access. Confirm the existing counter PK, expiry index and types.
--- If auth.users itself has RLS and denies the new lookup owner, stop for a provider-supported narrow policy review.
+-- Managed auth.users RLS/no-policy default deny remains unchanged. Runtime/definer roles must not read it.
 
 -- PUBLIC is inherited even by NOINHERIT roles. Review accessible existing definers without exporting their bodies.
 SELECT n.nspname,p.proname,pg_catalog.pg_get_userbyid(p.proowner) AS owner
 FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
 WHERE p.prosecdef AND pg_catalog.has_schema_privilege('taxiqaid_auth_backend',n.oid,'USAGE') AND pg_catalog.has_function_privilege('taxiqaid_auth_backend',p.oid,'EXECUTE') ORDER BY 1,2;
+
+-- FK support is an administrator DDL capability, not an Auth-user grant for the runtime or its owners.
+SELECT pg_catalog.has_column_privilege(current_user,'auth.users','id','REFERENCES') AS can_reference_auth_primary_key;

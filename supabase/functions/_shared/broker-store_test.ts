@@ -10,7 +10,7 @@ function harness(options:{identity?:unknown;attempt?:unknown;access?:unknown;fai
  const query=async(parts:TemplateStringsArray,...values:unknown[])=>{
   const text=parts.join('?');calls.push({text,values});
   if(text.includes('session_user'))return options.identity??[{login:'taxiqaid_auth_login',actor:'taxiqaid_auth_login',restricted:true}];
-  if(text.includes('begin_login_attempt')){if(options.failure)throw new Error('Synthetic outage.');return options.attempt??[{allowed:true,uid,email:'synthetic@example.invalid',status:'active'}];}
+  if(text.includes('begin_login_attempt')){if(options.failure)throw new Error('Synthetic outage.');return options.attempt??[{allowed:true,uid,email:'synthetic@example.invalid',status:'active',mapping_revision:'1'}];}
   if(text.includes('get_management_access'))return [{access:options.access??{version:1,uid,account:{uid,status:'active',type:'management',fullName:'Synthetic Manager'},permissions:{roleDefaults:[],overrides:{}}}}];
   if(text.includes('SET LOCAL ROLE')||text.includes('set_config'))return [];
   throw new Error('Unexpected SQL.');
@@ -35,13 +35,13 @@ Deno.test('attempt uses only protected function, parameterized arguments and com
  const unknown=harness({attempt:[{allowed:true,uid:null,email:null,status:null}]});equal(await unknown.store.beginAttempt('syntheticmanager',keys),{allowed:true,account:null});
 });
 Deno.test('outages and malformed private replies never produce a usable attempt or partially commit',async()=>{
- for(const options of [{failure:true},{attempt:[]},{attempt:[{allowed:'true'}]},{attempt:[{allowed:true,uid,email:'synthetic@example.invalid',status:'disabled'}]}]){
+ for(const options of [{failure:true},{attempt:[]},{attempt:[{allowed:'true'}]},{attempt:[{allowed:true,uid,email:'synthetic@example.invalid',status:'disabled',mapping_revision:'1'}]},{attempt:[{allowed:true,uid,email:'synthetic@example.invalid',status:'active'}]},{attempt:[{allowed:true,uid,email:'synthetic@example.invalid',status:'active',mapping_revision:'0'}]}]){
   const fixture=harness(options);let failed=false;try{await fixture.store.beginAttempt('syntheticmanager',keys);}catch{failed=true;}assert(failed);if(options.failure)assert(!fixture.transactions[0].committed);
  }
 });
 Deno.test('post-Auth access uses repeatable-read readonly transaction and exact UID; driver access fails closed',async()=>{
- const fixture=harness(),access=await fixture.store.loadAccess(uid);assert(access.uid===uid);assert(fixture.transactions[0].mode==='isolation level repeatable read read only');equal(fixture.calls.at(-1)?.values,[uid]);
+ const fixture=harness(),access=await fixture.store.loadAccess(uid,'1');assert(access.uid===uid);assert(fixture.transactions[0].mode==='isolation level repeatable read read only');equal(fixture.calls.at(-1)?.values,[uid,'1']);
  for(const access of [{version:1,uid:'other'},{version:1,uid,account:{uid,type:'driver',status:'active',fullName:'Synthetic Driver'},permissions:{roleDefaults:[],overrides:{}}}]){
-  let failed=false;try{await harness({access}).store.loadAccess(uid);}catch{failed=true;}assert(failed);
+  let failed=false;try{await harness({access}).store.loadAccess(uid,'1');}catch{failed=true;}assert(failed);
  }
 });
