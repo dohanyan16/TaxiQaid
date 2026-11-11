@@ -42,20 +42,7 @@ export function createIdentityStore(sql:ReturnType<typeof postgres>,mapping:Mapp
   const effects=booleanOverrides(overrides.map(row=>({key:row.key,allowed:row.allowed})));
   return {version:1,uid,account:profile,departments:membership.map(row=>row.code),permissions:{roleDefaults:grants.map(row=>row.key),overrides:effects},scope:{departments:[],driverRecordRefs:[],documentIds:[]},validUntil:Date.now()+60000};
  }
- async function resolve(identifier:string){
-  // Iqama remains a visible future identifier, but no verified driver mapping exists in this schema.
-  if(/^\d{10}$/.test(identifier))return null;
-  const rows=await sql`SELECT ${col('user_accounts','uid','a')} AS uid,${col('user_accounts','status','a')} AS status,u.email FROM taxiqaid_private.user_accounts AS a JOIN auth.users AS u ON u.id=${col('user_accounts','uid','a')} WHERE ${col('user_accounts','type','a')}='management' AND ${col('user_accounts','username','a')}=${identifier} LIMIT 2`;
-  return rows.length===1?rows[0]:null;
- }
- async function consume(keys:string[]){
-  const windows=[{seconds:60,limit:20},{seconds:900,limit:10},{seconds:60,limit:200}],current=Math.floor(Date.now()/1000);let allowed=true;
-  await sql.begin(async transaction=>{for(let index=0;index<keys.length;index++){const rule=windows[index],start=Math.floor(current/rule.seconds)*rule.seconds;
-   const rows=await transaction`INSERT INTO taxiqaid_private.login_attempt_counters(bucket,window_start,expires_at,attempts) VALUES(${keys[index]},to_timestamp(${start}),to_timestamp(${start+rule.seconds}),1) ON CONFLICT(bucket,window_start) DO UPDATE SET attempts=taxiqaid_private.login_attempt_counters.attempts+1 RETURNING attempts`;
-   if(rows[0].attempts>rule.limit)allowed=false;
-  }});return allowed;
- }
- return {loadAccess,resolve,consume};
+ return {loadAccess};
 }
 export function openStore(env:(name:string)=>string|undefined){
  const connection=env('TAXIQAID_DB_URL'),serialized=env('TAXIQAID_SCHEMA_MAPPING');

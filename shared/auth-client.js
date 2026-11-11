@@ -26,11 +26,12 @@ const TaxiQaidAuthClient=(()=>{
   async function login(identifier,password){
    const input=contract.credentials(identifier,password);
    if(!enabled)throw new Error('Dedicated authentication is not activated. Secure broker validation is pending.');
-   if(loggingIn)throw generic();loggingIn=true;clear();
+   if(/^\d{10}$/.test(input.identifier))throw new Error('Driver sign-in is unavailable until secure account provisioning is complete.');
+   if(loggingIn)throw generic();loggingIn=true;clear();const attemptGeneration=generation;
    try{
     const result=await request('login-with-identifier',{body:input});
     if(typeof result.access_token!=='string'||typeof result.refresh_token!=='string')throw generic();
-    const {error}=await client.auth.setSession({access_token:result.access_token,refresh_token:result.refresh_token});if(error)throw generic();
+    const {error}=await client.auth.setSession({access_token:result.access_token,refresh_token:result.refresh_token});if(error||generation!==attemptGeneration)throw generic();
     return await refresh();
    }catch(error){await discard();throw error.message.startsWith('Dedicated authentication')?error:generic();}finally{loggingIn=false;}
   }

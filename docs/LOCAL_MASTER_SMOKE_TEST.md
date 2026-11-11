@@ -1,4 +1,6 @@
-# Local-only Master authentication smoke test
+# Earlier local-only Master authentication diagnostic
+
+The owner reports the genuine direct-Auth/get-my-access Master test has passed. This helper remains available to developers only; **it is not an owner installation requirement**. The current username broker task uses the [Dashboard and browser-only plan](USERNAME_LOGIN_BACKEND_REVIEW.md#isolated-browser-only-genuine-test). Do not ask the owner to install Python, Node, Git or CLI tooling.
 
 This temporary technical test bypasses the **disabled username/Iqama broker** and signs in directly to the dedicated project using the owner's existing Supabase Auth email/password. This exception applies only to this private test; the final application still requires username or Iqama plus password. It never deploys/replaces `get-my-access`, enables the broker, changes the six private tables, grants permissions or modifies production.
 

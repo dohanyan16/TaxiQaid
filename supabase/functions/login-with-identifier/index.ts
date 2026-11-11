@@ -1,19 +1,20 @@
-/** Dormant until database mapping, distributed throttling, trusted ingress and session transport are verified. */
+/** Disabled candidate. Owner review and genuine browser-to-broker testing precede any activation. */
 import {createClient} from 'npm:@supabase/supabase-js@2.119.0';
-import {isIP} from 'node:net';
-import {configuredOrigins} from '../_shared/security.mjs';
+import {configuredOrigins,trustedClientIp} from '../_shared/security.mjs';
 import {createLoginHandler} from '../_shared/handlers.mjs';
-import {openStore} from '../_shared/store.ts';
+import {openBrokerStore} from '../_shared/broker-store.ts';
 const url='https://mqkflwsvnzcaylxtvsje.supabase.co';
 const key='sb_publishable_c6NqjXyYvryqdXpgTUS0jg_hnfxiTWd';
-let cachedStore:ReturnType<typeof openStore>|null=null;
+let cachedBrokerStore:ReturnType<typeof openBrokerStore>|null=null;
 Deno.serve(request=>{
  const env=(name:string)=>Deno.env.get(name),origins=configuredOrigins(env('TAXIQAID_AUTH_ORIGINS'),env('TAXIQAID_ALLOW_LOOPBACK_ORIGIN')==='true');
- let store;try{store=cachedStore??=openStore(env);}catch{store=null;}
  const header=env('TAXIQAID_TRUSTED_IP_HEADER')||'',secret=env('TAXIQAID_RATE_SECRET')||'';
- const ready=Boolean(store&&header&&secret.length>=32&&env('TAXIQAID_TRUSTED_IP_HEADER_VERIFIED')==='true'&&env('TAXIQAID_SESSION_TRANSPORT_REVIEWED')==='true'&&env('TAXIQAID_LOGIN_ENABLED')==='true');
- const auth=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
- return createLoginHandler({origins,ready,rateSecret:secret,clientIp:(req:Request)=>{const value=req.headers.get(header);return value&&isIP(value)?value:null;},
-  consume:(keys:string[])=>store!.consume(keys),resolve:(identifier:string)=>store!.resolve(identifier),loadAccess:(uid:string)=>store!.loadAccess(uid),
-  passwordSignIn:async(email:string,password:string)=>{const {data,error}=await auth.auth.signInWithPassword({email,password});if(error)throw new Error('Credentials rejected.');return data;},signOut:()=>auth.auth.signOut({scope:'local'})})(request);
+ const configured=Boolean(header&&secret.length>=32&&env('TAXIQAID_TRUSTED_IP_HEADER_VERIFIED')==='true'&&env('TAXIQAID_SESSION_TRANSPORT_REVIEWED')==='true'&&env('TAXIQAID_LOGIN_ENABLED')==='true');
+ let store:ReturnType<typeof openBrokerStore>|null=null;if(configured)try{store=cachedBrokerStore??=openBrokerStore(env);}catch{}
+ const auth=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false,debug:false},global:{fetch:(input,init)=>fetch(input,{...init,redirect:'error',signal:AbortSignal.timeout(10000)})}});
+ return createLoginHandler({origins,ready:Boolean(configured&&store),rateSecret:secret,
+  clientIp:(req:Request)=>trustedClientIp(req,header,env('TAXIQAID_TRUSTED_IP_HEADER_VERIFIED')==='true'),
+  beginAttempt:(identifier:string,keys:string[])=>store!.beginAttempt(identifier,keys),loadAccess:(uid:string)=>store!.loadAccess(uid),
+  passwordSignIn:async(email:string,password:string)=>{const {data,error}=await auth.auth.signInWithPassword({email,password});return {...data,error:error?{status:error.status||0}:null};},
+  signOut:()=>auth.auth.signOut({scope:'local'})})(request);
 });

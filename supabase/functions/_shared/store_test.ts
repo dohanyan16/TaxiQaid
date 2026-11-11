@@ -21,10 +21,7 @@ function harness(data=fixture()){
   assert(!/\b(?:INSERT|UPDATE|DELETE|CREATE|ALTER|DROP)\b/.test(text),'Identity reads must not mutate data.');
   const validNames=new Set([...Object.values(mapping).flatMap(table=>Object.values(table)),'a','d','m','p','r','o','fullName']);
   for(const [,name]of text.matchAll(/"([^"]+)"/g))assert(validNames.has(name),'Unverified column referenced: '+name);
-  if(text.includes('JOIN auth.users')){
-   assert(text.includes('u.id="a"."user_id"')&&text.includes('"a"."account_type"=\'management\'')&&text.includes('"a"."username"=?'),'Private resolution must bind the management username.');
-   return data.accounts.filter(a=>a.account_type==='management'&&a.username===values[0]).map(a=>({uid:a.user_id,status:a.status,email:'private-fixture@example.test'}));
-  }
+  assert(!text.includes('auth.users'),'The access adapter must not resolve private Auth identities.');
   if(text.includes('FROM taxiqaid_private.user_accounts')){
    assert(text.includes('WHERE "user_id"=?'),'Account read must bind the verified UID.');
    return data.accounts.filter(a=>a.user_id===values[0]).map(a=>({uid:a.user_id,username:a.username,fullName:a.full_name,type:a.account_type,role:a.role_key,status:a.status}));
@@ -86,10 +83,9 @@ Deno.test('inactive definitions remove inherited grants and overrides; inactive 
  const wire=await fixture.store.loadAccess(uid);assert(!wire.permissions.roleDefaults.includes('fuel.view'));assert(!Object.hasOwn(wire.permissions.overrides,'fuel.view'));equal(wire.permissions.overrides['ncr.view'],'deny');equal(wire.departments,['it']);
  assert(!authorize(wire,{uid,expiresAt:Date.now()/1000+3600},'fuel.create'));
 });
-Deno.test('other roles inherit no Master grants; usernames resolve privately and Iqama stays pending',async()=>{
+Deno.test('other roles inherit no Master grants; the access adapter exposes no identity resolver',async()=>{
  const fixture=harness();const wire=await fixture.store.loadAccess(other);equal(wire.permissions.roleDefaults,[]);
- const account=await fixture.store.resolve('fixtureuser');equal(account?.uid,uid);assert(account?.email==='private-fixture@example.test');
- const count=fixture.queries.length;equal(await fixture.store.resolve('1000000001'),null);equal(fixture.queries.length,count);
+ assert(!Object.hasOwn(fixture.store,'resolve'));assert(!Object.hasOwn(fixture.store,'consume'));
 });
 Deno.test('a driver account without verified provisioning is denied without querying invented columns',async()=>{
  const fixture=harness();fixture.data.accounts[0].account_type='driver';let blocked=false;
