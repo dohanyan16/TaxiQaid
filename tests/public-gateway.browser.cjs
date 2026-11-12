@@ -40,9 +40,16 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
    if(scenario==='broker-429')assert.equal(result.http.broker,429);if(scenario==='broker-503')assert.equal(result.http.broker,503);if(scenario==='missing-profile-fields')assert.deepEqual(result.fieldPresence,{activeStatus:false,fullName:false,username:false});
    results.push({scenario,result:'PASS'});await page.close();
   }
-  const probe=await browser.newPage();let probeRequests=0;
-  await probe.route('**/*',async route=>{const req=route.request();assert.equal(new URL(req.url()).origin,gateway);if(req.isNavigationRequest()){await route.fulfill({status:405,contentType:'application/json',body:'{}'});return;}const body=req.postDataJSON();assert.match(body.identifier,/^gwprobe[0-9a-f]{32}$/);assert.equal(body.password,'NOT_AN_ACCOUNT_PASSWORD');probeRequests++;await route.fulfill({status:probeRequests<3?401:429,contentType:'application/json',body:'{"error":"SYNTHETIC_PRIVATE_NOT_FOR_DISPLAY"}'});});
-  await probe.goto(gateway+'/login-with-identifier');await probe.evaluate(fs.readFileSync(path.resolve(__dirname,'../scripts/_public_gateway/provenance-probes.js'),'utf8').replaceAll('REPLACE_WITH_REVIEWED_WORKER_ORIGIN',gateway));const probeResult=JSON.parse(await probe.locator('pre').innerText());assert.deepEqual(probeResult,{provenance_bucket:'PASS',http:[401,401,429]});assert.equal(probeRequests,3);assert.equal((await probe.locator('body').innerText()).includes('SYNTHETIC_PRIVATE'),false);await probe.close();
+  const ipLimit=require('../scripts/lib/public-login-policy.cjs').load().ip.attempts;
+  for(const scenario of ['expected','early-denial','no-denial','native-outage','window-rollover']){
+   const probe=await browser.newPage();let probeRequests=0;const statuses=[];
+   await probe.route('**/*',async route=>{const req=route.request();assert.equal(new URL(req.url()).origin,gateway);if(req.isNavigationRequest()){await route.fulfill({status:405,contentType:'application/json',body:'{}'});return;}const body=req.postDataJSON();assert.match(body.identifier,/^gwprobe[0-9a-f]{32}$/);assert.equal(body.password,'NOT_AN_ACCOUNT_PASSWORD');probeRequests++;
+    const status=scenario==='early-denial'?429:scenario==='no-denial'?401:scenario==='native-outage'?503:scenario==='window-rollover'?(probeRequests===ipLimit?429:401):probeRequests<=ipLimit?401:429;statuses.push(status);
+    await route.fulfill({status,contentType:'application/json',body:'{"error":"SYNTHETIC_PRIVATE_NOT_FOR_DISPLAY"}'});
+   });
+   await probe.goto(gateway+'/login-with-identifier');await probe.evaluate(fs.readFileSync(path.resolve(__dirname,'../scripts/_public_gateway/provenance-probes.js'),'utf8').replaceAll('REPLACE_WITH_REVIEWED_WORKER_ORIGIN',gateway));const probeResult=JSON.parse(await probe.locator('pre').innerText());assert.deepEqual(probeResult,{status_pattern:scenario==='expected'?'PASS':'FAIL',http:statuses});assert.equal(probeRequests,ipLimit+1);assert.equal((await probe.locator('body').innerText()).includes('SYNTHETIC_PRIVATE'),false);await probe.close();
+  }
+
   console.log(JSON.stringify({result:'PASS',genuineUsernameAuthenticationVerified:false,scenarios:results,privacy:'No secrets in rendered/copied/logged output or storage; sessions signed out',ownerTooling:'Public gateway browser flow; pinned SDK, mock transport, no installation'},null,2));
  }finally{await browser.close();}
 })().catch(error=>{console.error(error.message);process.exitCode=1;});

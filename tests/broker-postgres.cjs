@@ -100,7 +100,8 @@ INSERT INTO taxiqaid_private.role_permissions(role_key,permission_key,is_allowed
    assert.equal(runtime(signed('once')),'t');assert.equal(runtime(signed('once')),'f');
    const budget=(group,index,ip,account)=>`SELECT allowed FROM taxiqaid_auth_api.begin_signed_login_attempt('unknownfixture',${lit(hash(group+'-ip-'+ip))},${lit(hash(group+'-account-'+account))},${lit(hash(group+'-global'))},${lit(hash(group+'-nonce-'+index))},floor(extract(epoch FROM clock_timestamp()))::bigint);`;
    // Observe the actual persisted fixed window, so a legitimate clock rollover is not a test failure.
-   for(const [group,limit,scope]of [['ip-budget',2,'ip'],['global-budget',20,'global'],['identifier-budget',10,'account']]){
+   const pilotPolicy=require('../scripts/lib/public-login-policy.cjs').load();
+   for(const [group,limit,scope]of [['ip-budget',pilotPolicy.ip.attempts,'ip'],['global-budget',pilotPolicy.global.attempts,'global'],['identifier-budget',pilotPolicy.identifier.attempts,'account']]){
     const permitted=new Map();let denied=false;
     for(let n=0;n<(limit+1)*3&&!denied;n++){
      const allowed=runtime(budget(group,n,scope==='ip'?'same':n,scope==='account'?'same':n));
@@ -111,10 +112,15 @@ INSERT INTO taxiqaid_private.role_permissions(role_key,permission_key,is_allowed
     assert.equal(denied,true,'Must observe a real boundary denial for '+scope);
    }
 
+   require('./_rate-capacity-fixture.cjs')({sql,runtime,hash,lit});
+
    assert.equal(runtime(signed('stale','stale',Number(epoch)-61)),'f');
    assert.equal(runtime(signed('future','future','floor(extract(epoch FROM clock_timestamp()))::bigint+10')),'f');
    // Replay still consumes existing limits but never releases another usable attempt.
    sql('ALTER ROLE taxiqaid_auth_login CONNECTION LIMIT 40;',{user:'supabase_admin'});
+   const globalRace=await concurrent(Array.from({length:30},(_,n)=>budget('global-concurrent',n,n,n)));
+   const globalPermits=Number(sql('SELECT sum(least(attempts,'+pilotPolicy.global.attempts+')) FROM taxiqaid_private.login_attempt_counters WHERE bucket='+lit(hash('global-concurrent-global'))+';'));
+   assert.equal(globalRace.filter(value=>value==='t').length,globalPermits,'Concurrent distinct identifiers cannot oversubscribe any actual global window');
    const raceEpoch=sql('SELECT floor(extract(epoch FROM clock_timestamp()))::bigint;');
    const nonceRace=await concurrent(Array.from({length:12},()=>signed('raced','race',raceEpoch)));assert.equal(nonceRace.filter(v=>v==='t').length,1);
    sql('ALTER ROLE taxiqaid_auth_login CONNECTION LIMIT 4;',{user:'supabase_admin'});

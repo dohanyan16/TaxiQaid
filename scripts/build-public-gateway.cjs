@@ -1,6 +1,10 @@
 // Review artifacts only. No deployment, network, secret generation or live SQL execution.
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),root=path.resolve(__dirname,'..'),check=process.argv.includes('--check'),read=file=>fs.readFileSync(path.join(root,file),'utf8');
 function output(file,source){if(check){if(read(file)!==source)throw new Error('Public gateway artifact drift: '+file);}else fs.writeFileSync(path.join(root,file),source);}
+const policy=require('./lib/public-login-policy.cjs').load();
+const probeFile='scripts/_public_gateway/provenance-probes.js',probe=read(probeFile);
+if((probe.match(/const reviewedIpLimit=\d+;/g)||[]).length!==1)throw new Error('Ambiguous provenance probe policy.');
+output(probeFile,probe.replace(/const reviewedIpLimit=\d+;/,'const reviewedIpLimit='+policy.ip.attempts+';'));
 const proof=read('supabase/functions/_shared/gateway-proof.mjs');
 const worker=read('gateway/worker.mjs');
 if(/\bcredentials\s*:/.test(worker)||/\bredirect\s*:\s*['"]error['"]/.test(worker))throw new Error('Unsupported Cloudflare Worker fetch options.');

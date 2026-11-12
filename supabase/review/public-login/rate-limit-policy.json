@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "profile": "controlled-pilot",
+  "global": { "attempts": 20, "windowSeconds": 60 },
+  "ip": { "attempts": 10, "windowSeconds": 60 },
+  "identifier": { "attempts": 10, "windowSeconds": 900 }
+}

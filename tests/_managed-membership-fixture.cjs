@@ -36,7 +36,7 @@ module.exports=function managedMembershipFixture({sql,runtime,root}){
  admin('ALTER ROLE taxiqaid_auth_rate_owner LOGIN;');denied(zero,'unexpected LOGIN owner');denied(one,'unexpected LOGIN owner');admin('ALTER ROLE taxiqaid_auth_rate_owner NOLOGIN;');
  admin('GRANT EXECUTE ON FUNCTION taxiqaid_auth_api.consume_login_counters(text,text,text) TO anon;');denied(zero,'unexpected base EXECUTE');denied(one,'unexpected base EXECUTE');admin('REVOKE EXECUTE ON FUNCTION taxiqaid_auth_api.consume_login_counters(text,text,text) FROM anon;');
  denied(one.replace('-- END REVIEW FUNCTION BODIES','GRANT USAGE ON SCHEMA taxiqaid_auth_api TO fixture_extra_member;\n-- END REVIEW FUNCTION BODIES'),'unexpected schema ACL change');
- const counterEdit=zero.split('-- BEGIN REVIEW FUNCTION BODIES\n')[1].split('\n-- END REVIEW FUNCTION BODIES')[0].replace('ARRAY[20,2,10]','ARRAY[19,2,10]');
+ const counterEdit=zero.split('-- BEGIN REVIEW FUNCTION BODIES\n')[1].split('\n-- END REVIEW FUNCTION BODIES')[0].replace(/limits integer\[\] := ARRAY\[[0-9,]+\]/,'limits integer[] := ARRAY[1,1,1]');
  denied(one.replace('-- END REVIEW FUNCTION BODIES',counterEdit+'\n-- END REVIEW FUNCTION BODIES'),'unexpected existing function body change');
  const catalogBefore=memberCatalog(),rows=data();sql(zero);assert.equal(memberCatalog(),catalogBefore);assert.equal(members(),beforeRows);assert.equal(data(),rows);sql('SET ROLE taxiqaid_auth_rate_owner;',{failure:true});
  sql(one);assert.equal(memberCatalog(),catalogBefore);assert.equal(members(),beforeRows);assert.equal(data(),rows);sql('SET ROLE taxiqaid_auth_lookup_owner;',{failure:true});

@@ -34,6 +34,20 @@ test('wrong credentials and native Auth throttling/outages preserve sanitized HT
 test('counter denial, counter outage and missing trusted IP never reach Auth',async()=>{
  for(const [change,expected]of [[{beginAttempt:async()=>({allowed:false,account:null})},429],[{beginAttempt:async()=>{throw new Error('SYNTHETIC_DATABASE_ERROR');}},503],[{clientIp:()=>null},503],[{ready:false},503]]){let authCalls=0;const {handler}=await harness({...change,passwordSignIn:async()=>{authCalls++;throw new Error('Forbidden.');}});const response=await handler(request());assert.equal(response.status,expected);assert.equal(authCalls,0);assert.equal((await response.text()).includes('SYNTHETIC'),false);}
 });
+test('success, password rejection, absent accounts and provider failures never refund or reset admission',async()=>{
+ let consumed=0,authCalls=0,accessCalls=0,expectedKeys;
+ const scenarios=[['success',{},200],['wrong-password',{passwordSignIn:async()=>({error:{status:400}})},401],['unknown',{absent:true,passwordSignIn:async()=>({error:{status:400}})},401],['disabled',{absent:true,passwordSignIn:async()=>({error:{status:400}})},401],['native-outage',{passwordSignIn:async()=>({error:{status:500}})},503],['access-outage',{loadAccess:async()=>{throw new Error('Synthetic outage.');}},503]];
+ const limit=scenarios.length;
+ for(const [,change,expected]of [...scenarios,['exhausted',{},429]]){
+  const {createLoginHandler}=await import('../supabase/functions/_shared/handlers.mjs');
+  const handler=createLoginHandler({origins:[origin],ready:true,rateSecret:'SYNTHETIC_RATE_SECRET_32_CHARACTERS_ONLY',clientIp:()=> '192.0.2.1',
+   beginAttempt:async(identifier,keys)=>{assert.equal(identifier,'syntheticmanager');if(expectedKeys)assert.deepEqual(keys,expectedKeys);else expectedKeys=keys;consumed++;return {allowed:consumed<=limit,account:change.absent?null:{uid,email:'synthetic-private@example.invalid',status:'active',mappingRevision:'1'}};},
+   passwordSignIn:async(...args)=>{authCalls++;return change.passwordSignIn?change.passwordSignIn(...args):{user:{id:uid},session:{access_token:'SYNTHETIC_ACCESS',refresh_token:'SYNTHETIC_REFRESH'}};},
+   loadAccess:async()=>{accessCalls++;return change.loadAccess?change.loadAccess():nested();},signOut:async()=>({error:null})});
+  assert.equal((await handler(request())).status,expected);
+ }
+ assert.equal(consumed,limit+1);assert.equal(authCalls,limit);assert.equal(accessCalls,2);
+});
 test('created sessions are revoked on UID mismatch, private-access failure and malformed session response',async()=>{
  for(const change of [{passwordSignIn:async()=>({user:{id:'another'},session:{access_token:'SYNTHETIC_ACCESS',refresh_token:'SYNTHETIC_REFRESH'}})},{loadAccess:async()=>{throw new Error('SYNTHETIC_SQL_ERROR');}},{passwordSignIn:async()=>({user:{id:uid},session:{access_token:'SYNTHETIC_ACCESS'}})}]){const {handler,events}=await harness(change),response=await handler(request());assert.ok([401,503].includes(response.status));assert.equal(events.at(-1),'revoke');assert.equal((await response.text()).includes('SYNTHETIC'),false);}
 });

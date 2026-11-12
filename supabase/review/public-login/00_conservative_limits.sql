@@ -69,6 +69,7 @@ DO $role_guard$ BEGIN
  AND NOT pg_catalog.has_function_privilege('taxiqaid_auth_login',p.oid,'EXECUTE'))) THEN RAISE EXCEPTION 'Unexpected existing function ownership, hardening or EXECUTE grants.'; END IF;
 END $role_guard$;
 -- BEGIN REVIEW FUNCTION BODIES
+-- Policy: controlled-pilot; generated literals from rate-limit-policy.json, no runtime overrides.
 SET LOCAL ROLE taxiqaid_auth_rate_owner;
 CREATE OR REPLACE FUNCTION taxiqaid_auth_api.consume_login_counters(p_ip text,p_account text,p_global text)
 RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER
@@ -77,7 +78,7 @@ DECLARE
  instant timestamptz := pg_catalog.clock_timestamp();
  keys text[] := ARRAY[p_global,p_ip,p_account];
  widths integer[] := ARRAY[60,60,900];
- limits integer[] := ARRAY[20,2,10];
+ limits integer[] := ARRAY[20,10,10];
  start_at timestamptz; used bigint; position integer;
 BEGIN
  IF p_ip IS NULL OR p_account IS NULL OR p_global IS NULL OR p_ip !~ '^[0-9a-f]{64}$' OR p_account !~ '^[0-9a-f]{64}$' OR p_global !~ '^[0-9a-f]{64}$' OR p_ip=p_account OR p_ip=p_global OR p_account=p_global THEN
