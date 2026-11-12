@@ -1,11 +1,12 @@
 /** Official Supabase sessions plus uncached, UID-bound access. No private-table queries or custom tokens. */
 const TaxiQaidAuthClient=(()=>{
  const contract=typeof TaxiQaidAuthContract!=='undefined'?TaxiQaidAuthContract:require('./auth-contract.js');
- function create({client,url,key,enabled=false,fetcher=fetch,onAccess=()=>{},onClear=()=>{},now=Date.now}){
+ function create({client,url,key,brokerUrl=null,enabled=false,fetcher=fetch,onAccess=()=>{},onClear=()=>{},now=Date.now}){
+  if(brokerUrl!==null){const target=new URL(brokerUrl);if(target.protocol!=='https:'||!target.hostname.endsWith('.workers.dev')||target.username||target.password||target.port||target.pathname!=='/login-with-identifier'||target.search||target.hash)throw new Error('Invalid authentication gateway configuration.');}
   let generation=0,loggingIn=false,subscription=null,timer=null,context=null,pending=null;
   const generic=()=>new Error('Unable to sign in. Check your credentials or contact your administrator.');
   async function request(path,{token,body}={}){
-   const response=await fetcher(url+'/functions/v1/'+path,{method:body?'POST':'GET',headers:{apikey:key,...(token?{Authorization:'Bearer '+token}:{}),...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),cache:'no-store',credentials:'omit',redirect:'error',signal:AbortSignal.timeout(15000)});
+   const response=await fetcher(path==='login-with-identifier'&&brokerUrl?brokerUrl:url+'/functions/v1/'+path,{method:body?'POST':'GET',headers:{apikey:key,...(token?{Authorization:'Bearer '+token}:{}),...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),cache:'no-store',credentials:'omit',redirect:'error',signal:AbortSignal.timeout(15000)});
    if(!response.ok)throw generic();return response.json();
   }
   function clear(){generation++;context=null;pending=null;onClear();}

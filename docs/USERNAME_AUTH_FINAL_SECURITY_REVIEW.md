@@ -1,5 +1,9 @@
 # Username authentication final security review — blocked before activation
 
+## Current owner-verified private success and public proposal
+
+The owner reports the genuine private username diagnostic passed every check, including mapping/UID, active Master, official Auth, deployed access compatibility, 101 management permissions, six Driver denials and session cleanup. Its function and three secrets are deleted; only the access function and disabled public broker remain deployed. The [public architecture proposal](PUBLIC_USERNAME_LOGIN_ARCHITECTURE.md) supersedes earlier private-results-pending wording and compares a signed gateway with IP-independent alternatives. It does not establish public readiness or authorize deployment, SQL, secret changes, activation or merge.
+
 ## New owner-only test proposal
 
 The [separate owner-only username diagnostic](OWNER_USERNAME_DIAGNOSTIC.md) records the owner-verified native rate limits (unchanged), temporary authorization design and browser-only plan. It can test username functionality privately while the public broker remains disabled; public IP trust and production activation remain separate. It is prepared only, not deployed or enabled, and genuine private username success remains unverified. Earlier lack-of-owner-only-path findings describe the existing public handler; the new candidate does not alter that handler.
@@ -12,7 +16,7 @@ The owner reports a genuine hosted Transaction Pooler PASS for connection, stric
 
 The owner removed `check-broker-pooler` and its three diagnostic secrets. Only `get-my-access` and `login-with-identifier` remain deployed. All three public-login flags remain false. The project signs user JWTs with ES256. The temporary diagnostic succeeded with its legacy platform JWT check disabled while its handler still verified the real user online through official Auth and enforced the owner-approved UID grant. This historical exception does not authorize changing another function's gateway or handler checks. The committed diagnostic remains an archived review artifact, not an instruction to redeploy it.
 
-The earlier owner-verified direct-Auth/get-my-access Master test remains distinct from a username-broker test. **No genuine username/password end-to-end PASS exists yet.** No live credentials, deployed function source, secret values or private access response are available to this workspace. A reviewed source candidate is not proof of the deployed source/configuration.
+The earlier owner-verified direct-Auth/get-my-access Master test remains distinct from a username-broker test. **The owner has since verified the private username path, as recorded above; a genuine deployed public-handler/browser PASS remains pending.** No live credentials, deployed function source, secret values or private access response are available to this workspace. A reviewed source candidate is not proof of the deployed source/configuration.
 
 ## Trusted client IP — activation blocker
 

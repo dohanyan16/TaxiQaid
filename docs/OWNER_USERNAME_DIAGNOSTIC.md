@@ -1,4 +1,8 @@
-# Owner-only username diagnostic — review proposal, not deployed
+# Owner-only username diagnostic — archived successful private test
+
+## Current owner-verified private success and public proposal
+
+The owner reports the genuine private username diagnostic passed every check, including mapping/UID, active Master, official Auth, deployed access compatibility, 101 management permissions, six Driver denials and session cleanup. Its function and three secrets are deleted; only the access function and disabled public broker remain deployed. The [public architecture proposal](PUBLIC_USERNAME_LOGIN_ARCHITECTURE.md) supersedes earlier private-results-pending wording and compares a signed gateway with IP-independent alternatives. It does not establish public readiness or authorize deployment, SQL, secret changes, activation or merge.
 
 Branch: `feat/dedicated-supabase-auth`. No deployment, new secret, activation, SQL change, main merge or branch deletion is authorized by this preparation. The new temporary endpoint candidate is **check-owner-username**. It neither calls nor changes public `login-with-identifier`; `get-my-access` remains unchanged.
 

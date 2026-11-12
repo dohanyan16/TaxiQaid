@@ -1,5 +1,5 @@
 {
   "compilerOptions": {"checkJs": false, "strict": true},
   "lock": "deno.lock",
-  "tasks": {"check": "deno check functions/login-with-identifier/index.ts functions/get-my-access/index.ts functions/_shared/authorization.ts functions/_shared/broker-store.ts dashboard/login-with-identifier.ts functions/check-broker-pooler/index.ts functions/_diagnostics/pooler-db.ts dashboard/check-broker-pooler.ts functions/check-owner-username/index.ts functions/_diagnostics/master-access.ts functions/_diagnostics/owner-runtime.ts dashboard/check-owner-username.ts"}
+  "tasks": {"check": "deno check functions/login-with-identifier/index.ts functions/get-my-access/index.ts functions/_shared/authorization.ts functions/_shared/broker-store.ts dashboard/login-with-identifier.ts functions/check-broker-pooler/index.ts functions/_diagnostics/pooler-db.ts dashboard/check-broker-pooler.ts functions/check-owner-username/index.ts functions/_diagnostics/master-access.ts functions/_diagnostics/owner-runtime.ts dashboard/check-owner-username.ts functions/_shared/signed-broker-store.ts review/public-login/login-with-identifier.ts dashboard/login-with-identifier-gateway.ts"}
 }

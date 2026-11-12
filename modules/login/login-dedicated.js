@@ -10,7 +10,7 @@ const TaxiQaidDedicatedLogin=(()=>{
   if(context.accountType==='Management'){$('erp-app').hidden=false;$('erp-app').style.display='flex';TaxiQaidPermissionBindings.reconcile();}
   else {$('erp-app').style.display='none';$('driver-portal').hidden=false;}
  }
- const auth=TaxiQaidAuthClient.create({client:supabaseClient,url:settings.url,key:settings.publicKey,enabled:settings.enabled,
+ const auth=TaxiQaidAuthClient.create({client:supabaseClient,url:settings.url,key:settings.publicKey,brokerUrl:settings.brokerUrl??null,enabled:settings.enabled,
   onClear:()=>{hide();$('login-screen').style.display='flex';if(preferDriver&&typeof TaxiQaidDriverPortal!=='undefined')TaxiQaidDriverPortal.openLogin();},onAccess:route});
  const toggle=$('sidebar-toggle');toggle.addEventListener('click',()=>{const collapsed=$('sidebar').classList.toggle('collapsed');toggle.textContent=collapsed?'›':'‹';toggle.setAttribute('aria-expanded',String(!collapsed));toggle.setAttribute('aria-label',collapsed?'Expand sidebar':'Collapse sidebar');});
  async function submit(event,driver=false){

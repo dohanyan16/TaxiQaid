@@ -1,5 +1,9 @@
 # Dedicated Supabase authentication migration — not activated
 
+## Current owner-verified private success and public proposal
+
+The owner reports the genuine private username diagnostic passed every check, including mapping/UID, active Master, official Auth, deployed access compatibility, 101 management permissions, six Driver denials and session cleanup. Its function and three secrets are deleted; only the access function and disabled public broker remain deployed. The [public architecture proposal](PUBLIC_USERNAME_LOGIN_ARCHITECTURE.md) supersedes earlier private-results-pending wording and compares a signed gateway with IP-independent alternatives. It does not establish public readiness or authorize deployment, SQL, secret changes, activation or merge.
+
 ## New owner-only test proposal
 
 The [separate owner-only username diagnostic](OWNER_USERNAME_DIAGNOSTIC.md) records the owner-verified native rate limits (unchanged), temporary authorization design and browser-only plan. It can test username functionality privately while the public broker remains disabled; public IP trust and production activation remain separate. It is prepared only, not deployed or enabled, and genuine private username success remains unverified. Earlier lack-of-owner-only-path findings describe the existing public handler; the new candidate does not alter that handler.

@@ -88,6 +88,37 @@ INSERT INTO taxiqaid_private.role_permissions(role_key,permission_key,is_allowed
   sql(`UPDATE taxiqaid_private.user_accounts SET status='disabled' WHERE user_id=${lit(uid)};`);runtime(access('3'),{failure:true});assert.equal(runtime(api('dohanyan','disabled-ip2','disabled-account2','disabled-global2').replace('SELECT allowed','SELECT uid IS NULL AND email IS NULL')),'t');
   sql(`INSERT INTO taxiqaid_private.login_attempt_counters VALUES(${lit(hash('expired'))},now()-interval '2 hours',now()-interval '1 hour',1);`);assert.equal(sql('SELECT taxiqaid_auth_api.prune_login_counters(1000);'),'1');
   assert.equal(authState(),originalAuthState,'Managed Auth owner/RLS/policies must remain unchanged');
+  if(process.env.TAXIQAID_TEST_PUBLIC_GATEWAY==='true'){
+   sql(fs.readFileSync(path.join(root,'supabase/review/public-login/00_conservative_limits.sql'),'utf8'));
+   sql(fs.readFileSync(path.join(root,'supabase/review/public-login/01_signed_attempt_and_cleanup.sql'),'utf8'));
+   const epoch=sql('SELECT floor(extract(epoch FROM clock_timestamp()))::bigint;');
+   const signed=(nonce,group='signed',stamp=epoch)=>`SELECT allowed FROM taxiqaid_auth_api.begin_signed_login_attempt('dohanyan',${lit(hash(group+'-ip'))},${lit(hash(group+'-account'))},${lit(hash(group+'-global'))},${lit(hash(nonce))},${stamp});`;
+   assert.equal(runtime(signed('unmaintained')),'f');
+   assert.equal(sql('SELECT taxiqaid_auth_api.public_login_limits_healthy();'),'f');
+   sql('SELECT taxiqaid_auth_api.maintain_public_login_counters(1000);');
+   assert.equal(sql('SELECT taxiqaid_auth_api.public_login_limits_healthy();'),'t');
+   assert.equal(runtime(signed('once')),'t');assert.equal(runtime(signed('once')),'f');
+   const budget=(group,index,ip,account)=>`SELECT allowed FROM taxiqaid_auth_api.begin_signed_login_attempt('unknownfixture',${lit(hash(group+'-ip-'+ip))},${lit(hash(group+'-account-'+account))},${lit(hash(group+'-global'))},${lit(hash(group+'-nonce-'+index))},floor(extract(epoch FROM clock_timestamp()))::bigint);`;
+   for(let n=0;n<3;n++)assert.equal(runtime(budget('ip-budget',n,'same',n)),n<2?'t':'f');
+   for(let n=0;n<21;n++)assert.equal(runtime(budget('global-budget',n,n,n)),n<20?'t':'f');
+   for(let n=0;n<11;n++)assert.equal(runtime(budget('identifier-budget',n,n,'same')),n<10?'t':'f');
+
+   assert.equal(runtime(signed('stale','stale',Number(epoch)-61)),'f');
+   assert.equal(runtime(signed('future','future',Number(epoch)+10)),'f');
+   // Replay still consumes existing limits but never releases another usable attempt.
+   sql('ALTER ROLE taxiqaid_auth_login CONNECTION LIMIT 40;');
+   const nonceRace=await concurrent(Array.from({length:12},()=>signed('raced','race')));assert.equal(nonceRace.filter(v=>v==='t').length,1);
+   sql('ALTER ROLE taxiqaid_auth_login CONNECTION LIMIT 4;');
+   sql("UPDATE taxiqaid_private.login_attempt_counters SET expires_at=clock_timestamp()-interval '1 second' WHERE window_start=to_timestamp(0);");
+   const staleCount=sql('SELECT count(*) FROM taxiqaid_private.login_attempt_counters;');assert.equal(runtime(signed('stopped','stopped')),'f');assert.equal(sql('SELECT count(*) FROM taxiqaid_private.login_attempt_counters;'),staleCount);
+   sql('SELECT taxiqaid_auth_api.maintain_public_login_counters(1000);');
+   sql(`INSERT INTO taxiqaid_private.login_attempt_counters SELECT md5('backlog'||g::text)||md5('tail'||g::text),now()-interval '2 hours',now()-interval '1 hour',1 FROM generate_series(1,1001) g;`);
+   assert.equal(sql('SELECT taxiqaid_auth_api.maintain_public_login_counters(1000);'),'1000');assert.equal(sql('SELECT taxiqaid_auth_api.public_login_limits_healthy();'),'f');
+   assert.equal(sql('SELECT taxiqaid_auth_api.maintain_public_login_counters(1000);'),'1');assert.equal(sql('SELECT taxiqaid_auth_api.public_login_limits_healthy();'),'t');
+   for(const fn of ['taxiqaid_auth_api.claim_gateway_nonce('+lit(hash('blocked'))+','+epoch+')','taxiqaid_auth_api.maintain_public_login_counters(1000)','taxiqaid_auth_api.public_login_limits_healthy()'])runtime('SELECT '+fn+';',{failure:true});
+   sql('SELECT taxiqaid_auth_api.maintain_public_login_counters(1001);',{failure:true});
+   assert.equal(authState(),originalAuthState);process.stderr.write('PASS: signed attempts, one-use nonce race, stale cleanup admission stop, bounded backlog and private function grants.\n');
+  }
   console.log(JSON.stringify({result:'PASS',database:'Disposable PostgreSQL 15, no live Supabase/Auth test',managedAuth:'supabase_auth_admin owner, RLS on, FORCE off, zero policies unchanged',mapping:'Existing UID seed, authoritative source, PK/FK/email uniqueness, no passwords or grants, controlled revision/suspension/resync',parallelSessions:30,parallelIdentifierPermits:10,privileges:'No runtime/definer Auth reads or browser/runtime mapping access',checks:'101 grants, six driver denials, unknown/disabled, prelookup limiter, generic administration failures and cleanup'},null,2));
  }finally{if(started)run(['stop','--time','1',name]);}
 })().catch(error=>{console.error(error.message);process.exitCode=1;});
