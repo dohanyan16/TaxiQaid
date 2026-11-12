@@ -13,13 +13,14 @@ const inventory=require('../supabase/baseline/permission-definitions.json').defi
 const api=(identifier,ip,account,global)=>`SELECT allowed FROM taxiqaid_auth_api.begin_login_attempt(${lit(identifier)},${lit(hash(ip))},${lit(hash(account))},${lit(hash(global))});`;
 const access=(revision='1',subject=uid)=>`SELECT taxiqaid_auth_api.get_management_access(${lit(subject)},${lit(revision)}::bigint);`;
 const runtime=(query,options={})=>sql('BEGIN;SET LOCAL ROLE taxiqaid_auth_backend;'+query+'COMMIT;',{user:'taxiqaid_auth_login',...options});
-const authState=()=>sql("SELECT json_build_array(pg_get_userbyid(relowner),relrowsecurity,relforcerowsecurity,(SELECT count(*) FROM pg_policies WHERE schemaname='auth' AND tablename='users')) FROM pg_class WHERE oid='auth.users'::regclass;");
+const authState=()=>sql("SELECT json_build_array(pg_get_userbyid(relowner),relrowsecurity,relforcerowsecurity,(SELECT count(*) FROM pg_policies WHERE schemaname='auth' AND tablename='users')) FROM pg_class WHERE oid=(SELECT c.oid FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='auth' AND c.relname='users');");
 async function concurrent(queries){return Promise.all(queries.map(query=>new Promise((resolve,reject)=>{const child=spawn('docker',[...docker,'exec','-i',name,'psql','-X','-qAt','-v','ON_ERROR_STOP=1','-U','taxiqaid_auth_login','-d','postgres'],{env:dockerEnv,stdio:['pipe','pipe','pipe']});let output='',error='';child.stdout.on('data',v=>output+=v);child.stderr.on('data',v=>error+=v);child.on('exit',code=>code?reject(new Error('Disposable concurrency failed: '+error)):resolve(output.trim()));child.stdin.end('BEGIN;SET LOCAL ROLE taxiqaid_auth_backend;'+query+'COMMIT;');})));}
 (async()=>{
  let started=false;
  try{
-  run(['run','--detach','--rm','--network','none','--name',name,'-e','POSTGRES_HOST_AUTH_METHOD=trust','postgres:15-alpine']);started=true;
+  run(['run','--detach','--rm','--network','none','--name',name,'-e','POSTGRES_HOST_AUTH_METHOD=trust','-e',process.env.TAXIQAID_TEST_PUBLIC_GATEWAY==='true'?'POSTGRES_USER=supabase_admin':'POSTGRES_USER=postgres','-e','POSTGRES_DB=postgres',process.env.TAXIQAID_TEST_PUBLIC_GATEWAY==='true'?'postgres:16-alpine':'postgres:15-alpine']);started=true;
   let ready=false;for(let n=0;n<100;n++){try{run(['exec',name,'pg_isready','-h','127.0.0.1','-U','postgres']);ready=true;break;}catch{await new Promise(resolve=>setTimeout(resolve,100));}}assert.ok(ready,'Disposable database startup failed');
+  if(process.env.TAXIQAID_TEST_PUBLIC_GATEWAY==='true')sql('CREATE ROLE postgres SUPERUSER LOGIN;',{user:'supabase_admin'});
   sql(`CREATE ROLE anon NOLOGIN;CREATE ROLE authenticated NOLOGIN;CREATE ROLE taxiqaid_auth_backend NOLOGIN NOBYPASSRLS NOSUPERUSER;
 CREATE ROLE supabase_auth_admin NOLOGIN NOBYPASSRLS;CREATE ROLE fixture_auth_reader NOLOGIN NOBYPASSRLS;
 CREATE SCHEMA auth AUTHORIZATION supabase_auth_admin;CREATE TABLE auth.users(id uuid PRIMARY KEY,email text,raw_user_meta_data jsonb DEFAULT '{}');ALTER TABLE auth.users OWNER TO supabase_auth_admin;ALTER TABLE auth.users ENABLE ROW LEVEL SECURITY;
@@ -89,8 +90,7 @@ INSERT INTO taxiqaid_private.role_permissions(role_key,permission_key,is_allowed
   sql(`INSERT INTO taxiqaid_private.login_attempt_counters VALUES(${lit(hash('expired'))},now()-interval '2 hours',now()-interval '1 hour',1);`);assert.equal(sql('SELECT taxiqaid_auth_api.prune_login_counters(1000);'),'1');
   assert.equal(authState(),originalAuthState,'Managed Auth owner/RLS/policies must remain unchanged');
   if(process.env.TAXIQAID_TEST_PUBLIC_GATEWAY==='true'){
-   sql(fs.readFileSync(path.join(root,'supabase/review/public-login/00_conservative_limits.sql'),'utf8'));
-   sql(fs.readFileSync(path.join(root,'supabase/review/public-login/01_signed_attempt_and_cleanup.sql'),'utf8'));
+   require('./_managed-membership-fixture.cjs')({sql,runtime,root});
    const epoch=sql('SELECT floor(extract(epoch FROM clock_timestamp()))::bigint;');
    const signed=(nonce,group='signed',stamp=epoch)=>`SELECT allowed FROM taxiqaid_auth_api.begin_signed_login_attempt('dohanyan',${lit(hash(group+'-ip'))},${lit(hash(group+'-account'))},${lit(hash(group+'-global'))},${lit(hash(nonce))},${stamp});`;
    assert.equal(runtime(signed('unmaintained')),'f');
@@ -99,16 +99,25 @@ INSERT INTO taxiqaid_private.role_permissions(role_key,permission_key,is_allowed
    assert.equal(sql('SELECT taxiqaid_auth_api.public_login_limits_healthy();'),'t');
    assert.equal(runtime(signed('once')),'t');assert.equal(runtime(signed('once')),'f');
    const budget=(group,index,ip,account)=>`SELECT allowed FROM taxiqaid_auth_api.begin_signed_login_attempt('unknownfixture',${lit(hash(group+'-ip-'+ip))},${lit(hash(group+'-account-'+account))},${lit(hash(group+'-global'))},${lit(hash(group+'-nonce-'+index))},floor(extract(epoch FROM clock_timestamp()))::bigint);`;
-   for(let n=0;n<3;n++)assert.equal(runtime(budget('ip-budget',n,'same',n)),n<2?'t':'f');
-   for(let n=0;n<21;n++)assert.equal(runtime(budget('global-budget',n,n,n)),n<20?'t':'f');
-   for(let n=0;n<11;n++)assert.equal(runtime(budget('identifier-budget',n,n,'same')),n<10?'t':'f');
+   // Observe the actual persisted fixed window, so a legitimate clock rollover is not a test failure.
+   for(const [group,limit,scope]of [['ip-budget',2,'ip'],['global-budget',20,'global'],['identifier-budget',10,'account']]){
+    const permitted=new Map();let denied=false;
+    for(let n=0;n<(limit+1)*3&&!denied;n++){
+     const allowed=runtime(budget(group,n,scope==='ip'?'same':n,scope==='account'?'same':n));
+     const key=hash(group+(scope==='global'?'-global':scope==='ip'?'-ip-same':'-account-same'));
+     const window=sql('SELECT max(window_start)::text FROM taxiqaid_private.login_attempt_counters WHERE bucket='+lit(key)+';');
+     const count=permitted.get(window)||0;assert.equal(allowed,count<limit?'t':'f');if(allowed==='t')permitted.set(window,count+1);else denied=true;
+    }
+    assert.equal(denied,true,'Must observe a real boundary denial for '+scope);
+   }
 
    assert.equal(runtime(signed('stale','stale',Number(epoch)-61)),'f');
-   assert.equal(runtime(signed('future','future',Number(epoch)+10)),'f');
+   assert.equal(runtime(signed('future','future','floor(extract(epoch FROM clock_timestamp()))::bigint+10')),'f');
    // Replay still consumes existing limits but never releases another usable attempt.
-   sql('ALTER ROLE taxiqaid_auth_login CONNECTION LIMIT 40;');
-   const nonceRace=await concurrent(Array.from({length:12},()=>signed('raced','race')));assert.equal(nonceRace.filter(v=>v==='t').length,1);
-   sql('ALTER ROLE taxiqaid_auth_login CONNECTION LIMIT 4;');
+   sql('ALTER ROLE taxiqaid_auth_login CONNECTION LIMIT 40;',{user:'supabase_admin'});
+   const raceEpoch=sql('SELECT floor(extract(epoch FROM clock_timestamp()))::bigint;');
+   const nonceRace=await concurrent(Array.from({length:12},()=>signed('raced','race',raceEpoch)));assert.equal(nonceRace.filter(v=>v==='t').length,1);
+   sql('ALTER ROLE taxiqaid_auth_login CONNECTION LIMIT 4;',{user:'supabase_admin'});
    sql("UPDATE taxiqaid_private.login_attempt_counters SET expires_at=clock_timestamp()-interval '1 second' WHERE window_start=to_timestamp(0);");
    const staleCount=sql('SELECT count(*) FROM taxiqaid_private.login_attempt_counters;');assert.equal(runtime(signed('stopped','stopped')),'f');assert.equal(sql('SELECT count(*) FROM taxiqaid_private.login_attempt_counters;'),staleCount);
    sql('SELECT taxiqaid_auth_api.maintain_public_login_counters(1000);');
@@ -119,6 +128,6 @@ INSERT INTO taxiqaid_private.role_permissions(role_key,permission_key,is_allowed
    sql('SELECT taxiqaid_auth_api.maintain_public_login_counters(1001);',{failure:true});
    assert.equal(authState(),originalAuthState);process.stderr.write('PASS: signed attempts, one-use nonce race, stale cleanup admission stop, bounded backlog and private function grants.\n');
   }
-  console.log(JSON.stringify({result:'PASS',database:'Disposable PostgreSQL 15, no live Supabase/Auth test',managedAuth:'supabase_auth_admin owner, RLS on, FORCE off, zero policies unchanged',mapping:'Existing UID seed, authoritative source, PK/FK/email uniqueness, no passwords or grants, controlled revision/suspension/resync',parallelSessions:30,parallelIdentifierPermits:10,privileges:'No runtime/definer Auth reads or browser/runtime mapping access',checks:'101 grants, six driver denials, unknown/disabled, prelookup limiter, generic administration failures and cleanup'},null,2));
+  console.log(JSON.stringify({result:'PASS',database:process.env.TAXIQAID_TEST_PUBLIC_GATEWAY==='true'?'Disposable PostgreSQL 16 managed-membership fixture, no live Supabase/Auth test':'Disposable PostgreSQL 15, no live Supabase/Auth test',managedAuth:'supabase_auth_admin owner, RLS on, FORCE off, zero policies unchanged',mapping:'Existing UID seed, authoritative source, PK/FK/email uniqueness, no passwords or grants, controlled revision/suspension/resync',parallelSessions:30,parallelIdentifierPermits:10,privileges:'No runtime/definer Auth reads or browser/runtime mapping access',checks:'101 grants, six driver denials, unknown/disabled, prelookup limiter, generic administration failures and cleanup'},null,2));
  }finally{if(started)run(['stop','--time','1',name]);}
-})().catch(error=>{console.error(error.message);process.exitCode=1;});
+})().catch(error=>{console.error(error.stack||error.message);process.exitCode=1;});

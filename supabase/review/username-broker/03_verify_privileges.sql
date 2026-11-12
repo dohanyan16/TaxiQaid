@@ -1,7 +1,10 @@
--- READ ONLY. Must pass before any credential provisioning or broker activation.
+-- READ ONLY. For public proposal cleanup also run public-login/03_verify_role_state.sql.
+-- PG15 display returns NULL for unsupported membership options; only the PG16+ verifier proves their values.
+-- Must pass before any credential provisioning or broker activation.
 SELECT r.rolname,r.rolcanlogin,r.rolinherit,r.rolsuper,r.rolbypassrls,r.rolcreaterole,r.rolcreatedb,r.rolreplication
 FROM pg_catalog.pg_roles r WHERE r.rolname LIKE 'taxiqaid_auth_%' ORDER BY r.rolname;
-SELECT pg_catalog.pg_get_userbyid(m.member) AS member,pg_catalog.pg_get_userbyid(m.roleid) AS granted_role,m.admin_option
+SELECT pg_catalog.pg_get_userbyid(m.member) AS member,pg_catalog.pg_get_userbyid(m.roleid) AS granted_role,pg_catalog.pg_get_userbyid(m.grantor) AS grantor,m.admin_option,
+ (pg_catalog.to_jsonb(m)->>'inherit_option')::boolean AS inherit_option,(pg_catalog.to_jsonb(m)->>'set_option')::boolean AS set_option
 FROM pg_catalog.pg_auth_members m WHERE pg_catalog.pg_get_userbyid(m.member) LIKE 'taxiqaid_auth_%' OR pg_catalog.pg_get_userbyid(m.roleid) LIKE 'taxiqaid_auth_%';
 SELECT n.nspname,p.proname,pg_catalog.pg_get_userbyid(p.proowner) AS owner,p.prosecdef,p.proconfig,p.proacl
 FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='taxiqaid_auth_api';
@@ -27,9 +30,16 @@ BEGIN
  END LOOP;
  FOR fn IN SELECT p.oid::regprocedure FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='taxiqaid_auth_api' LOOP
   IF pg_catalog.has_function_privilege('anon',fn,'EXECUTE') OR pg_catalog.has_function_privilege('authenticated',fn,'EXECUTE') THEN RAISE EXCEPTION 'Browser function execution must remain denied.'; END IF;
-  IF pg_catalog.has_function_privilege('taxiqaid_auth_backend',fn,'EXECUTE') AND fn NOT IN ('taxiqaid_auth_api.begin_login_attempt(text,text,text,text)'::regprocedure,'taxiqaid_auth_api.get_management_access(uuid,bigint)'::regprocedure) THEN RAISE EXCEPTION 'Unexpected or legacy backend API execution grant.'; END IF;
+  IF pg_catalog.has_function_privilege('taxiqaid_auth_backend',fn,'EXECUTE') AND fn NOT IN ('taxiqaid_auth_api.begin_login_attempt(text,text,text,text)'::regprocedure,'taxiqaid_auth_api.get_management_access(uuid,bigint)'::regprocedure) AND fn IS DISTINCT FROM pg_catalog.to_regprocedure('taxiqaid_auth_api.begin_signed_login_attempt(text,text,text,text,text,bigint)') THEN RAISE EXCEPTION 'Unexpected or legacy backend API execution grant.'; END IF;
   IF pg_catalog.has_function_privilege('taxiqaid_auth_login',fn,'EXECUTE') THEN RAISE EXCEPTION 'Connection role must switch locally to the restricted backend.'; END IF;
  END LOOP;
+ -- Optional public signed API is permitted only with its reviewed definer and narrow owner/backend ACL.
+ IF pg_catalog.to_regprocedure('taxiqaid_auth_api.begin_signed_login_attempt(text,text,text,text,text,bigint)') IS NOT NULL AND NOT EXISTS(
+  SELECT FROM pg_catalog.pg_proc p WHERE p.oid=pg_catalog.to_regprocedure('taxiqaid_auth_api.begin_signed_login_attempt(text,text,text,text,text,bigint)') AND p.proowner='taxiqaid_auth_lookup_owner'::regrole AND p.prosecdef
+   AND p.proconfig @> ARRAY['search_path=pg_catalog, pg_temp','row_security=on'] AND cardinality(p.proconfig)=2
+   AND pg_catalog.has_function_privilege('taxiqaid_auth_backend',p.oid,'EXECUTE')
+   AND NOT EXISTS(SELECT FROM pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a WHERE a.privilege_type<>'EXECUTE' OR a.grantee NOT IN (p.proowner,'taxiqaid_auth_backend'::regrole) OR (a.grantee<>p.proowner AND a.is_grantable) OR a.grantor<>p.proowner)
+ ) THEN RAISE EXCEPTION 'Unexpected signed API owner, hardening or EXECUTE grants.'; END IF;
  IF pg_catalog.has_function_privilege('taxiqaid_auth_backend','taxiqaid_auth_api.consume_login_counters(text,text,text)','EXECUTE') OR pg_catalog.has_function_privilege('taxiqaid_auth_backend','taxiqaid_auth_api.prune_login_counters(integer)','EXECUTE') THEN RAISE EXCEPTION 'Backend must not consume/reset/prune counters separately.'; END IF;
  IF NOT pg_catalog.has_function_privilege('taxiqaid_auth_backend','taxiqaid_auth_api.begin_login_attempt(text,text,text,text)','EXECUTE') OR NOT pg_catalog.has_function_privilege('taxiqaid_auth_backend','taxiqaid_auth_api.get_management_access(uuid,bigint)','EXECUTE') THEN RAISE EXCEPTION 'Two reviewed runtime functions required.'; END IF;
  FOREACH actor IN ARRAY ARRAY['taxiqaid_auth_lookup_owner','taxiqaid_auth_access_owner','taxiqaid_auth_rate_owner'] LOOP

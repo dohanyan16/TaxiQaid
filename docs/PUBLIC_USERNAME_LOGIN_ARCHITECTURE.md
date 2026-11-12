@@ -1,5 +1,9 @@
 # Public username login architecture — proposal, not activated
 
+## Managed-role precondition correction
+
+The owner verified normal permanent owner memberships granted by supabase_admin (ADMIN true, INHERIT/SET false) and confirmed pg_cron is not installed. The [corrected role-grant runbook](SUPABASE_MANAGED_ROLE_PROPOSALS.md) supersedes the earlier blanket membership rejection. Reviewed SQL now preserves those rows, uses explicitly self-granted temporary SET privileges and verifies cleanup/ownership/ACLs before commit. Read-only 03 must be checked before and after approved 00/01 transactions; Cron installation remains a separate approval. No live SQL or activation is performed by this correction.
+
 ## Worker runtime correction
 
 The owner created the disabled Worker `taxiqaid-auth-gateway` and reported a Dashboard Fetch type incompatibility. The [compatibility correction](CLOUDFLARE_WORKER_COMPATIBILITY.md) removes the browser-only credentials option, uses manual redirects with explicit denial and records official-type/local-workerd validation. It changes no live Worker variable, Supabase setting or activation state. Use the newly regenerated Worker artifact for review rather than the original `b8a033f` artifact.

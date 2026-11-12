@@ -1,5 +1,6 @@
 -- REVIEW ONLY. Do not run before explicit approval. Dashboard Cron is the preferred browser-only interface.
--- After enabling the supported pg_cron integration, verify this exact job name does not already exist.
+-- Owner verified pg_cron is NOT installed. First verify approved 00/01 with 03_verify_role_state.sql.
+-- Only after separate approval enable the supported pg_cron integration and verify this exact job name does not already exist.
 -- Schedule as postgres, once per minute; SQL runs in the database, with no key or network call.
 SELECT cron.schedule('taxiqaid-public-login-counter-maintenance','* * * * *',
  $$SELECT taxiqaid_auth_api.maintain_public_login_counters(1000);$$);
