@@ -1,5 +1,9 @@
 # Public username login architecture — proposal, not activated
 
+## Worker runtime correction
+
+The owner created the disabled Worker `taxiqaid-auth-gateway` and reported a Dashboard Fetch type incompatibility. The [compatibility correction](CLOUDFLARE_WORKER_COMPATIBILITY.md) removes the browser-only credentials option, uses manual redirects with explicit denial and records official-type/local-workerd validation. It changes no live Worker variable, Supabase setting or activation state. Use the newly regenerated Worker artifact for review rather than the original `b8a033f` artifact.
+
 Review date: 2026-11-12. Continue `feat/dedicated-supabase-auth`. No deployment, secret edit, live SQL, login enablement, main merge or branch deletion is authorized. Production GitHub Pages and the old external Supabase project remain unchanged.
 
 ## Owner-verified state

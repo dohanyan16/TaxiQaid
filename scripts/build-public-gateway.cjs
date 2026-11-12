@@ -2,7 +2,9 @@
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),root=path.resolve(__dirname,'..'),check=process.argv.includes('--check'),read=file=>fs.readFileSync(path.join(root,file),'utf8');
 function output(file,source){if(check){if(read(file)!==source)throw new Error('Public gateway artifact drift: '+file);}else fs.writeFileSync(path.join(root,file),source);}
 const proof=read('supabase/functions/_shared/gateway-proof.mjs');
-output('gateway/dashboard-worker.mjs','// GENERATED REVIEW ONLY. No secrets, deployment or activation.\n'+proof.replace(/^export /gm,'')+'\n'+read('gateway/worker.mjs').replace(/^import .*;\n/gm,''));
+const worker=read('gateway/worker.mjs');
+if(/\bcredentials\s*:/.test(worker)||/\bredirect\s*:\s*['"]error['"]/.test(worker))throw new Error('Unsupported Cloudflare Worker fetch options.');
+output('gateway/dashboard-worker.mjs','// GENERATED REVIEW ONLY. No secrets, deployment or activation.\n'+proof.replace(/^export /gm,'')+'\n'+worker.replace(/^import .*;\n/gm,''));
 const files=['supabase/functions/_shared/security.mjs','supabase/functions/_shared/handlers.mjs','supabase/functions/_shared/broker-store.ts','supabase/functions/_shared/gateway-proof.mjs','supabase/functions/_shared/signed-broker-store.ts','supabase/review/public-login/login-with-identifier.ts'],imports=new Set(),bodies=[];
 for(const file of files){let source=read(file).replace(/^import .* from ['"]([^'"]+)['"];\n/gm,(line,target)=>{if(!target.startsWith('.'))imports.add(line.trim());return '';}).replace(/^export /gm,'');bodies.push('// Source: '+file+'\n'+source);}
 output('supabase/dashboard/login-with-identifier-gateway.ts','// @ts-nocheck\n// GENERATED REVIEW REPLACEMENT. Original modules are checked separately. Do not deploy without approval.\n'+[...imports].join('\n')+'\n'+bodies.join('\n'));
