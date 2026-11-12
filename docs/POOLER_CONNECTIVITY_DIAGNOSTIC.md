@@ -1,4 +1,10 @@
-# Restricted pooler diagnostic — prepare for review only
+# Restricted pooler diagnostic — archived preparation
+
+## Historical preparation; owner completed and removed diagnostic — 2026-11-12
+
+The owner now reports a genuine hosted PASS on every diagnostic check, strict TLS and backend SSL, SSL Enforcement enabled, and deletion of the temporary function plus all three diagnostic secrets. The project uses ES256; the successful temporary test had the legacy platform JWT check disabled while the handler retained online Auth verification and the administrator grant. The candidate below proposed gateway verification on; it does not describe that later live setting. Current official documentation says platform verification supports asymmetric keys. Do not infer a need to disable any working function's verification or recreate the removed diagnostic.
+
+Only `get-my-access` and disabled `login-with-identifier` remain deployed. All three login activation flags remain false. The [final security review](USERNAME_AUTH_FINAL_SECURITY_REVIEW.md) records current evidence, trusted-IP/activation blockers and the future username-test procedure. The preparation/results-pending wording below is historical; no new diagnostic deployment is requested. Genuine username authentication remains unverified.
 
 **No deployment, enablement, main merge or live database change is authorized by this preparation.** Work remains on `feat/dedicated-supabase-auth`. The owner reports `login-with-identifier` is manually deployed with its three activation flags false, `TAXIQAID_BROKER_DB_URL` configured, and existing SQL privilege checks passed. Those facts do not establish a successful pooler connection.
 

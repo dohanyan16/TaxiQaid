@@ -1,5 +1,9 @@
 # Username login backend: review and manual staging runbook
 
+## Current security review — 2026-11-12
+
+The [final username authentication review](USERNAME_AUTH_FINAL_SECURITY_REVIEW.md) supersedes the earlier pending pooler/mapping status and controls the current handoff. The owner confirms hosted pooler/TLS/backend SSL/roles/rollback/closure PASS, SSL Enforcement enabled, active Master mapping verified, ES256 signing and removal of the temporary diagnostic/function secrets. Only the access function and disabled broker remain deployed. No username end-to-end PASS exists. Trusted-IP provenance is still unestablished: a readiness flag or forwarded-header example is not evidence. The live test below remains blocked; no flag, secret, SQL, function or main change is authorized now. Compatibility corrections require verified semantics and separate review; the deployed access function remains untouched.
+
 ## Status and scope
 
 Work stays on `feat/dedicated-supabase-auth`. Nothing in this change applies SQL to Supabase, changes live database grants/accounts, deploys a function, enables the broker, changes `main` or publishes GitHub Pages. **Do not perform the deployment steps below until the owner separately approves the reviewed staging changes.** The production login and old external Supabase project remain untouched.
@@ -171,7 +175,7 @@ Automated verification uses synthetic data and the real pinned browser SDK with 
 
 Developer checks: JavaScript syntax; all Node unit/regression suites; the existing seven application browser suites; new username Snippet and prior local smoke mocked suites; catalog drift check; Deno type/tests; generated-artifact consistency; disposable PostgreSQL privilege/concurrency suite; Roster PDF verification outside the repository. The developer-only commands are not owner prerequisites.
 
-Remaining activation/cutover blockers: reviewed mapping DDL/FK authority, existing-Master seed and administrative lifecycle/ownership; strict TLS/custom-role pooler connection; Vault provisioning/log redaction; independently proven trusted ingress and spoof rejection; native/direct Auth rate-limit coverage and capacity; cleanup monitoring; explicit deployed profile-field compatibility; genuine username-browser-to-broker session/permission/sign-out results; authorized disabled-account and hosted concurrency/outage checks. No mandatory MFA or driver provisioning is used to bypass any blocker.
+Remaining activation/cutover blockers (updated after owner pooler/mapping verification): independently proven trusted ingress and spoof rejection; deployed-source parity; native/direct Auth rate-limit coverage and shared-egress capacity; bounded recurring cleanup/monitoring; session/log privacy and administrative identity lifecycle review; explicit deployed profile-field compatibility; genuine username-browser-to-broker session/permission/sign-out results; authorized disabled-account and hosted concurrency/outage checks; separate live-window and eventual cutover approval. No mandatory MFA or driver provisioning is used to bypass any blocker.
 
 ## Rollback
 
