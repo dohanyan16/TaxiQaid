@@ -11,3 +11,8 @@ verify_jwt = true
 # Review-only temporary administrator diagnostic. No broker activation; no deploy is performed by this file.
 [functions.check-broker-pooler]
 verify_jwt = true
+
+# Review-only independent owner diagnostic: online Auth and active Master checks are mandatory in the handler.
+# No preexisting user JWT can be replaced by an API key. Existing function settings remain unchanged.
+[functions.check-owner-username]
+verify_jwt = false

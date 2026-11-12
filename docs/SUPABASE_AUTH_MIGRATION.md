@@ -1,5 +1,9 @@
 # Dedicated Supabase authentication migration — not activated
 
+## New owner-only test proposal
+
+The [separate owner-only username diagnostic](OWNER_USERNAME_DIAGNOSTIC.md) records the owner-verified native rate limits (unchanged), temporary authorization design and browser-only plan. It can test username functionality privately while the public broker remains disabled; public IP trust and production activation remain separate. It is prepared only, not deployed or enabled, and genuine private username success remains unverified. Earlier lack-of-owner-only-path findings describe the existing public handler; the new candidate does not alter that handler.
+
 ## Current owner-verified state — 2026-11-12
 
 See the [final username authentication security review](USERNAME_AUTH_FINAL_SECURITY_REVIEW.md) for the current findings and exact browser-only handoff. The owner verified the hosted restricted pooler, strict client TLS and backend SSL, enabled SSL Enforcement, verified the active Master mapping, then deleted the temporary diagnostic and its three secrets. Only `get-my-access` and the disabled `login-with-identifier` remain deployed. Signing uses ES256; the temporary diagnostic's legacy gateway JWT check was disabled while its handler verified the real Auth user and temporary admin grant. This does not authorize changing the working access function.

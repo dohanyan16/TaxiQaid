@@ -1,5 +1,9 @@
 # Username authentication final security review — blocked before activation
 
+## New owner-only test proposal
+
+The [separate owner-only username diagnostic](OWNER_USERNAME_DIAGNOSTIC.md) records the owner-verified native rate limits (unchanged), temporary authorization design and browser-only plan. It can test username functionality privately while the public broker remains disabled; public IP trust and production activation remain separate. It is prepared only, not deployed or enabled, and genuine private username success remains unverified. Earlier lack-of-owner-only-path findings describe the existing public handler; the new candidate does not alter that handler.
+
 Review date: 2026-11-12. Branch: `feat/dedicated-supabase-auth`. This is a source/documentation review, not authorization to deploy, edit secrets, execute SQL, activate login or merge. Production remains unchanged.
 
 ## Evidence and current state
