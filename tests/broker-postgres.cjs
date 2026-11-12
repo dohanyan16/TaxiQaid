@@ -32,7 +32,7 @@ CREATE TABLE taxiqaid_private.user_departments(user_id uuid,department_key text,
 CREATE TABLE taxiqaid_private.permissions(permission_key text PRIMARY KEY,module_key text,action_key text,display_name text,description text,is_active boolean);
 CREATE TABLE taxiqaid_private.role_permissions(role_key text,permission_key text,is_allowed boolean);
 CREATE TABLE taxiqaid_private.user_permission_overrides(user_id uuid,permission_key text,is_allowed boolean,updated_at timestamptz,updated_by uuid);
-CREATE TABLE taxiqaid_private.login_attempt_counters(bucket text,window_start timestamptz,expires_at timestamptz,attempts bigint,PRIMARY KEY(bucket,window_start));CREATE INDEX ON taxiqaid_private.login_attempt_counters(expires_at);
+CREATE TABLE taxiqaid_private.login_attempt_counters(bucket text,window_start timestamptz,expires_at timestamptz,attempts bigint CONSTRAINT login_attempt_counters_attempts_check CHECK (attempts > 0),CONSTRAINT login_attempt_counters_bucket_check CHECK (bucket ~ '^[0-9a-f]{64}$'),PRIMARY KEY(bucket,window_start));CREATE INDEX ON taxiqaid_private.login_attempt_counters(expires_at);
 ${['user_accounts','departments','user_departments','permissions','role_permissions','user_permission_overrides','login_attempt_counters'].map(t=>'ALTER TABLE taxiqaid_private.'+t+' ENABLE ROW LEVEL SECURITY;').join('\n')}
 INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES(${lit(uid)},'synthetic-private@example.invalid','{"email":"untrusted-metadata@example.invalid","role":"untrusted"}'),(${lit(driver)},'synthetic-driver@example.invalid','{}'),(${lit(disabled)},'synthetic-disabled@example.invalid','{}');
 INSERT INTO taxiqaid_private.user_accounts(user_id,username,full_name,account_type,role_key,status) VALUES(${lit(uid)},'dohanyan','Synthetic Manager','management','super_admin','active'),(${lit(driver)},'1000000001','Synthetic Driver','driver','driver','active'),(${lit(disabled)},'disabledfixture','Synthetic Disabled','management','staff','disabled');
@@ -91,6 +91,7 @@ INSERT INTO taxiqaid_private.role_permissions(role_key,permission_key,is_allowed
   assert.equal(authState(),originalAuthState,'Managed Auth owner/RLS/policies must remain unchanged');
   if(process.env.TAXIQAID_TEST_PUBLIC_GATEWAY==='true'){
    require('./_managed-membership-fixture.cjs')({sql,runtime,root});
+   require('./_maintenance-repair-fixture.cjs')({sql,runtime,root,hash,lit});
    const epoch=sql('SELECT floor(extract(epoch FROM clock_timestamp()))::bigint;');
    const signed=(nonce,group='signed',stamp=epoch)=>`SELECT allowed FROM taxiqaid_auth_api.begin_signed_login_attempt('dohanyan',${lit(hash(group+'-ip'))},${lit(hash(group+'-account'))},${lit(hash(group+'-global'))},${lit(hash(nonce))},${stamp});`;
    assert.equal(runtime(signed('unmaintained')),'f');

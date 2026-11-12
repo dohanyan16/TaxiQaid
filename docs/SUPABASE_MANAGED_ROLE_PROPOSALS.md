@@ -1,5 +1,7 @@
 # Supabase-managed owner memberships — corrected SQL proposals
 
+> Current owner-verified incident: SQL 00/01 are installed and 03 security checks PASS. The existing Cron job failed the watermark bucket CHECK and is now disabled; public login remains disabled. Historical NOT_APPLIED/NOT_INSTALLED statements below are superseded. Use the separately approved [04 watermark repair procedure](CRON_MAINTENANCE_WATERMARK_REPAIR.md), never rerun 01 or create a duplicate job. No live repair is authorized by this commit. Validation/file lists below describe their earlier review commits; the linked repair runbook contains the current files and results.
+
 Continue `feat/dedicated-supabase-auth`, correcting reviewed commit `40b9cec`. **No live SQL, deployment, secret/settings change, main merge or branch deletion is authorized.** The owner has verified real authentication, private mapping, access compatibility and restricted TLS connectivity. This correction preserves that evidence and does not claim a new live execution result.
 
 ## Verified baseline and official procedure

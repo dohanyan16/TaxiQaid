@@ -1,5 +1,7 @@
 # Public username login — capacity and rate-limit review
 
+> Current owner-verified incident: SQL 00/01 are installed and 03 security checks PASS. The existing Cron job failed the watermark bucket CHECK and is now disabled; public login remains disabled. Historical NOT_APPLIED/NOT_INSTALLED statements below are superseded. Use the separately approved [04 watermark repair procedure](CRON_MAINTENANCE_WATERMARK_REPAIR.md), never rerun 01 or create a duplicate job. No live repair is authorized by this commit. Validation/file lists below describe their earlier review commits; the linked repair runbook contains the current files and results.
+
 Review baseline: `4f7b171`, branch `feat/dedicated-supabase-auth`. This is a proposal, not an applied configuration or production-readiness claim. No live SQL, deployment, activation, secret change, native Auth setting change, merge or branch deletion is authorized.
 
 ## Recommendation

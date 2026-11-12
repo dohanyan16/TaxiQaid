@@ -1,5 +1,7 @@
 # Public username login architecture — proposal, not activated
 
+> Current owner-verified incident: SQL 00/01 are installed and 03 security checks PASS. The existing Cron job failed the watermark bucket CHECK and is now disabled; public login remains disabled. Historical NOT_APPLIED/NOT_INSTALLED statements below are superseded. Use the separately approved [04 watermark repair procedure](CRON_MAINTENANCE_WATERMARK_REPAIR.md), never rerun 01 or create a duplicate job. No live repair is authorized by this commit. Validation/file lists below describe their earlier review commits; the linked repair runbook contains the current files and results.
+
 ## Managed-role precondition correction
 
 The owner verified normal permanent owner memberships granted by supabase_admin (ADMIN true, INHERIT/SET false) and confirmed pg_cron is not installed. The [corrected role-grant runbook](SUPABASE_MANAGED_ROLE_PROPOSALS.md) supersedes the earlier blanket membership rejection. Reviewed SQL now preserves those rows, uses explicitly self-granted temporary SET privileges and verifies cleanup/ownership/ACLs before commit. Read-only 03 must be checked before and after approved 00/01 transactions; Cron installation remains a separate approval. No live SQL or activation is performed by this correction.
