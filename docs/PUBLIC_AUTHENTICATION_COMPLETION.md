@@ -2,6 +2,8 @@
 
 Scope: finish public authentication, its final frontend integration and safe production cutover on `feat/dedicated-supabase-auth`, repository reconciliation approved from `c0a5e7d` after Step 141. Account management, database redesign, Drivers Management, department modules and unrelated ERP work are deferred to a separate conversation **after this phase closes**. This document authorizes no deployment, live test, SQL, setting/secret change, activation, merge or branch deletion.
 
+Step 154: the historical evidence review is CLOSED with TIMING_ONLY support; the [phased Master pilot proposal](MASTER_PILOT_VALIDATION_PROPOSAL.md) is now the next item for owner approval. It gives work, expected evidence, owner intervention, independent authorizations, rollback and actual blockers for every phase. No implementation or hosted test is approved by this update.
+
 ## Accepted live evidence — do not restart completed work
 
 These are **owner-verified hosted results**, not new agent-run tests:
@@ -15,13 +17,13 @@ These are **owner-verified hosted results**, not new agent-run tests:
 | Revised login-with-identifier | Step 141 functional source review accepted; Step 144 Dashboard showed 27 deployments without an exact identifier. Version remains UNVERIFIED; the count is not a version |
 | Worker source/version review | Step 141: active reference `9452cefc`, reviewed against `gateway/dashboard-worker.mjs` at `c0a5e7d`, with no functional discrepancies identified; no new deployment performed |
 | Unsigned direct Supabase POST | HTTP 403; baseline direct-origin denial accepted |
-| Dummy Worker POST and matching Supabase POST log | HTTP 503 at both; supports signed transport to the disabled broker, not password, SQL admission, IP fidelity, replay or browser-session readiness |
+| Historical Worker/Supabase POST 503 | Step 154: both at 2026-11-15 17:37:35 CET; owner-attested time/target/method/status match only, no visible outbound span or verified shared ID. Not definitive signed-communication/HMAC evidence |
 | Current controls | Worker returned to enabled=false; public login disabled; approved browser origins configured |
 | Option A security decision | Step 144: owner accepts broker-only enforcement and residual native Auth bypass for a limited internal office pilot; no activation/test/settings approval |
 | Hosted R1 owner results | BOOT 405, QUERY 403, PATH 403, disabled PUT 503, GitHub Pages CORS OPTIONS 204/POST 503 with correct allow-origin, null-Origin OPTIONS 403/no allow-origin/POST blocked: six owner-reported PASS; no credentials or production configuration changes |
 | R1-DENY-CORS | BLOCKED: no separate owner-controlled unapproved HTTPS origin; null-Origin case does not close it |
 | Completed R2 owner inventory | Worker=false; only the gateway in the inspected Cloudflare account; no production bindings, previews disabled, no custom domains/routes visible; Cloudflare R1 timestamps/methods/paths available |
-| R2 attribution capability | UNVERIFIED; Supabase Logs showed no results in the inspected 60-minute R1 window. This is consistent with disabled Worker behavior, not complete cross-platform attribution or a new broker PASS |
+| R2-EVIDENCE-REVIEW | CLOSED: HISTORICAL_RECORD AVAILABLE, OUTBOUND_LINK ABSENT_IN_VISIBLE_TRACE, TARGET_METHOD_STATUS MATCH, SHARED_NONSECRET_ID UNVERIFIED, CROSS_PLATFORM_LINK OWNER_ATTESTED, LIMITATION TIMING_ONLY. Do not repeat this review or relabel it a security PASS |
 | Earlier private Master diagnostic | Existing evidence for password/UID/mapping/active Master/access/101 management grants/six Driver denials/cleanup; do not recreate it or substitute it for a public-flow test |
 
 The latest evidence supersedes older documents saying repair is pending, Cron is disabled/missing, the revised handler is undeployed or the disabled handshake is wholly untested. Preserve their historical test reports, not those outdated current-state statements. No live PASS is inferred for the remaining gates below.
@@ -31,7 +33,7 @@ The latest evidence supersedes older documents saying repair is pending, Cron is
 | Priority / gate | Current status | Acceptance criterion |
 | --- | --- | --- |
 | P0 — Source/config parity and scope decision | OPEN traceability/configuration; repository aligned and Option A approved | Supabase version UNVERIFIED (27 is only a deployment count); preserve existing functional-review evidence, finish origin/topology/configuration evidence and close release traceability without redeploying for an ID |
-| P1 — Disabled-login ingress/proof checks | Six R1 owner-reported PASS; DENY-CORS BLOCKED; R2 inventory recorded, CONTROL DEFERRED/four negatives BLOCKED; R3 OPEN | Genuine hosted origin/path/provenance and signature/timestamp/body-context checks, with no broker password admission; bound missing validation work and record any explicit owner pilot-scope decisions |
+| P1 — Disabled-login ingress/proof checks | Six R1 owner-reported PASS; historical review CLOSED/TIMING_ONLY; DENY-CORS and R2 negatives BLOCKED, CONTROL DEFERRED; R3 OPEN | Genuine hosted source/IP and proof checks with sufficient sanitized branch evidence; separately decide unconfigured-context scope, no implicit waiver of reachable attacks |
 | P2 — Hosted admission, replay and pilot capacity | OPEN | Genuine trusted-IP attribution, unchanged 20/10/10 limits, one-use signed-proof replay protection, no over-admission and acceptable agreed pilot burst/refresh demand |
 | P3 — Genuine public Master and session lifecycle | OPEN | Actual Worker → deployed broker → official SDK → get-my-access flow; UID/active/super_admin/101/six checks; refresh/expiry/logout/failure cleanup and frontend controller verified |
 | P4 — Production frontend integration/cutover | OPEN | Reviewed canonical sources, approved staging evidence, configuration/CSP/storage/revocation policy, rollback/monitoring operator, explicit production activation/merge approval and exact-main Pages verification |
@@ -52,9 +54,9 @@ Finish P0–P4 in order; perform only the approved cases for each gate. A failed
 
 The owner already checked deployment metadata: the Dashboard showed **27 deployments but no exact Supabase identifier**. Record version UNVERIFIED and count 27 separately. Do not call it version 27, repeat the same search indefinitely, redeploy to generate an ID, request Management API credentials or silently treat functional review as exact version parity. The traceability gap remains a release item. Case preparation/read-only inventory can proceed; any later bounded login-disabled test approval must explicitly retain that evidence limitation, not imply a production waiver.
 
-**Next bounded proposal: R2-EVIDENCE-REVIEW in [P1-R2 readiness](P1_R2_READINESS_ASSESSMENT.md).** The completed inventory is recorded; do not request it again. No standalone CONTROL or new enablement is recommended. At most one optional pass over readily available historical positive-handshake metadata can establish whether existing outbound traces/shared non-secret links support attribution; missing retention/fields means stop UNVERIFIED. Zero gateway/broker/Auth test requests and zero writes. No 403/503 retest, caller creation, live-tail/logging change or repeated version search. R2 remains unready; any later runnable cases and Worker enable/restore need separate explicit approval. Keep Worker/public login disabled and healthy Cron unchanged.
+**Next owner action: approve or revise [Step 154 — Master pilot validation by phases](MASTER_PILOT_VALIDATION_PROPOSAL.md).** R2-EVIDENCE-REVIEW is completed with timing-only evidence; no more historical searches, R1 repeats or standalone 403/503. The proposal first requires a minimal repository-only evidence/tooling design and exact file/local-test manifest before any implementation approval. Later code deployment, caller creation, grant/secret/configuration change, live test, activation and cutover each retain separate approval. Current request/write budget is zero. Keep Worker/public login disabled and healthy Cron unchanged.
 
-The P1 plan supplies per-case requests, actual preflight caps, browser-only manual instructions and cleanup requirements. The R2 assessment records completed owner inventory, CONTROL's conditional evidence value, blocked cases, the exact three-document proposal manifest and minimum remaining validation before a controlled Master pilot. It recommends no fixture merely to recreate absent bindings/previews and no separate website only for CORS; any limited-topology exception needs explicit owner scope approval, while external cross-Worker/IP attacks remain relevant. Real Worker provenance needs a separately approved enabled window while public login stays false. Any indispensable proof/rate/caller tooling needs a consolidated, narrowly scoped proposal first; none is implemented or deployed here. Disabled tests cannot establish SQL nonce consumption, IP buckets, 20/10/10 capacity or password/session success.
+The P1 plan retains candidate caps and the R2 assessment records exact completed-review evidence. Step 154 separates mandatory properties from currently unavailable tests, avoids fixtures only to recreate absent bindings/previews, and proposes one consolidated minimum tool/evidence design if indispensable. External cross-Worker/IP attacks remain relevant. No tooling is implemented. Real replay/rate tests require explicitly approved normal counter/nonce writes and native Auth calls even for unknown synthetic identifiers. A genuine Master session can continue approved lifecycle tests after both admission gates are closed again. The frontend's returned-signOut-error gap and a practical real-controller browser context need review before release. Step 154's current manifest is four documentation files; it grants no later code scope.
 
 The prior P0-PARITY inventory remains the source/configuration checklist: exact public approved origins must agree on Worker and broker, the fixed destination/manual redirect rejection must remain, and secret presence never proves equal secret values. GitHub Pages origin is `https://dohanyan16.github.io`, without `/TaxiQaid/`; Origin is not non-browser authorization. Signed readiness requires four flags (`TAXIQAID_LOGIN_ENABLED`, `TAXIQAID_SESSION_TRANSPORT_REVIEWED`, `TAXIQAID_GATEWAY_ENABLED`, `TAXIQAID_GATEWAY_REVIEWED`) explicitly true and `TAXIQAID_TRUSTED_IP_HEADER_VERIFIED=false`; missing/disabled configuration remains fail-closed. These requirements are descriptions, not instructions to enable them. Hidden settings stay UNVERIFIED rather than being unmasked or re-entered. Preserve broker `verify_jwt=false` with mandatory HMAC and get-my-access JWT protection.
 
@@ -73,7 +75,7 @@ Do not rotate secrets, change native limits, forward an unverified IP, clear cou
 
 ## P1 — Hosted ingress, provenance and proof closure
 
-Use [P1_HOSTED_SECURITY_TEST_PLAN.md](P1_HOSTED_SECURITY_TEST_PLAN.md) as the case manifest and [P1_R2_READINESS_ASSESSMENT.md](P1_R2_READINESS_ASSESSMENT.md) for completed owner inventory and the current evidence-only proposal. Accepted baselines and six successful R1 cases are reused, not rerun by preparing the assessment. DENY-CORS remains BLOCKED; R2-CONTROL is DEFERRED and its four negative cases are BLOCKED. Empty Supabase Logs in the disabled R1 window neither verify cross-platform attribution nor invalidate the earlier positive handshake. No case becomes PASS from inventory alone. R2/R3 test execution, live enable/restore, caller/harness implementation/deployment or a pilot scope exception needs separate explicit approval.
+Use [P1_HOSTED_SECURITY_TEST_PLAN.md](P1_HOSTED_SECURITY_TEST_PLAN.md) as the candidate case manifest, [P1_R2_READINESS_ASSESSMENT.md](P1_R2_READINESS_ASSESSMENT.md) as completed inventory/history and [the Step 154 proposal](MASTER_PILOT_VALIDATION_PROPOSAL.md) as the current phase plan for approval. Accepted baselines and six successful R1 cases are reused. Historical status matching remains TIMING_ONLY, not HMAC/provenance PASS. DENY-CORS and four R2 negative cases remain BLOCKED; CONTROL is DEFERRED. No case becomes PASS from inventory or review completion. R2/R3 execution, live enable/restore, caller/harness implementation/deployment or a pilot scope exception needs separate explicit approval.
 
 The original case-target ceilings are R1 11, R2 5 and R3 11, not actual R1 counts or combined execution approval. The R2 assessment adds at most two separately approved setup requests and upstream/abort accounting; caller control-plane traffic still requires its own exact reviewed budget before execution. No new agent-run hosted PASS is claimed. No harness, public debug/signing route, privileged key, SQL, code deployment or configuration change is implemented by the documentation update.
 
@@ -137,7 +139,7 @@ Use one record per approved case; no screenshots of secrets/settings, raw logs, 
 
 ```json
 {
-  "case": "R2-EVIDENCE-REVIEW",
+  "case": "STEP154_PHASE_PROPOSAL",
   "ownerApprovalRef": "APPROVED_CASE_REFERENCE",
   "reviewedCommit": "PINNED_COMMIT",
   "startedAt": "ISO_8601_WITH_TIMEZONE",
@@ -147,7 +149,7 @@ Use one record per approved case; no screenshots of secrets/settings, raw logs, 
   "source": {"worker": "OWNER_FUNCTIONALLY_REVIEWED", "signedBroker": "OWNER_FUNCTIONALLY_REVIEWED", "canonicalRepoEntry": "RECONCILED_REPOSITORY_ONLY"},
   "deployment": {"cloudflareOwnerReported": "9452cefc", "supabaseVersion": "UNVERIFIED", "ownerObservedDeploymentCount": 27},
   "configuration": {"approvedOrigins": "UNVERIFIED", "fixedTarget": "UNVERIFIED", "secretPresenceOnly": "UNVERIFIED"},
-  "crossPlatformAttribution": "UNVERIFIED",
+  "historicalLink": {"review": "CLOSED", "link": "OWNER_ATTESTED", "limitation": "TIMING_ONLY", "sharedId": "UNVERIFIED"},
   "nativeBoundaryDecision": "APPROVED_OPTION_A_LIMITED_OFFICE_PILOT",
   "result": "PLANNED",
   "sanitizedDiagnostic": "NONE",
