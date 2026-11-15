@@ -1,6 +1,6 @@
 # P1-R2 readiness assessment — review only
 
-Repository baseline: `b55df54`, branch `feat/dedicated-supabase-auth`. This is a repository-only assessment, not approval or execution of a hosted test, configuration change, deployment or test infrastructure. Public login and the Worker remain disabled according to owner evidence. No new request was sent to either service in preparing it.
+Current assessment baseline: `160c559`, branch `feat/dedicated-supabase-auth`; original R1 case plan baseline `b55df54`. This is a repository-only assessment, not approval or execution of a hosted test, configuration change, deployment or test infrastructure. Public login and the Worker remain disabled according to owner evidence. No new request was sent to either service in preparing it.
 
 ## Accepted R1 evidence and readiness decision
 
@@ -18,13 +18,76 @@ The owner reports the approved hosted R1 tests completed without credentials or 
 
 Do not repeat those successful cases just to begin R2. Exact R1 timestamps, total requests and evidence references were not supplied; do not invent them or backfill the full eleven-request cap as actual traffic. This assessment records owner-reported hosted evidence, not agent-run verification.
 
-**Readiness: NOT READY TO EXECUTE.** The direct control can be prepared after the checks below; SAME/CROSS/BINDING remain BLOCKED without actual approved callers, and PREVIEW requires an inventoried reachable target. No caller/harness is implemented by this assessment. R1-DENY-CORS remains a separate open P1 item; it is not silently waived. A later approval for a limited R2 subset must retain that limitation.
+**Readiness: NOT READY TO EXECUTE. CONTROL is DEFERRED, not recommended as a standalone next test.** The completed inventory below provides no runnable negative case or verified cross-platform attribution. SAME/CROSS/BINDING/PREVIEW remain BLOCKED for the reasons recorded below. No caller/harness is implemented by this assessment. R1-DENY-CORS remains a separate open P1 item; it is not silently waived. A later approval for a limited R2 subset must retain those limitations.
 
 The Supabase deployment version remains **UNVERIFIED**. The reported 27 deployments is only a count. Preserve the accepted functional source reviews and Cloudflare reference `9452cefc` as historical owner evidence. Record any future Worker variable-publication reference separately; no Supabase redeployment is needed. Any bounded R2 approval must explicitly retain this traceability limitation; production release still requires its resolution or a separately approved evidence alternative.
 
+## Completed owner-reported readiness inventory
+
+These are owner-reported existing Dashboard observations, not new agent-run tests. No new hosted test or configuration change was performed by the owner in collecting this inventory.
+
+| Inventory item | Owner-reported observation | Limit / consequence |
+| --- | --- | --- |
+| Worker gate | `TAXIQAID_GATEWAY_ENABLED=false` | Preserve disabled state; this inventory makes no new Supabase-flag measurement |
+| Current Cloudflare account | Only `taxiqaid-auth-gateway` exists | No second current-account Worker caller; does not inventory other accounts or prevent external Worker attacks |
+| Production Worker bindings | None | Gateway binding configuration is not an inventory of references from other callers; with only one current-account Worker, no second such caller is established. Absence is not hosted rejection evidence |
+| Worker Preview URLs | Disabled | No enabled preview target; do not enable one to obtain a 403 |
+| Custom domains/routes | None visible | Limited to the inspected views/account; do not claim a global alias scan or default workers.dev closure |
+| Cloudflare Observability | Completed R1 requests visible with timestamps, methods and paths | Establishes available ingress metadata, not an outbound-fetch trace or a shared downstream request ID |
+| Supabase login-with-identifier Logs | No results in the inspected 60-minute R1 window | Consistent with the disabled Worker returning before forwarding; not proof of complete logging, zero upstream traffic or a tested broker branch |
+| Cross-platform attribution | UNVERIFIED | R1 window cannot calibrate it because no upstream call was expected |
+| Supabase deployment version | UNVERIFIED | Do not substitute deployment count, timestamp or empty log results for an identifier |
+
+The historical positive Worker/Supabase 503 handshake occurred in a different enabled-Worker test context. The empty R1 window neither contradicts nor strengthens that accepted evidence. Do not repeat R1 log searches or POSTs to populate an expected-empty window. Existing public-login-disabled evidence remains unchanged; do not describe it as a freshly inspected Supabase setting.
+
+## Can CONTROL provide meaningful evidence without new infrastructure?
+
+**Potentially, but current evidence does not establish that capability.** The reviewed Worker forwards only its fixed proof headers; it adds no dedicated cross-platform correlation identifier and currently emits no explicit sanitized outcome event. Ingress timestamps/methods/paths alone do not show whether its fetch ran. A returned 503 can be a local signing/fetch/redirect error or the broker's disabled response. A 403 can also have originated upstream. Do not infer a branch or invent automatic trace propagation.
+
+If already available observability exposes an outbound-fetch span naming fixed S, POST, upstream status and its parent invocation, it can connect the two hops without a new caller or instrumentation. An already propagated non-secret request/trace identifier verified in both providers could also help. Field names, propagation, sampling and retention are **UNVERIFIED**, not promised Free-plan features. One time-correlated downstream handler record in a quiet window can support the transport path with that stated limitation; it is weaker than an explicit parent/outbound link and does not prove client-IP fidelity.
+
+The reported R1 ingress events and empty Supabase Logs do not tell us whether a fresh CONTROL would produce an attributable broker record or only an unexplained 503. The earlier positive Overview record shows that some downstream status evidence has existed; the R1 window does not test that capability. **Do not enable the Worker or send CONTROL now merely to find out.** Reuse the earlier accepted handshake. Consider a new control only to calibrate a meaningful separately approved new security window/caller after available attribution has been assessed. No new infrastructure is necessary merely to repeat a positive transport result; that is different from saying the remaining security tests need no tooling.
+
+### Case disposition after inventory
+
+| Case | Current disposition | Why / required next evidence |
+| --- | --- | --- |
+| P1-R2-CONTROL | DEFERRED; attribution capability UNVERIFIED | Existing direct-browser path is available in principle; no useful new subset or new enabled window is approved. A future positive needs attributable handler/upstream evidence, not status alone |
+| P1-R2-SAME | BLOCKED | Only the gateway exists in this account; no approved same-zone caller. Same account and same zone must not be treated as equivalent |
+| P1-R2-CROSS | BLOCKED | No approved external/cross-context caller is established. Other people's Cloudflare Workers remain a possible attack source despite this account having only one Worker |
+| P1-R2-BINDING | BLOCKED; bindings not configured | No binding/caller. Do not create one solely to mark this case PASS |
+| P1-R2-PREVIEW | BLOCKED; preview URLs disabled | No enabled preview target. Retain disabled topology; do not mark hosted rejection PASS |
+
+These statuses are not blanket pilot exceptions. A proposed pilot scope can keep owner-configured bindings/previews/extra current-account Workers absent, with explicit owner acceptance of those untested contexts and mandatory reassessment before topology changes. The gateway's empty bindings list alone does not establish that no other caller can target it through a binding; any externally constructible invocation remains in the adversarial-provenance review. That scope decision is not yet approved and cannot waive externally reachable cross-Worker/IP-spoofing risk. R1-DENY-CORS also stays BLOCKED, not replaced by null-Origin or server-side Origin checks.
+
+## Next bounded proposal — existing evidence only
+
+**R2-EVIDENCE-REVIEW:** one optional read-only inspection of retained positive-handshake metadata, only if that historical record is still available. This is not another broad inventory or a new 403/503 test, and is not a requirement to keep chasing unavailable logs. It requires no service enablement or test infrastructure.
+
+1. In Cloudflare **Workers & Pages → taxiqaid-auth-gateway → Observability**, select at most one retained invocation from the previously accepted positive 503 handshake, not the already inspected disabled R1 window. View its existing details and, only if present, its existing trace view. Do not start a live tail, open a Worker preview/tester, enable logging/tracing or change sampling.
+2. In Supabase **Edge Functions → login-with-identifier → Overview/Logs**, inspect at most one existing matching event/detail view if retained. Use the earlier Overview evidence rather than insisting the Logs tab must contain it. Do not invoke the function, expand private payloads, change filters repeatedly or obtain a Management API token. Do not repeat the unsuccessful deployment-version search.
+3. Return only `HISTORICAL_RECORD=AVAILABLE/UNAVAILABLE`, `WORKER_OUTBOUND_LINK=PRESENT/ABSENT/UNVERIFIED`, `UPSTREAM_TARGET_METHOD_STATUS=MATCH/UNVERIFIED`, `SHARED_NONSECRET_ID=PRESENT/ABSENT/UNVERIFIED`, `CROSS_PLATFORM_LINK=OWNER_ATTESTED/UNVERIFIED`, `LIMITATION=TIMING_ONLY/NONE_ESTABLISHED`, and a private evidence reference. No raw trace/request IDs, IPs, signing/proof fields, secrets, account data or log exports are needed. Do not treat the proof nonce/MAC as a public trace identifier.
+4. Stop after that one pass. Missing retention, permissions or fields yields UNAVAILABLE/UNVERIFIED, not an invitation to generate a new event. Available metadata may improve the accepted historical evidence but cannot create a new hosted R2 PASS. Keep both gates disabled.
+
+**Caps:** zero Worker/broker/native Auth test requests; zero SQL, code, configuration, secret or resource writes; at most one existing Cloudflare invocation-details view, one existing trace view and one existing Supabase event/details view. Ordinary Dashboard metadata traffic is not claimed to be zero HTTP traffic. No polling/retry loop, credential bootstrap or test infrastructure. No functional file changes are proposed for this step.
+
+**Exact repository manifest for this assessment/proposal:** `docs/P1_R2_READINESS_ASSESSMENT.md`, `docs/P1_HOSTED_SECURITY_TEST_PLAN.md`, `docs/PUBLIC_AUTHENTICATION_COMPLETION.md` only. Expected evidence is observability capability/retained-link status, not passwords, sessions, rate tests or production readiness. The owner can inspect those existing metadata views without running a service test; no new gateway/broker/Auth test invocation, setting change or enablement is authorized here. Any subsequent code/harness proposal must first name its exact files, security controls, local tests, deployment/write budget and cleanup for separate approval.
+
+## Minimum remaining validation before a controlled Master pilot
+
+Use the already accepted SQL/repair/probe/Cron, private Master, local security suites, R1 and historical signed-transport evidence. Do not restart them without drift or an incident. The following unresolved gates are the minimum security decisions/evidence to close, not approval to run them:
+
+1. **Freeze source/configuration and pilot scope.** Retain current functional reviews; resolve Supabase release traceability through available evidence or a separately owner-approved frozen-source attestation that still labels the version UNVERIFIED. No redeploy merely for an ID. Privately define the existing office cohort, unique-password/individual-permission checks, no Drivers, monitoring operator and stop/restore authority. Option A covers native Auth bypass only, not an automatic waiver of other missing controls.
+2. **Demonstrate relevant hosted ingress/IP defenses.** Require genuine adversarial cross-Worker/provenance and client-header spoof-resistance evidence with sanitized attribution. Do not conclude that a one-Worker account seals ingress. Propose a narrowly limited current topology for unconfigured binding/preview/same-zone cases instead of manufacturing unused paths, but retain their BLOCKED hosted status until an explicit owner scope decision. For the still-missing unapproved HTTPS browser origin, reuse an owner-controlled origin if a later justified caller supplies one; do not build a second website solely for this case.
+3. **Verify the signed origin and admission controls.** Complete the required hosted tampered/stale/context-bound proof and one-use/concurrent replay cases, then separately attributable 20/global-minute, 10/trusted-IP-minute and 10/identifier-15-minute limits and the agreed small pilot workload. Disabled admission cannot exercise SQL counters/nonces. Preserve the existing thresholds, records, native quotas and healthy maintenance; never saturate the Master or clear counters to make a test pass.
+4. **One genuine public Master flow, then lifecycle/frontend evidence.** After prerequisite acceptance and separate named live-window approval, use the actual Worker → signed broker → official SDK → unchanged get-my-access path. Verify UID/active/super_admin, 101 management permissions/six Driver denials, failure cleanup, actual refresh/expiry/logout boundaries and the real frontend controller. Earlier private Auth success, one-shot immediate sign-out or another 503 is not this evidence. Even a supervised Master-only intention does not make the existing public endpoint owner-only while enabled; approval must acknowledge that reachability.
+5. **Explicit release decision.** Close the authentication-only staging/integration, monitoring, rollback and limited-pilot acceptance gates before any production activation/main/Pages cutover. Retain native-bypass monitoring under Option A, the old project and all account/security records. No account-management or database redesign starts here.
+
+**Infrastructure recommendation:** no new service for the next evidence review and no standalone repeated CONTROL. If meaningful hosted adversarial/proof/rate tests remain impossible, prepare one consolidated, temporary validation proposal, reusing existing private server context safely where possible and the minimum genuine external caller. No general proxy, arbitrary target, public signer, broad service key, private-table grants or raw proof/IP logging. A request-only ingress caller should not receive signing/DB secrets; any proof/rate evidence component needs protected server-side authorization and exact request/expiry/cleanup controls. It must not become an alternative login endpoint. Only then decide which small pieces are indispensable; do not implement/deploy them or silently weaken acceptance criteria now. The existing full case manifest stays open until actual evidence or a separately recorded owner scope decision resolves each item.
+
 ## Exact prerequisites — read-only before any enablement
 
-Use existing Dashboard views and owner records only. No test POST, Invoke/Test, SQL, credential entry, secret reveal, caller creation or setting edit is needed for readiness.
+This retained checklist applies to a future approved enabled window, not the next proposed action. Reuse the completed inventory above; review only genuinely missing facts or later drift. Use existing Dashboard views and owner records only. No test POST, Invoke/Test, SQL, credential entry, secret reveal, caller creation or setting edit is needed for readiness.
 
 1. **Pin the source and destinations.** Existing owner functional review must still apply to the active Worker and signed broker. Record the current visible Worker reference or UNVERIFIED and whether any code/configuration changed since review. Only new drift requires a fresh affected-source review. Fixed Worker W is `https://taxiqaid-auth-gateway.dohanyan.workers.dev`; fixed path is `/login-with-identifier`. Its only upstream S is `https://mqkflwsvnzcaylxtvsje.supabase.co/functions/v1/login-with-identifier`. No query, redirect, arbitrary target or old unsigned broker fallback.
 2. **Confirm both disabled states.** Owner attests Worker `TAXIQAID_GATEWAY_ENABLED=false` and Supabase `TAXIQAID_LOGIN_ENABLED=false` from existing configuration/change records. Other Supabase readiness flags, trusted-header mode, JWT settings and secrets remain unchanged. Do not unmask or overwrite a hidden secret to establish its value. If disabled state is uncertain, STOP; a generic 503 cannot substitute for configuration evidence.
@@ -38,7 +101,7 @@ Preserve SQL, normal healthy Cron, restricted roles/TLS, counter records and 20/
 
 ## Case manifest and exact request budgets
 
-All cases are PLANNED/BLOCKED until individually approved. Browser requests use only `{}` with `Content-Type: application/json`, no credentials/cookies/API key/Authorization, no redirects and no retries. The browser supplies Origin; caller artifacts use their reviewed fixed approved Origin. Do not use the eleven-request provenance helper or the Master helper.
+This is the retained future test manifest, not a runnable current subset: CONTROL is DEFERRED and all four negatives are BLOCKED as described above. Current assessment/evidence-review test-request budget is zero. Browser requests in any later approved window use only `{}` with `Content-Type: application/json`, no credentials/cookies/API key/Authorization, no redirects and no retries. The browser supplies Origin; caller artifacts use their reviewed fixed approved Origin. Do not use the eleven-request provenance helper or the Master helper.
 
 | Case | Required source/request | Target cap | Expected result and limitation |
 | --- | --- | ---: | --- |
@@ -82,10 +145,10 @@ Never include an IP, bucket hash, username/UID/email, password, access/refresh t
 
 R2 can support only the particular hosted ingress/subrequest/route paths tested. It cannot establish true IP value/fidelity or spoof-resistance from 403/503 alone, every possible alias/Worker context, SQL nonce consumption/replay, 20/10/10 rates/capacity, password Auth, UID/permissions or browser session lifecycle. The disabled broker returns before opening SQL/Auth; its 503 must not close P2/P3. Signed-proof mutations remain separate R3 work requiring a reviewed protected server-side harness. R1-DENY-CORS and Supabase release traceability remain open.
 
-**Exact next owner action:** review and return the prerequisite inventory (current disabled states, source/reference drift, public origin/topology labels, actual existing caller/preview availability and available attribution) without invoking services or changing settings. No need to repeat the six successful R1 cases. Then review a named runnable subset and its enable/restore approval; if callers are missing, request a proposal only, not their creation. No public activation or next TaxiQaid development phase is authorized.
+**Exact next owner action:** review the bounded R2-EVIDENCE-REVIEW proposal above. If retained historical records are readily available, inspect only their existing metadata once and report the capability labels. Otherwise record UNAVAILABLE/UNVERIFIED and stop; do not repeat the completed inventory, six successful R1 cases or any POST. Then decide the proposed limited topology scope and whether a consolidated minimal validation design is needed; design review precedes implementation/deployment approval. No new enablement window, caller creation, public activation or next TaxiQaid development phase is authorized.
 
 ## Repository-only manifest and validation
 
-Only three documentation files change: this new assessment, [P1_HOSTED_SECURITY_TEST_PLAN.md](P1_HOSTED_SECURITY_TEST_PLAN.md) and [PUBLIC_AUTHENTICATION_COMPLETION.md](PUBLIC_AUTHENTICATION_COMPLETION.md). They record owner R1 evidence and point to the current R2 readiness/approval boundary. No executable test caller, runtime/SQL/configuration change or production write is included. Documentation rollback is a normal feature-branch revert, with no live rollback action or force push.
+Only three documentation files change: this updated assessment, [P1_HOSTED_SECURITY_TEST_PLAN.md](P1_HOSTED_SECURITY_TEST_PLAN.md) and [PUBLIC_AUTHENTICATION_COMPLETION.md](PUBLIC_AUTHENTICATION_COMPLETION.md). They record completed owner inventory, deferred/blocked cases, the bounded existing-evidence proposal and minimum remaining pilot gates. No executable test caller, runtime/SQL/configuration change or production write is included. Documentation rollback is a normal feature-branch revert, with no live rollback action or force push.
 
 Local documentation links, Markdown fences, JSON parsing, syntax-only checking of the existing manual browser example (not executed), exact documentation-only scope and whitespace passed. Read-only catalog and Dashboard/gateway/role-proposal artifact checks passed; signed broker artifacts remain identical and unchanged. Runtime/browser/SQL suites were not rerun for these documentation-only changes. These local checks are not hosted R2 evidence or production-readiness PASS.
