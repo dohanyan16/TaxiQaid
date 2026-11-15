@@ -1,5 +1,7 @@
 # Master pilot — consolidated implementation and operator runbook
 
+Latest evidence/device: [PROTECTED_AUTH_VALIDATION.md](PROTECTED_AUTH_VALIDATION.md) supersedes the older candidate rate/replay batches below. Owner's **2026-11-15 22:23:59 CET** trace-matched `UPSTREAM_RESPONSE` 503 → `PROOF_VERIFIED` 200 → `BROKER_DISABLED` 503 is **PASS for signed communication and disabled rejection only**. No repeat is needed. The new six-case device reuses the same two services, requires online verified Master authorization plus a server grant of at most 15 minutes, and keeps both public gates false. Hosted execution/publication/temporary grant remain unapproved. Its complete ceiling is 29 HTTP, including internal calls and cleanup, plus 213 client SQL statements (including durable per-case quotas that survive nonce cleanup). The old 17:37:35 timing-only evidence and earlier local counts/fingerprints below are historical, not updated hosted claims.
+
 Repository implementation is authorized on `feat/dedicated-supabase-auth`. **No deployment, hosted authentication request, activation, hosted SQL, account/permission/secret/Cron change, main merge, Pages publication or branch deletion was performed.** Production and the old project remain unchanged. Both new login gates remain disabled according to owner evidence; dedicated frontend activation remains `enabled:false`.
 
 ## Implemented

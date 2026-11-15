@@ -1,6 +1,8 @@
 /** Proposal only. Single purpose public gateway; never a general proxy or credential logger. */
-import {GATEWAY_TARGET,GATEWAY_PATH,canonicalGatewayIp,gatewayBody,signGateway} from '../supabase/functions/_shared/gateway-proof.mjs';
+import {GATEWAY_TARGET,GATEWAY_PATH,gatewaySource,gatewayBody,signGateway} from '../supabase/functions/_shared/gateway-proof.mjs';
 import {AUTH_TRACE_HEADER,authAudit} from '../supabase/functions/_shared/auth-audit.mjs';
+import {createValidationGateway} from './validation.mjs';
+import {VALIDATION_PATH} from '../supabase/functions/_shared/validation-policy.mjs';
 function workerOrigins(value){return String(value||'').split(',').map(x=>x.trim()).filter(x=>{try{return new URL(x).origin===x&&x.startsWith('https://');}catch{return false;}});}
 function workerReply(status,body,origin){return new Response(status===204?null:JSON.stringify(body),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store, max-age=0',Pragma:'no-cache','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'none'; connect-src 'self' https://mqkflwsvnzcaylxtvsje.supabase.co; form-action 'none'; frame-ancestors 'none'",Vary:'Origin',...(origin?{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Headers':'content-type,apikey','Access-Control-Allow-Methods':'POST,OPTIONS'}:{})}});}
 /** @param {typeof fetch} [fetcher] @param {()=>number} [now] @param {(value:string)=>void} [auditSink] */
@@ -13,8 +15,8 @@ export function createGateway(fetcher=fetch,now=Date.now,auditSink=undefined){re
  if(request.method==='OPTIONS')return workerReply(204,null,approved);
  if(env.TAXIQAID_GATEWAY_ENABLED!=='true'||request.method!=='POST'){audit('GATEWAY_DISABLED',503);return workerReply(503,error,approved);}
  // Only direct Cloudflare ingress. Block Worker subrequests, service bindings and ambiguous proxy provenance.
- const ip=canonicalGatewayIp(request.headers.get('cf-connecting-ip'));
- if(!request.cf||request.headers.has('cf-worker')||request.headers.has('cf-ew-via')||!ip||ip==='2a06:98c0:3600::103'){audit('PROVENANCE_REJECTED',403);return workerReply(403,error,approved);}
+ const ip=gatewaySource(request);
+ if(!ip){audit('PROVENANCE_REJECTED',403);return workerReply(403,error,approved);}
  try{
   const body=await gatewayBody(request),proof={ip,origin:approved,issued:Math.floor(now()/1000),nonce:crypto.randomUUID().replaceAll('-',''),trace},mac=await signGateway(env.TAXIQAID_GATEWAY_SECRET,proof,body);
   const upstream=await fetcher(GATEWAY_TARGET,{method:'POST',headers:{'Content-Type':'application/json',Origin:approved,'x-taxiqaid-ip':ip,'x-taxiqaid-issued':String(proof.issued),'x-taxiqaid-nonce':proof.nonce,'x-taxiqaid-mac':mac,[AUTH_TRACE_HEADER]:trace},body,cache:'no-store',redirect:'manual',signal:AbortSignal.timeout(20000)});
@@ -27,4 +29,6 @@ export function createGateway(fetcher=fetch,now=Date.now,auditSink=undefined){re
   return workerReply(200,{access_token:raw.access_token,refresh_token:raw.refresh_token,token_type:'bearer',...(Number.isFinite(raw.expires_in)&&raw.expires_in>0?{expires_in:raw.expires_in}:{})},approved);
  }catch{audit('UPSTREAM_UNAVAILABLE',503);return workerReply(503,error,approved);}
 };}
-export default {fetch:createGateway()};
+/** @param {typeof fetch} [fetcher] @param {()=>number} [now] @param {(value:string)=>void} [auditSink] */
+export function createGatewayRouter(fetcher=fetch,now=Date.now,auditSink=undefined){const login=createGateway(fetcher,now,auditSink),validation=createValidationGateway(fetcher,now);return (request,env)=>new URL(request.url).pathname===VALIDATION_PATH?validation(request,env):login(request,env);}
+export default {fetch:createGatewayRouter()};

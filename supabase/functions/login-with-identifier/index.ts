@@ -7,6 +7,8 @@ import {brokerConnectionOptions} from '../_shared/broker-store.ts';
 import {signedBrokerStore} from '../_shared/signed-broker-store.ts';
 import {verifyGateway} from '../_shared/gateway-proof.mjs';
 import {authAudit} from '../_shared/auth-audit.mjs';
+import {createValidationHandler} from '../_diagnostics/validation-runtime.ts';
+import {VALIDATION_HEADER} from '../_shared/validation-policy.mjs';
 export function createSignedLogin(env:(name:string)=>string|undefined,connect:typeof postgres=postgres,fetcher:typeof fetch=fetch,auditSink:((value:string)=>void)|undefined=undefined){return async(request:Request)=>{
  const origins=configuredOrigins(env('TAXIQAID_AUTH_ORIGINS')),origin=request.headers.get('origin'),rate=env('TAXIQAID_RATE_SECRET')||'';
  const configured=['TAXIQAID_LOGIN_ENABLED','TAXIQAID_SESSION_TRANSPORT_REVIEWED','TAXIQAID_GATEWAY_ENABLED','TAXIQAID_GATEWAY_REVIEWED'].every(key=>env(key)==='true')&&rate.length>=32&&env('TAXIQAID_TRUSTED_IP_HEADER_VERIFIED')==='false';
@@ -24,4 +26,8 @@ export function createSignedLogin(env:(name:string)=>string|undefined,connect:ty
  }catch{audit('DATABASE_UNAVAILABLE',503);return response(503,{error:FAILURE},proof.origin);}
  finally{if(sql)try{await sql.end({timeout:1});}catch{}}
 };}
-Deno.serve(createSignedLogin(name=>Deno.env.get(name)));
+export function createLoginRouter(env:(name:string)=>string|undefined,connect:typeof postgres=postgres,fetcher:typeof fetch=fetch,auditSink:((value:string)=>void)|undefined=undefined){
+ const login=createSignedLogin(env,connect,fetcher,auditSink),validation=createValidationHandler(env,connect,fetcher);
+ return (request:Request)=>request.headers.has(VALIDATION_HEADER)?validation(request):login(request);
+}
+Deno.serve(createLoginRouter(name=>Deno.env.get(name)));

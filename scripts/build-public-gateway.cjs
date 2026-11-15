@@ -8,9 +8,10 @@ output(probeFile,probe.replace(/const reviewedIpLimit=\d+;/,'const reviewedIpLim
 const proof=read('supabase/functions/_shared/gateway-proof.mjs');
 const worker=read('gateway/worker.mjs');
 const audit=read('supabase/functions/_shared/auth-audit.mjs');
-if(/\bcredentials\s*:/.test(worker)||/\bredirect\s*:\s*['"]error['"]/.test(worker))throw new Error('Unsupported Cloudflare Worker fetch options.');
+const validation=read('gateway/validation.mjs'),validationPolicy=read('supabase/functions/_shared/validation-policy.mjs');
+if(/\bcredentials\s*:/.test(worker+validation)||/\bredirect\s*:\s*['"]error['"]/.test(worker+validation))throw new Error('Unsupported Cloudflare Worker fetch options.');
 const inline=source=>source.replace(/^import .*;\n/gm,'').replace(/^export /gm,'');
-output('gateway/dashboard-worker.mjs','// GENERATED REVIEW ONLY. No secrets, deployment or activation.\n'+inline(audit)+'\n'+inline(proof)+'\n'+worker.replace(/^import .*;\n/gm,''));
+output('gateway/dashboard-worker.mjs','// GENERATED REVIEW ONLY. No secrets, deployment or activation.\n'+inline(audit)+'\n'+inline(proof)+'\n'+inline(validationPolicy)+'\n'+inline(validation)+'\n'+worker.replace(/^import .*;\n/gm,''));
 const {DASHBOARD_FILES,buildSignedBrokerArtifact}=require('./lib/signed-broker-artifact.cjs');
 const brokerArtifact=buildSignedBrokerArtifact(root);
 for(const file of DASHBOARD_FILES)output(file,brokerArtifact);

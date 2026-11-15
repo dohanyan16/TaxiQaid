@@ -19,7 +19,9 @@ async function concurrent(queries){return Promise.all(queries.map(query=>new Pro
  let started=false;
  try{
   const signedE2E=process.env.TAXIQAID_TEST_SIGNED_E2E==='true';assert.ok(!signedE2E||process.env.TAXIQAID_TEST_PUBLIC_GATEWAY==='true','Signed E2E requires the disposable public-gateway fixture.');
-  run(['run','--detach','--rm',...(signedE2E?['--publish','127.0.0.1::5432']:['--network','none']),'--name',name,'-e','POSTGRES_HOST_AUTH_METHOD=trust','-e',process.env.TAXIQAID_TEST_PUBLIC_GATEWAY==='true'?'POSTGRES_USER=supabase_admin':'POSTGRES_USER=postgres','-e','POSTGRES_DB=postgres',process.env.TAXIQAID_TEST_PUBLIC_GATEWAY==='true'?'postgres:16-alpine':'postgres:15-alpine']);started=true;
+  // Preserve exact catalog rollback checks; background VACUUM/ANALYZE would change their physical statistics.
+  // This setting applies only to this disposable fixture, never hosted SQL or production maintenance.
+  run(['run','--detach','--rm',...(signedE2E?['--publish','127.0.0.1::5432']:['--network','none']),'--name',name,'-e','POSTGRES_HOST_AUTH_METHOD=trust','-e',process.env.TAXIQAID_TEST_PUBLIC_GATEWAY==='true'?'POSTGRES_USER=supabase_admin':'POSTGRES_USER=postgres','-e','POSTGRES_DB=postgres',process.env.TAXIQAID_TEST_PUBLIC_GATEWAY==='true'?'postgres:16-alpine':'postgres:15-alpine','-c','autovacuum=off']);started=true;
   let ready=false;for(let n=0;n<100;n++){try{run(['exec',name,'pg_isready','-h','127.0.0.1','-U','postgres']);ready=true;break;}catch{await new Promise(resolve=>setTimeout(resolve,100));}}assert.ok(ready,'Disposable database startup failed');
   if(process.env.TAXIQAID_TEST_PUBLIC_GATEWAY==='true')sql('CREATE ROLE postgres SUPERUSER LOGIN;',{user:'supabase_admin'});
   sql(`CREATE ROLE anon NOLOGIN;CREATE ROLE authenticated NOLOGIN;CREATE ROLE taxiqaid_auth_backend NOLOGIN NOBYPASSRLS NOSUPERUSER;

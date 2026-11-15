@@ -1,7 +1,7 @@
 /** Actual Worker -> canonical broker -> restricted PostgreSQL. Auth/cloud provenance are synthetic. */
 import postgres from 'npm:postgres@4.1.0';
 import {createRequire} from 'node:module';
-import {createGateway} from '../gateway/worker.mjs';
+import {createGateway,createGatewayRouter} from '../gateway/worker.mjs';
 import {GATEWAY_TARGET,signGateway} from '../supabase/functions/_shared/gateway-proof.mjs';
 import {bucket} from '../supabase/functions/_shared/security.mjs';
 const require=createRequire(import.meta.url),catalog=require('../shared/permission-catalog.js'),model=require('../shared/permission-model.js'),contract=require('../shared/auth-contract.js');
@@ -52,4 +52,34 @@ Deno.test('signed JS pipeline enforces actual 20/10/10 and replay before simulat
   const data=JSON.stringify(master.audit);for(const value of ['192.0.2.1','synthetic-updated','SYNTHETIC_PASSWORD','SYNTHETIC_ACCESS','SYNTHETIC_REFRESH',secret,uid])assert(!data.includes(value));
   console.info('PASS: actual signed Worker/broker/SQL adapter, restricted local PostgreSQL, 20/10/10, replay race, 101 grants/six denials. Auth and cf metadata synthetic; no new hosted or transport-TLS evidence claimed.');
  }finally{await observer.end({timeout:1});}
+});
+Deno.test('protected device uses unchanged restricted SQL functions with public gates false; no password or access-function HTTP',async()=>{
+ const fixture=()=>{
+  const time=Math.floor(Date.now()/1000),grant={id:crypto.randomUUID(),ownerUid:uid,issuedAt:time,expiresAt:(Math.floor(time/900)+1)*900-10},jwt=['eyJhbGciOiJIUzI1NiJ9',btoa(JSON.stringify({sub:uid,exp:time+3600})).replaceAll('=',''),'c3ludGhldGlj'].join('.');
+  const values:Record<string,string>={TAXIQAID_VALIDATION_GRANT:JSON.stringify(grant),TAXIQAID_LOGIN_ENABLED:'false',TAXIQAID_GATEWAY_ENABLED:'false',TAXIQAID_GATEWAY_ORIGIN:origin,TAXIQAID_GATEWAY_ORIGINS:origin,TAXIQAID_TRUSTED_IP_HEADER_VERIFIED:'false',TAXIQAID_GATEWAY_SECRET:secret,TAXIQAID_RATE_SECRET:'SYNTHETIC_DEVICE_'+crypto.randomUUID(),TAXIQAID_AUTH_ORIGINS:origin,TAXIQAID_BROKER_DB_URL:'postgresql://taxiqaid_auth_login.mqkflwsvnzcaylxtvsje:SYNTHETIC_ONLY@aws-0-fixture.pooler.supabase.com:6543/postgres'};
+  let calls=0;const options:ReturnType<typeof postgres>['options'][]=[];
+  const connect=((input:ReturnType<typeof postgres>['options'])=>{options.push(input);assert(input.ssl&&input.fetch_types===false&&input.prepare===false);return postgres({host:'127.0.0.1',port,username:'taxiqaid_auth_login',database:'postgres',ssl:false,prepare:false,fetch_types:false,max:input.max,idle_timeout:1});}) as unknown as typeof postgres;
+  const fetcher:typeof fetch=async(target,init)=>{assert(init?.redirect==='manual');if(String(target).endsWith('/auth/v1/user')){calls++;return Response.json({id:uid,aud:'authenticated',role:'authenticated',is_anonymous:false});}if(String(target)===GATEWAY_TARGET){calls++;return handler(new Request(String(target),init));}throw new Error('Unexpected local diagnostic HTTP.');};
+  const handler=candidate.createLoginRouter(name=>values[name],connect,fetcher),worker=createGatewayRouter(fetcher);
+  const control=async(name:string,ip='192.0.2.1')=>{
+   const request=new Request(origin+'/auth-validation',{method:'POST',headers:{Origin:origin,Authorization:'Bearer '+jwt,'Content-Type':'application/json','cf-connecting-ip':ip,'x-real-ip':'198.51.100.1','x-forwarded-for':'198.51.100.2'},body:JSON.stringify({case:name})});Object.defineProperty(request,'cf',{value:{colo:'SYNTHETIC'}});const response=await worker(request,values);assert(response.status===200);return await response.json();
+  };return {control,options,grant,rate:values.TAXIQAID_RATE_SECRET,calls:()=>calls};
+ };
+ const pair=fixture(),base=await pair.control('ip-base'),spoof=await pair.control('ip-spoof');assert(base.result==='PASS'&&spoof.result==='PASS'&&base.dbMinute===spoof.dbMinute&&spoof.denied===1&&spoof.canary);
+ const observer=postgres({host:'127.0.0.1',port,username:'supabase_admin',database:'postgres',ssl:false,prepare:false,max:1});
+ try{
+  // Disposable clock-state simulation only: expire these synthetic nonce rows and source/global
+  // windows, preserving the case's identifier quota. Never run this observer against hosted data.
+  const key=(label:string)=>bucket(pair.rate,'v1:owner-validation:'+pair.grant.id+':'+label),nonces=await Promise.all(Array.from({length:10},(_,n)=>key('case:ip-base:'+n))),short=await Promise.all(['source','global'].map(label=>key('guard:ip-base:'+label)));
+  await observer`UPDATE taxiqaid_private.login_attempt_counters SET expires_at=clock_timestamp()-interval '6 minutes' WHERE bucket=ANY(${nonces}::text[])`;
+  await observer`UPDATE taxiqaid_private.login_attempt_counters SET window_start=window_start-interval '8 minutes',expires_at=expires_at-interval '8 minutes' WHERE bucket=ANY(${short}::text[])`;
+  await observer`SELECT taxiqaid_auth_api.maintain_public_login_counters(1000)`;
+  const rows=await observer`SELECT count(*)::integer AS remaining FROM taxiqaid_private.login_attempt_counters WHERE bucket=ANY(${nonces}::text[])`;assert(rows[0].remaining===0);
+  let denied=false;try{await pair.control('ip-base');}catch{denied=true;}assert(denied&&pair.calls()===9);
+ }finally{await observer.end({timeout:1});}
+ for(const name of ['replay','global-db']){const f=fixture(),result=await f.control(name);assert(result.result==='PASS');assert(f.calls()===3);if(name==='replay')assert(f.options[0].max===2&&result.allowed===5&&result.denied===2);else assert(result.scope==='SQL_GLOBAL_ONLY'&&result.allowed===21&&result.denied===1);}
+ // Synthetic distinct ingress values isolate the quarter-window SQL contract without a multi-minute wait.
+ // This is not genuine hosted IP provenance or a real multi-source traffic/capacity claim.
+ const identifier=fixture(),first=await identifier.control('identifier-base'),last=await identifier.control('identifier-finish','192.0.2.2');assert(first.result==='PASS'&&last.result==='PASS'&&first.dbQuarter===last.dbQuarter&&last.allowed===8&&last.denied===1);
+ console.info('PASS: protected device, actual restricted PostgreSQL, one-use ledger, 20/10/10, genuine concurrent DB nonce claims; Auth/cf mocked, no hosted PASS.');
 });

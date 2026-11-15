@@ -2,9 +2,10 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os'),crypto=require('node:crypto'),{execFileSync}=require('node:child_process');
 const root=path.resolve(__dirname,'..'),read=file=>fs.readFileSync(path.join(root,file),'utf8');
 const {SOURCE_FILES,DASHBOARD_FILES,buildSignedBrokerArtifact}=require('../scripts/lib/signed-broker-artifact.cjs');
-test('canonical factory and server registration match the reviewed consolidated candidate',()=>{
- const source=read('supabase/functions/login-with-identifier/index.ts'),factory=source.slice(source.indexOf('export function createSignedLogin'));
- assert.equal(crypto.createHash('sha256').update(factory).digest('hex'),'39deb6ddec89da6fe7e5aa273043eb9e48a8002b1fd6d42fb5ee4d1bd2ff7967');
+test('public canonical factory remains byte-identical; server registers the separately protected router',()=>{
+ const source=read('supabase/functions/login-with-identifier/index.ts'),factory=source.slice(source.indexOf('export function createSignedLogin'),source.indexOf('export function createLoginRouter'));
+ assert.equal(crypto.createHash('sha256').update(factory).digest('hex'),'afddf2f7dd15c78d17a0d4a26b2d75bcf39757a673b83238dab949b669cfdaf0');
+ assert.match(source,/Deno\.serve\(createLoginRouter\(/);assert.match(source,/request\.headers\.has\(VALIDATION_HEADER\)\?validation\(request\):login\(request\)/);
  assert.doesNotMatch(source,/trustedClientIp|openBrokerStore|cachedBrokerStore/);
  const compatibility=read('supabase/review/public-login/login-with-identifier.ts');assert.match(compatibility,/export \{createSignedLogin\} from '\.\.\/\.\.\/functions\/login-with-identifier\/index\.ts';/);assert.doesNotMatch(compatibility,/Deno\.serve|function createSignedLogin/);
 });

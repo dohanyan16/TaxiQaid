@@ -1,0 +1,8 @@
+// Deterministic public-source packaging only. Never deploys, generates secrets or sends a hosted request.
+const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),root=path.resolve(__dirname,'..'),read=file=>fs.readFileSync(path.join(root,file),'utf8');
+const embedded=read('scripts/_broker_smoke/dashboard-snippet.js'),start='// BEGIN PUBLIC SUPABASE SDK\n',end='\n// END PUBLIC SUPABASE SDK',sdk=embedded.slice(embedded.indexOf(start)+start.length,embedded.indexOf(end)),hash='a867edbcfb029370aeec7223dd6180b560b621fbe3bc64c6584fb0369d1b7bce';
+if(crypto.createHash('sha256').update(sdk).digest('hex')!==hash)throw new Error('SDK integrity failed.');
+const guard="if(location.origin!=='REPLACE_WITH_REVIEWED_WORKER_ORIGIN'||location.pathname!=='/login-with-identifier'||location.search||location.hash||globalThis.TAXIQAID_VALIDATION_RUNNING)return;\nfor(const name of ['localStorage','sessionStorage','indexedDB','caches'])Object.defineProperty(globalThis,name,{get(){throw new DOMException('Storage disabled.','SecurityError');}});\n";
+const source='/*\n'+read('scripts/_broker_smoke/THIRD_PARTY_LICENSES.txt')+'\n*/\n// GENERATED PRIVATE OPERATOR TOOL. Public SDK SHA-256: '+hash+'\n(async()=>{\n'+guard+start+sdk+end+'\n'+read('supabase/functions/_shared/validation-policy.mjs').replace(/^export /gm,'')+'\n'+read('scripts/_auth_validation/browser.js')+'\n})();\n';
+const target=path.join(root,'scripts/_auth_validation/dashboard-snippet.js');if(process.argv.includes('--check')){if(fs.readFileSync(target,'utf8')!==source)throw new Error('Validation helper artifact drift.');}else fs.writeFileSync(target,source);
+console.log('PASS: protected validation helper '+(process.argv.includes('--check')?'verified.':'prepared.'));
