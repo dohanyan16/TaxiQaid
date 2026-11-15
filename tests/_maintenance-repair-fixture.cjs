@@ -52,7 +52,8 @@ module.exports=function maintenanceRepairFixture({sql,runtime,root,hash,lit}){
  const fixedHealthy=definition(read('supabase/review/public-login/01_signed_attempt_and_cleanup.sql'),signatures[0]).create.replace(/^CREATE FUNCTION /,'CREATE OR REPLACE FUNCTION ');
  admin(fixedHealthy);denied(repair,'mixed repaired/legacy definitions');admin('BEGIN;'+legacy+'COMMIT;');
  admin('ALTER TABLE taxiqaid_private.login_attempt_counters DROP CONSTRAINT login_attempt_counters_attempts_check;ALTER TABLE taxiqaid_private.login_attempt_counters ADD CONSTRAINT login_attempt_counters_attempts_check CHECK(attempts>0) NOT VALID;');denied(repair,'unvalidated CHECK');admin('ALTER TABLE taxiqaid_private.login_attempt_counters VALIDATE CONSTRAINT login_attempt_counters_attempts_check;');
- const previous=records(),catalog=metadata();sql(repair);assert.equal(records(),previous,'DDL repair must not prune, reset or insert any counter/account records');
+ const inspection=require('./_function-fingerprint-fixture.cjs')({sql,admin,root,records,metadata,denied,repair,verify});
+ const previous=records(),catalog=metadata();sql(repair.replaceAll('\n','\r\n'));assert.equal(records(),previous,'DDL repair must not prune, reset or insert any counter/account records');
  const beforeMetadata=JSON.parse(catalog),afterMetadata=JSON.parse(metadata());
  for(const key of ['members','schemas','constraints','table','cron'])assert.deepEqual(afterMetadata[key],beforeMetadata[key],'Successful repair preserves '+key);
  const changed=[];
@@ -62,6 +63,7 @@ module.exports=function maintenanceRepairFixture({sql,runtime,root,hash,lit}){
   delete beforeFunction.prosrc;delete afterFunction.prosrc;assert.deepEqual(afterFunction,beforeFunction,'All non-body pg_proc metadata is preserved');
  }
  assert.deepEqual(changed.sort(),['begin_signed_login_attempt','claim_gateway_nonce','maintain_public_login_counters','public_login_limits_healthy']);
+ const fixedInspection=inspection.run();for(const result of fixedInspection){assert.equal(result.body_review,'EXACT_REVIEWED_BYTES');assert.equal(result.matched_references[0].line_endings,'CRLF');assert.equal(result.matched_references[0].reference,result.signature.includes('.consume_login_counters(')?'REVIEWED_20_10_10':'CORRECTED_64_CHARACTER_WATERMARK');}
  const final=statuses();assert.ok(Object.entries(final).every(([key,value])=>value===(key==='existing_cron_state'?'DISABLED':'PASS')));assert.equal(sql('SELECT taxiqaid_auth_api.public_login_limits_healthy();'),'f');
  denied(repair,'already-repaired reapplication');
  // Rollback-only browser probe really exercises maintenance and leaves all counter rows untouched.

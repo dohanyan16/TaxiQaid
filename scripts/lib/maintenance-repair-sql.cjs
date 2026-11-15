@@ -1,5 +1,6 @@
 // Review artifacts only. All hashes are of public SQL function bodies, never private records.
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
+const {sourceFingerprints}=require('./sql-source-fingerprints.cjs');
 const watermark='dcb1306e6346ce4bb67985af42e8376d56df9b3f9ac325c4a0a96cf4e9d28279';
 if(watermark.length!==64||!/^[0-9a-f]{64}$/.test(watermark))throw new Error('Invalid maintenance watermark identifier.');
 function definition(source,signature){
@@ -24,7 +25,7 @@ function generate({root,output,guard,secure,added,base,schemaState,quote}){
  const digest=`pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(p.prosrc,'UTF8')),'hex')`;
  function matches(spec,version='fixed'){
   const d=spec[version];return `(${secure(spec)} AND EXISTS(SELECT FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_language l ON l.oid=p.prolang WHERE p.oid=pg_catalog.to_regprocedure(${quote(spec.signature)})
- AND ${digest}=${quote(d.hash)} AND pg_catalog.pg_get_function_arguments(p.oid)=${quote(d.args)} AND pg_catalog.pg_get_function_result(p.oid)=${quote(d.result)} AND l.lanname=${quote(d.language)}
+ AND ${digest} IN (${sourceFingerprints(d.src).map(value=>quote(value.hash)).join(',')}) AND pg_catalog.pg_get_function_arguments(p.oid)=${quote(d.args)} AND pg_catalog.pg_get_function_result(p.oid)=${quote(d.result)} AND l.lanname=${quote(d.language)}
  AND p.prokind='f' AND p.provolatile='v' AND p.proparallel='u' AND NOT p.proisstrict AND NOT p.proleakproof AND p.prosupport=0 AND p.procost=100 AND p.prorows=${d.result.startsWith('TABLE(')?1000:0}))`;
  }
  const constraints=`(SELECT count(*)=2 AND bool_and(c.convalidated AND c.contype='c' AND
@@ -40,7 +41,7 @@ function generate({root,output,guard,secure,added,base,schemaState,quote}){
  IF NOT ${matches(rate)} THEN RAISE EXCEPTION 'Installed SQL 00 does not match the reviewed 20/10/10 policy.'; END IF;`;
  const allMetadata=`(SELECT coalesce(pg_catalog.jsonb_object_agg(p.oid::text,(pg_catalog.to_jsonb(p)-'prosrc')||pg_catalog.jsonb_build_object('reviewed_definition',CASE WHEN p.oid IN (${definitions.map(s=>quote(s.signature)+'::regprocedure').join(',')}) THEN NULL ELSE pg_catalog.pg_get_functiondef(p.oid) END)),'{}'::jsonb) FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='taxiqaid_auth_api')`;
  const tableMetadata=`(SELECT pg_catalog.jsonb_build_object('owner',c.relowner,'rls',c.relrowsecurity,'force_rls',c.relforcerowsecurity,'acl',c.relacl,'constraints',(SELECT pg_catalog.jsonb_agg(pg_catalog.to_jsonb(k) ORDER BY k.oid) FROM pg_catalog.pg_constraint k WHERE k.conrelid=c.oid),'policies',(SELECT pg_catalog.jsonb_agg(pg_catalog.to_jsonb(v) ORDER BY v.oid) FROM pg_catalog.pg_policy v WHERE v.polrelid=c.oid)) FROM pg_catalog.pg_class c WHERE c.oid=pg_catalog.to_regclass('taxiqaid_private.login_attempt_counters'))`;
- const header='-- GENERATED REVIEW ONLY. No live execution authorized. Run the COMPLETE file only after owner approval.\n-- Existing deployment repair: NEVER rerun SQL 01. No operational counter rows are changed by this repair.\n';
+ const header='-- GENERATED REVIEW ONLY. No live execution authorized. Run the COMPLETE file only after owner approval.\n-- Exact LF/CRLF hashes are derived from reviewed repository sources; live bodies are never normalized.\n-- Existing deployment repair: NEVER rerun SQL 01. No operational counter rows are changed by this repair.\n';
  output('supabase/review/public-login/04_repair_maintenance_watermark.sql',header+`BEGIN;
 SET LOCAL lock_timeout='1s';
 SET LOCAL statement_timeout='15s';
@@ -103,5 +104,6 @@ SELECT 'PASS' AS maintenance_execution,'PASS' AS watermark_shape,'PASS' AS water
 ROLLBACK;
 -- Healthy state created inside this probe is rolled back too. This does not activate the scheduled job.
 `);
+ require('./function-fingerprint-diagnostic.cjs').generate({output,secure,quote,definitions,rate});
 }
 module.exports={watermark,definition,generate};

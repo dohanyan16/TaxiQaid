@@ -1,0 +1,85 @@
+-- READ ONLY. Catalog-only source hashes/structure; no source text, identities, private rows or logs.
+-- Run as the existing Dashboard administrator. Keep Cron/login disabled. Do not run SQL 00/01/04/06.
+-- Expected variants are computed from reviewed repository bodies, never copied from live observations.
+BEGIN TRANSACTION READ ONLY;
+SET LOCAL statement_timeout='5s';
+SET LOCAL lock_timeout='1s';
+-- BEGIN READ-ONLY FINGERPRINT QUERY
+WITH targets(signature,expected_arguments,expected_result,expected_language,reviewed_variants) AS (VALUES
+ ('taxiqaid_auth_api.consume_login_counters(text,text,text)','p_ip text, p_account text, p_global text','boolean','plpgsql','[{"reference":"REVIEWED_20_10_10","line_endings":"LF","sha256":"143f160059c9c4e80b30824d8855de89de30510e1949a9950e0f49a6349e7eae"},{"reference":"REVIEWED_20_10_10","line_endings":"CRLF","sha256":"d616c97d7dc76dedad6bd9bb0c86f9593b4e083cba6e5a345d67e17141f57fc3"}]'::jsonb),
+ ('taxiqaid_auth_api.public_login_limits_healthy()','','boolean','sql','[{"reference":"CORRECTED_64_CHARACTER_WATERMARK","line_endings":"LF","sha256":"631a1177982123108052a091077f876772a9c9f8e11a54e7b0466fb7e6b5b0eb"},{"reference":"CORRECTED_64_CHARACTER_WATERMARK","line_endings":"CRLF","sha256":"cd49e2989a4a0ec0fcc04919cb5abd3d31fb0322d653e00e9e7de078217f456e"},{"reference":"LEGACY_65_CHARACTER_WATERMARK","line_endings":"LF","sha256":"44e59d313c81eb389e1d518454d10de78000c989f5a42f2c797c3dad2a5e1f58"},{"reference":"LEGACY_65_CHARACTER_WATERMARK","line_endings":"CRLF","sha256":"df08001b1aac4a1ad736fcf09a0d3b1db5f285eb6c2d5d7ee046cca2204a561b"}]'::jsonb),
+ ('taxiqaid_auth_api.maintain_public_login_counters(integer)','p_limit integer DEFAULT 1000','integer','plpgsql','[{"reference":"CORRECTED_64_CHARACTER_WATERMARK","line_endings":"LF","sha256":"98327443f445573163ecdbbd0b8d336a68e8dc8d78e858b8013b61d1c975790e"},{"reference":"CORRECTED_64_CHARACTER_WATERMARK","line_endings":"CRLF","sha256":"cf499af81f6598765228ad106a1830c6322c2e6223dc1acbfecebd5f7ac96572"},{"reference":"LEGACY_65_CHARACTER_WATERMARK","line_endings":"LF","sha256":"25514a977e8b8724837f7fcc0638b6c7bcf213ea3ed07d0420dca886d1e82561"},{"reference":"LEGACY_65_CHARACTER_WATERMARK","line_endings":"CRLF","sha256":"9beafec47ac169c70ccfcfe0158a1abcdb7eef4a8926fcfd086302043ece5ed3"}]'::jsonb),
+ ('taxiqaid_auth_api.claim_gateway_nonce(text,bigint)','p_nonce text, p_issued bigint','boolean','plpgsql','[{"reference":"CORRECTED_64_CHARACTER_WATERMARK","line_endings":"LF","sha256":"d1a4a79f3cb93bce046dd5b90d0a0b7071ff14591137d485331a839ff0dd357f"},{"reference":"CORRECTED_64_CHARACTER_WATERMARK","line_endings":"CRLF","sha256":"a3b9b7d9bde41f61f63b453787e19ca563dbcb6c8d6bc8ba9b162c681b62731c"},{"reference":"LEGACY_65_CHARACTER_WATERMARK","line_endings":"LF","sha256":"6fc0b6e815a8278768603b375056aaf4c5ab0c0ea1552fd9ed68e863a5961d97"},{"reference":"LEGACY_65_CHARACTER_WATERMARK","line_endings":"CRLF","sha256":"236885ef27aa3959e943acd1a0cb60f1793754fda6dcb0d878d7c1125a9744b0"}]'::jsonb),
+ ('taxiqaid_auth_api.begin_signed_login_attempt(text,text,text,text,text,bigint)','p_identifier text, p_ip text, p_account text, p_global text, p_nonce text, p_issued bigint','TABLE(allowed boolean, uid uuid, email text, status text, mapping_revision bigint)','plpgsql','[{"reference":"CORRECTED_64_CHARACTER_WATERMARK","line_endings":"LF","sha256":"b5526e7ec0f131e9fc4ba50bac062a4e5dfb92a54d28f306f69da488c2963bed"},{"reference":"CORRECTED_64_CHARACTER_WATERMARK","line_endings":"CRLF","sha256":"5de849aecb6b949b8ecf3c37e9db9b8aa0e5b406d510188b7f62f35f19a2c0a7"},{"reference":"LEGACY_65_CHARACTER_WATERMARK","line_endings":"LF","sha256":"9f86bd933fc93215b064953cf6bd7695aae6cbd98178fd600650be1c472445cf"},{"reference":"LEGACY_65_CHARACTER_WATERMARK","line_endings":"CRLF","sha256":"5925c6a5f8a9effa1c5ac8f8cbccd6a563ddca58a23c0929e3f26ba4de146314"}]'::jsonb)
+), inspected AS (
+ SELECT t.*,p.oid,p.prosrc,
+ pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(p.prosrc,'UTF8')),'hex') AS raw_prosrc_sha256,
+ pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(pg_catalog.pg_get_functiondef(p.oid),'UTF8')),'hex') AS full_definition_sha256,
+ CASE WHEN p.oid IS NOT NULL AND pg_catalog.pg_get_function_arguments(p.oid)=t.expected_arguments
+ AND pg_catalog.pg_get_function_result(p.oid)=t.expected_result AND l.lanname=t.expected_language
+ AND p.prokind='f' AND p.provolatile='v' AND p.proparallel='u' AND NOT p.proisstrict AND NOT p.proleakproof AND p.prosupport=0 AND p.procost=100 AND p.prorows=CASE WHEN t.expected_result LIKE 'TABLE(%' THEN 1000 ELSE 0 END
+ THEN 'PASS' ELSE 'FAIL' END AS interface_review,
+ CASE WHEN CASE t.signature WHEN 'taxiqaid_auth_api.consume_login_counters(text,text,text)' THEN EXISTS(SELECT FROM pg_catalog.pg_proc p WHERE p.oid=pg_catalog.to_regprocedure('taxiqaid_auth_api.consume_login_counters(text,text,text)') AND p.proowner='taxiqaid_auth_rate_owner'::regrole AND p.prosecdef
+ AND p.proconfig @> ARRAY['search_path=pg_catalog, pg_temp','row_security=on'] AND cardinality(p.proconfig)=2
+ AND NOT EXISTS(SELECT FROM pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a WHERE a.privilege_type<>'EXECUTE' OR a.grantee NOT IN ('taxiqaid_auth_rate_owner'::regrole,'taxiqaid_auth_lookup_owner'::regrole) OR (a.grantee<>p.proowner AND a.is_grantable) OR a.grantor<>p.proowner)
+ AND EXISTS(SELECT FROM pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a WHERE a.grantee='taxiqaid_auth_lookup_owner'::regrole AND a.privilege_type='EXECUTE' AND NOT a.is_grantable)
+ AND NOT pg_catalog.has_function_privilege('anon',p.oid,'EXECUTE')
+ AND NOT pg_catalog.has_function_privilege('authenticated',p.oid,'EXECUTE')
+ AND NOT pg_catalog.has_function_privilege('taxiqaid_auth_login',p.oid,'EXECUTE')
+ AND NOT pg_catalog.has_function_privilege('taxiqaid_auth_backend',p.oid,'EXECUTE'))
+ WHEN 'taxiqaid_auth_api.public_login_limits_healthy()' THEN EXISTS(SELECT FROM pg_catalog.pg_proc p WHERE p.oid=pg_catalog.to_regprocedure('taxiqaid_auth_api.public_login_limits_healthy()') AND p.proowner='taxiqaid_auth_rate_owner'::regrole AND p.prosecdef
+ AND p.proconfig @> ARRAY['search_path=pg_catalog, pg_temp','row_security=on'] AND cardinality(p.proconfig)=2
+ AND NOT EXISTS(SELECT FROM pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a WHERE a.privilege_type<>'EXECUTE' OR a.grantee NOT IN ('taxiqaid_auth_rate_owner'::regrole,'taxiqaid_auth_lookup_owner'::regrole,'postgres'::regrole) OR (a.grantee<>p.proowner AND a.is_grantable) OR a.grantor<>p.proowner)
+ AND EXISTS(SELECT FROM pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a WHERE a.grantee='taxiqaid_auth_lookup_owner'::regrole AND a.privilege_type='EXECUTE' AND NOT a.is_grantable)
+ AND EXISTS(SELECT FROM pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a WHERE a.grantee='postgres'::regrole AND a.privilege_type='EXECUTE' AND NOT a.is_grantable)
+ AND NOT pg_catalog.has_function_privilege('anon',p.oid,'EXECUTE')
+ AND NOT pg_catalog.has_function_privilege('authenticated',p.oid,'EXECUTE')
+ AND NOT pg_catalog.has_function_privilege('taxiqaid_auth_login',p.oid,'EXECUTE')
+ AND NOT pg_catalog.has_function_privilege('taxiqaid_auth_backend',p.oid,'EXECUTE'))
+ WHEN 'taxiqaid_auth_api.maintain_public_login_counters(integer)' THEN EXISTS(SELECT FROM pg_catalog.pg_proc p WHERE p.oid=pg_catalog.to_regprocedure('taxiqaid_auth_api.maintain_public_login_counters(integer)') AND p.proowner='taxiqaid_auth_rate_owner'::regrole AND p.prosecdef
+ AND p.proconfig @> ARRAY['search_path=pg_catalog, pg_temp','row_security=on'] AND cardinality(p.proconfig)=2
+ AND NOT EXISTS(SELECT FROM pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a WHERE a.privilege_type<>'EXECUTE' OR a.grantee NOT IN ('taxiqaid_auth_rate_owner'::regrole,'postgres'::regrole) OR (a.grantee<>p.proowner AND a.is_grantable) OR a.grantor<>p.proowner)
+ AND EXISTS(SELECT FROM pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a WHERE a.grantee='postgres'::regrole AND a.privilege_type='EXECUTE' AND NOT a.is_grantable)
+ AND NOT pg_catalog.has_function_privilege('anon',p.oid,'EXECUTE')
+ AND NOT pg_catalog.has_function_privilege('authenticated',p.oid,'EXECUTE')
+ AND NOT pg_catalog.has_function_privilege('taxiqaid_auth_login',p.oid,'EXECUTE')
+ AND NOT pg_catalog.has_function_privilege('taxiqaid_auth_backend',p.oid,'EXECUTE'))
+ WHEN 'taxiqaid_auth_api.claim_gateway_nonce(text,bigint)' THEN EXISTS(SELECT FROM pg_catalog.pg_proc p WHERE p.oid=pg_catalog.to_regprocedure('taxiqaid_auth_api.claim_gateway_nonce(text,bigint)') AND p.proowner='taxiqaid_auth_rate_owner'::regrole AND p.prosecdef
+ AND p.proconfig @> ARRAY['search_path=pg_catalog, pg_temp','row_security=on'] AND cardinality(p.proconfig)=2
+ AND NOT EXISTS(SELECT FROM pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a WHERE a.privilege_type<>'EXECUTE' OR a.grantee NOT IN ('taxiqaid_auth_rate_owner'::regrole,'taxiqaid_auth_lookup_owner'::regrole) OR (a.grantee<>p.proowner AND a.is_grantable) OR a.grantor<>p.proowner)
+ AND EXISTS(SELECT FROM pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a WHERE a.grantee='taxiqaid_auth_lookup_owner'::regrole AND a.privilege_type='EXECUTE' AND NOT a.is_grantable)
+ AND NOT pg_catalog.has_function_privilege('anon',p.oid,'EXECUTE')
+ AND NOT pg_catalog.has_function_privilege('authenticated',p.oid,'EXECUTE')
+ AND NOT pg_catalog.has_function_privilege('taxiqaid_auth_login',p.oid,'EXECUTE')
+ AND NOT pg_catalog.has_function_privilege('taxiqaid_auth_backend',p.oid,'EXECUTE'))
+ WHEN 'taxiqaid_auth_api.begin_signed_login_attempt(text,text,text,text,text,bigint)' THEN EXISTS(SELECT FROM pg_catalog.pg_proc p WHERE p.oid=pg_catalog.to_regprocedure('taxiqaid_auth_api.begin_signed_login_attempt(text,text,text,text,text,bigint)') AND p.proowner='taxiqaid_auth_lookup_owner'::regrole AND p.prosecdef
+ AND p.proconfig @> ARRAY['search_path=pg_catalog, pg_temp','row_security=on'] AND cardinality(p.proconfig)=2
+ AND NOT EXISTS(SELECT FROM pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a WHERE a.privilege_type<>'EXECUTE' OR a.grantee NOT IN ('taxiqaid_auth_lookup_owner'::regrole,'taxiqaid_auth_backend'::regrole) OR (a.grantee<>p.proowner AND a.is_grantable) OR a.grantor<>p.proowner)
+ AND EXISTS(SELECT FROM pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a WHERE a.grantee='taxiqaid_auth_backend'::regrole AND a.privilege_type='EXECUTE' AND NOT a.is_grantable)
+ AND NOT pg_catalog.has_function_privilege('anon',p.oid,'EXECUTE')
+ AND NOT pg_catalog.has_function_privilege('authenticated',p.oid,'EXECUTE')
+ AND NOT pg_catalog.has_function_privilege('taxiqaid_auth_login',p.oid,'EXECUTE')) ELSE false END THEN 'PASS' ELSE 'FAIL' END AS security_review
+ FROM targets t LEFT JOIN pg_catalog.pg_proc p ON p.oid=pg_catalog.to_regprocedure(t.signature)
+ LEFT JOIN pg_catalog.pg_language l ON l.oid=p.prolang
+), matched AS (
+ SELECT i.*,(SELECT pg_catalog.jsonb_agg(v ORDER BY v->>'reference',v->>'line_endings')
+ FROM pg_catalog.jsonb_array_elements(i.reviewed_variants) v WHERE v->>'sha256'=i.raw_prosrc_sha256) AS matched_references
+ FROM inspected i
+)
+SELECT signature,pg_catalog.current_setting('server_version_num')::integer AS server_version_num,
+ CASE WHEN oid IS NULL THEN 'MISSING' WHEN matched_references IS NULL THEN 'UNREVIEWED_BODY' ELSE 'EXACT_REVIEWED_BYTES' END AS body_review,
+ raw_prosrc_sha256,full_definition_sha256,matched_references,reviewed_variants,
+ pg_catalog.length(prosrc) AS source_characters,
+ pg_catalog.octet_length(pg_catalog.convert_to(prosrc,'UTF8')) AS source_utf8_bytes,
+ pg_catalog.length(prosrc)-pg_catalog.length(pg_catalog.replace(prosrc,pg_catalog.chr(10),'')) AS lf_characters,
+ (pg_catalog.length(prosrc)-pg_catalog.length(pg_catalog.replace(prosrc,pg_catalog.chr(13)||pg_catalog.chr(10),'')))/2 AS crlf_pairs,
+ pg_catalog.length(prosrc)-pg_catalog.length(pg_catalog.replace(prosrc,pg_catalog.chr(13),''))-
+ (pg_catalog.length(prosrc)-pg_catalog.length(pg_catalog.replace(prosrc,pg_catalog.chr(13)||pg_catalog.chr(10),'')))/2 AS lone_cr_characters,
+ pg_catalog.length(prosrc)-pg_catalog.length(pg_catalog.replace(prosrc,pg_catalog.chr(9),'')) AS tab_characters,
+ interface_review,security_review,
+ CASE WHEN signature='taxiqaid_auth_api.consume_login_counters(text,text,text)' THEN
+ CASE WHEN matched_references IS NOT NULL AND interface_review='PASS' AND security_review='PASS' THEN 'CONFIRMED_20_10_10_WINDOWS_60_60_900' ELSE 'NOT_CONFIRMED' END
+ ELSE 'NOT_APPLICABLE' END AS rate_policy_review
+FROM matched ORDER BY signature;
+-- END READ-ONLY FINGERPRINT QUERY
+ROLLBACK;

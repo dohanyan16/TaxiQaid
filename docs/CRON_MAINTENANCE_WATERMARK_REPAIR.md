@@ -1,5 +1,7 @@
 # Cron maintenance watermark — reviewed repair
 
+> Step 120 investigation: all five owner-supplied source hashes exactly match CRLF versions of the known committed bodies. The counter remains 20/10/10; the other four still contain the historical bug. Read [the fingerprint investigation and 07 diagnostic](FUNCTION_FINGERPRINT_INVESTIGATION.md) before proceeding. Updated 04/05/06 accept only exact repository-derived LF/CRLF fingerprints and retain all other checks. No live change or Cron activation is authorized.
+
 Continue `feat/dedicated-supabase-auth` from `095f494`. **No live SQL, Cron/settings change, deployment, secret change, public login activation, main merge or branch deletion is authorized.** This commit prepares a repair for the owner to review and explicitly approve.
 
 ## Incident and correction
@@ -25,7 +27,7 @@ Use only [04_repair_maintenance_watermark.sql](../supabase/review/public-login/0
 04 is a complete BEGIN/COMMIT transaction. It:
 
 1. Requires ordinary non-superuser postgres, the exact existing managed memberships/options, restricted owner attributes, existing SECURITY DEFINER hardening and narrow EXECUTE ACLs. Both owners must initially lack effective SET/CREATE authority.
-2. Requires the exact validated named CHECK constraints, the reviewed SQL 00 definition (20 global/minute, 10 verified-IP/minute, 10 identifier/15 minutes), all four known `095f494` body hashes/interfaces and exactly one **disabled** existing maintenance job with the expected name, command, database, postgres role and minute schedule. Mixed, already-repaired or unreviewed definitions stop for review. The new marker/epoch-zero record must not already exist.
+2. Requires the exact validated named CHECK constraints, the reviewed SQL 00 definition (20 global/minute, 10 verified-IP/minute, 10 identifier/15 minutes), all four known `095f494` body hashes/interfaces (exact LF or CRLF forms derived from repository source) and exactly one **disabled** existing maintenance job with the expected name, command, database, postgres role and minute schedule. Mixed, already-repaired or unreviewed definitions stop for review. The new marker/epoch-zero record must not already exist.
 3. Snapshots API function metadata, schema ACL, and counter-table owner/RLS/ACL/constraints/policies in a transaction-local temporary metadata table. It does not copy operational records.
 4. Grants only temporary self-granted SET and schema CREATE to the existing rate/lookup owners, switches to each actual owner and uses CREATE OR REPLACE on the four existing functions. It does not drop functions, transfer ownership, alter EXECUTE ACLs, create permanent tables/roles or modify the counter schema.
 5. Removes only the postgres-granted temporary memberships/CREATE, with explicit grantor and RESTRICT. Permanent supabase_admin ADMIN=true/INHERIT=false/SET=false grants remain untouched. No ADMIN/INHERIT or runtime privilege is added.
@@ -33,14 +35,14 @@ Use only [04_repair_maintenance_watermark.sql](../supabase/review/public-login/0
 
 The repair executes **no operational INSERT/UPDATE/DELETE/TRUNCATE**, does not invoke maintenance, and does not reset/delete/prune existing counters. There is no repair of impossible 65-character rows because the live CHECK already prevents them. Accounts, private mappings, departments, all 107 definitions, 101 Master grants, six Driver denials, the deployed get-my-access and all Edge/Worker sources remain untouched.
 
-[05_verify_maintenance_watermark.sql](../supabase/review/public-login/05_verify_maintenance_watermark.sql) compares SHA-256 hashes of public SQL bodies, exact input/default/return interfaces, language, volatility/parallel/strictness properties, hardening and narrow EXECUTE grants against reviewed sources. Hashes identify SQL code, not user data. Its output contains statuses only. It complements 03, whose security PASS by itself did not validate watermark behavior.
+[05_verify_maintenance_watermark.sql](../supabase/review/public-login/05_verify_maintenance_watermark.sql) compares SHA-256 hashes of public SQL bodies, exact input/default/return interfaces, language, volatility/parallel/strictness properties, hardening and narrow EXECUTE grants against reviewed sources. Hashes identify SQL code, not user data. Its output contains statuses only. The updated predicates accept exactly the reviewed LF/CRLF byte forms without normalizing live source; arbitrary formatting or logic edits remain rejected. It complements 03, whose security PASS by itself did not validate watermark behavior.
 
 ## Browser-only owner procedure after explicit approval
 
 No installation, local command, credential entry or public login is required.
 
 1. On GitHub, select this exact feature-branch commit. Review the complete 04 script and this runbook. In Supabase Dashboard confirm the **dedicated** project, public broker flags false and Cloudflare gateway disabled. In Integrations → Cron, confirm the existing `taxiqaid-public-login-counter-maintenance` job is inactive. Do not create/reschedule a second job or run 02. Privately retain the current four function definitions and ACLs for incident evidence; never post private mappings, credentials or account responses.
-2. In SQL Editor using the ordinary postgres session, run the unchanged **03** verifier, then **05**. Neither writes data. Expected 03: every security field PASS and cron_extension INSTALLED. Expected 05: constraints/rate policy PASS; the four function fields NEEDS_REPAIR; existing_cron_state DISABLED. Any FAIL, missing job, mixed function state or different constraint representation means stop and review sanitized metadata. Do not relax a guard or request broader privileges. These scripts require the owner's existing Dashboard inspection authority; no new database grant is proposed.
+2. In SQL Editor using the ordinary postgres session, run the unchanged **03** verifier, the new read-only **07** source/line-ending diagnostic and then updated **05** from the same reviewed commit. Follow the fingerprint investigation expected results; do not use the older LF-only 05. Neither writes data. Expected 03: every security field PASS and cron_extension INSTALLED. Expected 05: constraints/rate policy PASS; the four function fields NEEDS_REPAIR; existing_cron_state DISABLED. Any FAIL, missing job, mixed function state or different constraint representation means stop and review sanitized metadata. Do not relax a guard or request broader privileges. These scripts require the owner's existing Dashboard inspection authority; no new database grant is proposed.
 3. Obtain explicit owner authorization for **the complete 04 transaction at this commit**. Paste/run the whole file, with no highlighted fragments or manual COMMIT halfway through it. Require successful COMMIT. No maintenance, Cron activation or public login occurs in 04.
 4. Run 03 and 05 again. All 03 security checks must PASS, cron_extension remains INSTALLED. All 05 constraints/rate/function fields must PASS and existing_cron_state must remain DISABLED. The function statuses validate the installed bodies and interfaces against the reviewed definitions; no raw pg_get_functiondef dump is returned. 04's internal snapshot also proves that the existing ACLs/metadata were preserved through replacement. If any status differs, keep Cron/login disabled.
 5. After **separate approval for a rollback-only functional probe**, run all of [06_probe_maintenance_rollback.sql](../supabase/review/public-login/06_probe_maintenance_rollback.sql). It invokes maintenance twice inside one transaction, validates CHECK-compatible watermark shape, five-minute TTL, refresh and health, returns four PASS statuses, then **ROLLBACK**. The code really executes but every counter insertion, update and expired-row prune is undone. Healthy state created only by this probe is undone too. On error, run ROLLBACK in the same session if needed; report only the sanitized SQLSTATE/status. Do not copy raw failing rows or SQL output containing private values. If more than 1,000 eligible expired rows prevent healthy admission, the probe stops and rolls back: approve a separate bounded-backlog recovery plan before any scheduler reactivation, rather than deleting buckets, bypassing health or increasing privileges.
@@ -61,7 +63,7 @@ Before commit, any SQL/ownership/constraint/hash/cleanup/postflight error aborts
 
 After a committed repair, leave Cron and login disabled if verification fails. Preserve the saved before/after definitions and sanitized failure status. Prepare a separately reviewed forward correction or owner-approved restoration under the same role/ACL transaction safeguards. Do not blindly restore the known-broken 65-character definitions, weaken constraints, truncate/reset counters, manually forge a healthy watermark or use a privileged public connection. Resuming/closing a Cron window is a separate owner-controlled action; the agent has not changed any job.
 
-## Validation and remaining blockers
+## Validation at `874671b` and remaining blockers
 
 Local regression results:
 
@@ -76,7 +78,7 @@ Roster artifact verification passed **815 synthetic PDFs and 4,974 map annotatio
 
 Remaining blockers: owner review/explicit authorization of 04; genuine hosted preflight, transactional repair, postflight and separately approved rollback-only probe; separate Cron reactivation approval plus successful scheduled refresh evidence. Public gateway provenance/origin closure, real public-handler/browser authentication, capacity review, activation and eventual main cutover remain separate and unapproved. No local PASS is a live repair or production-readiness claim.
 
-## Changed files
+## Changed files at `874671b` (historical)
 
 - `docs/CRON_MAINTENANCE_WATERMARK_REPAIR.md`
 - `docs/PUBLIC_LOGIN_RATE_LIMIT_CAPACITY.md`

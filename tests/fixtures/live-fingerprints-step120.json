@@ -1,0 +1,10 @@
+{
+  "provenance": "Owner-reported read-only Step 120 observations; public SQL source hashes only, never an authorization allowlist",
+  "functions": {
+    "begin_signed_login_attempt": "5925c6a5f8a9effa1c5ac8f8cbccd6a563ddca58a23c0929e3f26ba4de146314",
+    "claim_gateway_nonce": "236885ef27aa3959e943acd1a0cb60f1793754fda6dcb0d878d7c1125a9744b0",
+    "consume_login_counters": "d616c97d7dc76dedad6bd9bb0c86f9593b4e083cba6e5a345d67e17141f57fc3",
+    "maintain_public_login_counters": "9beafec47ac169c70ccfcfe0158a1abcdb7eef4a8926fcfd086302043ece5ed3",
+    "public_login_limits_healthy": "df08001b1aac4a1ad736fcf09a0d3b1db5f285eb6c2d5d7ee046cca2204a561b"
+  }
+}
