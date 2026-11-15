@@ -1,5 +1,7 @@
 # Dedicated Supabase authentication migration — not activated
 
+> Current phase is exclusively public authentication completion. Owner-verified repair/probe/Cron and disabled signed transport evidence are recorded in [PUBLIC_AUTHENTICATION_COMPLETION.md](PUBLIC_AUTHENTICATION_COMPLETION.md); earlier pending wording below is historical. The normal repository broker entry still differs from the signed review/deployed candidate and requires explicit source-parity reconciliation before release. No deployment, activation, account/database development, main merge or branch deletion is authorized.
+
 ## Current owner-verified private success and public proposal
 
 The owner reports the genuine private username diagnostic passed every check, including mapping/UID, active Master, official Auth, deployed access compatibility, 101 management permissions, six Driver denials and session cleanup. Its function and three secrets are deleted; only the access function and disabled public broker remain deployed. The [public architecture proposal](PUBLIC_USERNAME_LOGIN_ARCHITECTURE.md) supersedes earlier private-results-pending wording and compares a signed gateway with IP-independent alternatives. It does not establish public readiness or authorize deployment, SQL, secret changes, activation or merge.

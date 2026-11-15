@@ -1,6 +1,6 @@
 # Public username login architecture — proposal, not activated
 
-> Current owner-verified incident: SQL 00/01 are installed and 03 security checks PASS. The existing Cron job failed the watermark bucket CHECK and is now disabled; public login remains disabled. Historical NOT_APPLIED/NOT_INSTALLED statements below are superseded. Use the separately approved [04 watermark repair procedure](CRON_MAINTENANCE_WATERMARK_REPAIR.md), never rerun 01 or create a duplicate job. No live repair is authorized by this commit. Validation/file lists below describe their earlier review commits; the linked repair runbook contains the current files and results.
+> Latest owner-verified state: SQL 04 repair and SQL 06 probe passed; Cron is enabled/healthy with two successful runs; the revised signed broker is deployed. An unsigned direct POST returned 403 and a dummy Worker POST returned 503 with a matching Supabase POST log. This supports disabled signed transport, not full authentication readiness. Worker is back to enabled=false and public login remains disabled; approved origins are configured. Use the [authentication-only completion plan](PUBLIC_AUTHENTICATION_COMPLETION.md) for current gates/approvals. Historical pending/disabled-Cron/undeployed wording below is superseded; do not repeat completed tests or rerun SQL 00/01/04/06 without a specific approved reason.
 
 ## Managed-role precondition correction
 

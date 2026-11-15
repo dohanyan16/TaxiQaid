@@ -1,5 +1,7 @@
 # Cron maintenance watermark — reviewed repair
 
+> Completed owner-verified milestone: SQL 04 was applied, SQL 06 returned four PASS results, and the existing Cron job is enabled/healthy with two successful consecutive runs. Preserve that state. The repair/probe steps below are historical procedures, not instructions to repeat them. Remaining work is exclusively the [public authentication completion plan](PUBLIC_AUTHENTICATION_COMPLETION.md); no live write or test is authorized here.
+
 > Step 120 investigation: all five owner-supplied source hashes exactly match CRLF versions of the known committed bodies. The counter remains 20/10/10; the other four still contain the historical bug. Read [the fingerprint investigation and 07 diagnostic](FUNCTION_FINGERPRINT_INVESTIGATION.md) before proceeding. Updated 04/05/06 accept only exact repository-derived LF/CRLF fingerprints and retain all other checks. No live change or Cron activation is authorized.
 
 Continue `feat/dedicated-supabase-auth` from `095f494`. **No live SQL, Cron/settings change, deployment, secret change, public login activation, main merge or branch deletion is authorized.** This commit prepares a repair for the owner to review and explicitly approve.
