@@ -1,13 +1,10 @@
 // Developer-only deterministic packaging; the owner copies the checked artifact through Dashboard/browser UI.
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const root=path.resolve(__dirname,'..'),check=process.argv.includes('--check');
-const files=['supabase/functions/_shared/security.mjs','supabase/functions/_shared/handlers.mjs','supabase/functions/_shared/broker-store.ts','supabase/functions/login-with-identifier/index.ts'];
-const imports=new Set(),bodies=[];
-for(const file of files){let source=fs.readFileSync(path.join(root,file),'utf8');source=source.replace(/^import .* from ['"]([^'"]+)['"];\n/gm,(line,target)=>{if(!target.startsWith('.'))imports.add(line.trim());return '';}).replace(/^export /gm,'');bodies.push('// Source: '+file+'\n'+source);}
-const header='// @ts-nocheck\n// GENERATED REVIEW CANDIDATE. Disabled unless every server readiness gate is explicitly approved.\n// Do not edit here. Regenerate with scripts/build-auth-dashboard.cjs; no secrets are included.\n';
-const artifact=header+[...imports].join('\n')+'\n'+bodies.join('\n');
+const {DASHBOARD_FILES,buildSignedBrokerArtifact}=require('./lib/signed-broker-artifact.cjs');
+const artifact=buildSignedBrokerArtifact(root);
 function output(file,contents){const target=path.join(root,file);if(check){if(!fs.existsSync(target)||fs.readFileSync(target,'utf8')!==contents)throw new Error('Dashboard artifact drift: '+file);}else{fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,contents);}}
-output('supabase/dashboard/login-with-identifier.ts',artifact);
+for(const file of DASHBOARD_FILES)output(file,artifact);
 const sdkFile=process.env.TAXIQAID_SMOKE_SDK_FILE,expected='a867edbcfb029370aeec7223dd6180b560b621fbe3bc64c6584fb0369d1b7bce';
 const snippetFile='scripts/_broker_smoke/dashboard-snippet.js',snippetSource=path.join(root,'scripts/_broker_smoke/browser.js');
 if(fs.existsSync(snippetSource)){

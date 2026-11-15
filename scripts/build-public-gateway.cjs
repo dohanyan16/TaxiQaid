@@ -9,9 +9,9 @@ const proof=read('supabase/functions/_shared/gateway-proof.mjs');
 const worker=read('gateway/worker.mjs');
 if(/\bcredentials\s*:/.test(worker)||/\bredirect\s*:\s*['"]error['"]/.test(worker))throw new Error('Unsupported Cloudflare Worker fetch options.');
 output('gateway/dashboard-worker.mjs','// GENERATED REVIEW ONLY. No secrets, deployment or activation.\n'+proof.replace(/^export /gm,'')+'\n'+worker.replace(/^import .*;\n/gm,''));
-const files=['supabase/functions/_shared/security.mjs','supabase/functions/_shared/handlers.mjs','supabase/functions/_shared/broker-store.ts','supabase/functions/_shared/gateway-proof.mjs','supabase/functions/_shared/signed-broker-store.ts','supabase/review/public-login/login-with-identifier.ts'],imports=new Set(),bodies=[];
-for(const file of files){let source=read(file).replace(/^import .* from ['"]([^'"]+)['"];\n/gm,(line,target)=>{if(!target.startsWith('.'))imports.add(line.trim());return '';}).replace(/^export /gm,'');bodies.push('// Source: '+file+'\n'+source);}
-output('supabase/dashboard/login-with-identifier-gateway.ts','// @ts-nocheck\n// GENERATED REVIEW REPLACEMENT. Original modules are checked separately. Do not deploy without approval.\n'+[...imports].join('\n')+'\n'+bodies.join('\n'));
+const {DASHBOARD_FILES,buildSignedBrokerArtifact}=require('./lib/signed-broker-artifact.cjs');
+const brokerArtifact=buildSignedBrokerArtifact(root);
+for(const file of DASHBOARD_FILES)output(file,brokerArtifact);
 const existing=read('scripts/_broker_smoke/dashboard-snippet.js'),start='// BEGIN PUBLIC SUPABASE SDK\n',end='\n// END PUBLIC SUPABASE SDK',sdk=existing.slice(existing.indexOf(start)+start.length,existing.indexOf(end)),hash='a867edbcfb029370aeec7223dd6180b560b621fbe3bc64c6584fb0369d1b7bce';
 if(crypto.createHash('sha256').update(sdk).digest('hex')!==hash)throw new Error('SDK integrity failed.');
 const guard="if(location.origin!=='REPLACE_WITH_REVIEWED_WORKER_ORIGIN')return;\nif(location.protocol!=='https:'||!location.hostname.endsWith('.workers.dev')||location.pathname!=='/login-with-identifier'||location.search||location.hash||globalThis.TAXIQAID_BROKER_TEST_RUNNING)return;";

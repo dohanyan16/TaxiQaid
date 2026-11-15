@@ -1,5 +1,6 @@
 // @ts-nocheck
-// GENERATED REVIEW REPLACEMENT. Original modules are checked separately. Do not deploy without approval.
+// GENERATED SIGNED BROKER. Both Dashboard filenames use the canonical signed entry.
+// Source modules are checked separately. No deployment or activation is authorized.
 import {isIP} from 'node:net';
 import postgres from 'npm:postgres@4.1.0';
 import {createClient} from 'npm:@supabase/supabase-js@2.119.0';
@@ -183,8 +184,8 @@ function signedBrokerStore(sql:SignedSql,proof:{nonce:string;issued:number},rate
  }};
 }
 
-// Source: supabase/review/public-login/login-with-identifier.ts
-/** REVIEW replacement only. Never deploy before approved SQL, signed gateway and direct-origin rejection tests. */
+// Source: supabase/functions/login-with-identifier/index.ts
+/** Canonical signed broker. Deployment and activation require separate owner approval. */
 function createSignedLogin(env:(name:string)=>string|undefined,connect:typeof postgres=postgres,fetcher:typeof fetch=fetch){return async(request:Request)=>{
  const origins=configuredOrigins(env('TAXIQAID_AUTH_ORIGINS')),origin=request.headers.get('origin'),rate=env('TAXIQAID_RATE_SECRET')||'';
  const configured=['TAXIQAID_LOGIN_ENABLED','TAXIQAID_SESSION_TRANSPORT_REVIEWED','TAXIQAID_GATEWAY_ENABLED','TAXIQAID_GATEWAY_REVIEWED'].every(key=>env(key)==='true')&&rate.length>=32&&env('TAXIQAID_TRUSTED_IP_HEADER_VERIFIED')==='false';

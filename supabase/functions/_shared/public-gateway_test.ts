@@ -3,8 +3,8 @@ import postgres from 'npm:postgres@4.1.0';
 import {signGateway,GATEWAY_TARGET} from './gateway-proof.mjs';
 function assert(value:unknown):asserts value{if(!value)throw new Error('Signed broker assertion failed.');}
 const uid='00000000-0000-4000-8000-000000000001',origin='https://review.example.workers.dev',secret='1'.repeat(64);
-let loaded:typeof import('../../review/public-login/login-with-identifier.ts')|undefined;
-async function candidate(){if(!loaded){const previous=Deno.serve;try{Deno.serve=(()=>({})) as unknown as typeof Deno.serve;loaded=await import('../../review/public-login/login-with-identifier.ts');}finally{Deno.serve=previous;}}return loaded;}
+let loaded:typeof import('../login-with-identifier/index.ts')|undefined;
+async function candidate(){if(!loaded){const previous=Deno.serve;try{Deno.serve=(()=>({})) as unknown as typeof Deno.serve;loaded=await import('../login-with-identifier/index.ts');}finally{Deno.serve=previous;}}return loaded;}
 async function fixture(mode='success'){
  const {createSignedLogin}=await candidate(),events:string[]=[],seen=new Set<string>();
  const values:Record<string,string>={TAXIQAID_LOGIN_ENABLED:'true',TAXIQAID_SESSION_TRANSPORT_REVIEWED:'true',TAXIQAID_GATEWAY_ENABLED:'true',TAXIQAID_GATEWAY_REVIEWED:'true',TAXIQAID_TRUSTED_IP_HEADER_VERIFIED:'false',TAXIQAID_GATEWAY_SECRET:secret,TAXIQAID_RATE_SECRET:'SYNTHETIC_RATE_SECRET_32_CHARACTERS',TAXIQAID_AUTH_ORIGINS:origin,TAXIQAID_BROKER_DB_URL:'postgresql://taxiqaid_auth_login.mqkflwsvnzcaylxtvsje:SYNTHETIC_ONLY@aws-0-fixture.pooler.supabase.com:6543/postgres'};
@@ -39,4 +39,41 @@ Deno.test('disabled deployment can prove signature gating without enabling Auth'
 Deno.test('replay/rate denial and mapping/revision failures release no usable session',async()=>{
  const replay=await fixture();assert((await replay.handler(await request())).status===200);const count=replay.events.filter(x=>x==='password-auth').length;assert((await replay.handler(await request())).status===429);assert(replay.events.filter(x=>x==='password-auth').length===count);
  for(const mode of ['rate-denied','wrong-mapping','revision-race']){const {handler,events}=await fixture(mode),response=await handler(await request());assert(response.status!==200);assert(!(await response.text()).includes('SYNTHETIC'));if(mode==='rate-denied')assert(!events.includes('password-auth'));else assert(events.includes('signout'));assert(events.at(-1)==='close');}
+});
+
+Deno.test('compatibility import shares the canonical factory without registering a second server',async()=>{
+ const canonical=await candidate(),previous=Deno.serve;let registrations=0;
+ try{
+  Deno.serve=(()=>{registrations++;return {};}) as unknown as typeof Deno.serve;
+  const compatibility=await import('../../review/public-login/login-with-identifier.ts');
+  assert(compatibility.createSignedLogin===canonical.createSignedLogin&&registrations===0);
+ }finally{Deno.serve=previous;}
+});
+Deno.test('every readiness gate fails closed before SQL/Auth and never bypasses proof validation',async()=>{
+ for(const key of ['TAXIQAID_LOGIN_ENABLED','TAXIQAID_SESSION_TRANSPORT_REVIEWED','TAXIQAID_GATEWAY_ENABLED','TAXIQAID_GATEWAY_REVIEWED']){
+  for(const state of ['false','missing']){
+   const {handler,events,values}=await fixture();if(state==='missing')delete values[key];else values[key]='false';
+   assert((await handler(await request())).status===503&&events.length===0);
+   const forged=await request();forged.headers.set('x-taxiqaid-mac','0'.repeat(64));
+   assert((await handler(forged)).status===403&&events.length===0);
+  }
+ }
+ for(const [key,value,status]of [['TAXIQAID_TRUSTED_IP_HEADER_VERIFIED','true',503],['TAXIQAID_RATE_SECRET','short',503],['TAXIQAID_GATEWAY_SECRET','',403]] as const){
+  const {handler,events,values}=await fixture();values[key]=value;assert((await handler(await request())).status===status&&events.length===0);
+ }
+});
+Deno.test('canonical proof rejection covers body/origin/IP/nonce/time/MAC/query before opening SQL',async()=>{
+ for(const mutation of ['body','origin','ip','nonce','stale','future','mac','query','unapproved']){
+  const {handler,events,values}=await fixture();let input=await request();
+  if(mutation==='body')input=new Request(GATEWAY_TARGET,{method:'POST',headers:input.headers,body:'{}'});
+  if(mutation==='origin')input.headers.set('origin','https://unapproved.invalid');
+  if(mutation==='ip')input.headers.set('x-taxiqaid-ip','192.0.2.2');
+  if(mutation==='nonce')input.headers.set('x-taxiqaid-nonce','b'.repeat(32));
+  if(mutation==='stale')input.headers.set('x-taxiqaid-issued',String(Math.floor(Date.now()/1000)-61));
+  if(mutation==='future')input.headers.set('x-taxiqaid-issued',String(Math.floor(Date.now()/1000)+10));
+  if(mutation==='mac')input.headers.set('x-taxiqaid-mac','0'.repeat(64));
+  if(mutation==='query')input=new Request(GATEWAY_TARGET+'?bypass=1',input);
+  if(mutation==='unapproved')values.TAXIQAID_AUTH_ORIGINS='https://unapproved.invalid';
+  const result=await handler(input);assert(result.status===403&&events.length===0);assert(!(await result.text()).includes('SYNTHETIC'));
+ }
 });

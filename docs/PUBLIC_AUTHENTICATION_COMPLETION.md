@@ -1,6 +1,6 @@
 # Public authentication completion — bounded owner-controlled plan
 
-Scope: finish public authentication, its final frontend integration and safe production cutover on `feat/dedicated-supabase-auth`, reviewed from `d5a6e86`. Account management, database redesign, Drivers Management, department modules and unrelated ERP work are deferred to a separate conversation **after this phase closes**. This document authorizes no deployment, live test, SQL, setting/secret change, activation, merge or branch deletion.
+Scope: finish public authentication, its final frontend integration and safe production cutover on `feat/dedicated-supabase-auth`, repository reconciliation approved from `c0a5e7d` after Step 141. Account management, database redesign, Drivers Management, department modules and unrelated ERP work are deferred to a separate conversation **after this phase closes**. This document authorizes no deployment, live test, SQL, setting/secret change, activation, merge or branch deletion.
 
 ## Accepted live evidence — do not restart completed work
 
@@ -12,7 +12,8 @@ These are **owner-verified hosted results**, not new agent-run tests:
 | SQL 04 maintenance repair | Applied successfully; do not rerun 00, 01 or 04 |
 | SQL 06 rollback-only probe | Four PASS results; do not repeat without a relevant change |
 | Existing Cron maintenance | Enabled, healthy, two consecutive successful runs; preserve this one job and its schedule |
-| Revised login-with-identifier | Owner reports deployed; exact source/config parity still needs a release record |
+| Revised login-with-identifier | Step 141: downloaded source reviewed against the pinned signed Dashboard artifact, matching functional content; Supabase deployment version remains UNVERIFIED |
+| Worker source/version review | Step 141: active reference `9452cefc`, reviewed against `gateway/dashboard-worker.mjs` at `c0a5e7d`, with no functional discrepancies identified; no new deployment performed |
 | Unsigned direct Supabase POST | HTTP 403; baseline direct-origin denial accepted |
 | Dummy Worker POST and matching Supabase POST log | HTTP 503 at both; supports signed transport to the disabled broker, not password, SQL admission, IP fidelity, replay or browser-session readiness |
 | Current controls | Worker returned to enabled=false; public login disabled; approved browser origins configured |
@@ -24,7 +25,7 @@ The latest evidence supersedes older documents saying repair is pending, Cron is
 
 | Priority / gate | Current status | Acceptance criterion |
 | --- | --- | --- |
-| P0 — Source/config parity and scope decision | OPEN | Pin deployed Worker/broker revisions and reviewed artifacts; reconcile the stale normal repository entry; record exact origins/topology/flag states and explicit native-Auth risk decision |
+| P0 — Source/config parity and scope decision | OPEN; repository reconciliation implemented | Canonical signed source/identical artifacts replace the stale entry; retain Step 141 functional-review evidence, obtain the missing Supabase deployment reference and finish configuration/native-boundary decisions |
 | P1 — Disabled-login ingress/proof checks | OPEN beyond the accepted 403/503 baseline | Genuine hosted allowed/denied origin/path/provenance and signature/timestamp/body-context checks, with no broker password admission; bound missing test-harness work |
 | P2 — Hosted admission, replay and pilot capacity | OPEN | Genuine trusted-IP attribution, unchanged 20/10/10 limits, one-use signed-proof replay protection, no over-admission and acceptable agreed pilot burst/refresh demand |
 | P3 — Genuine public Master and session lifecycle | OPEN | Actual Worker → deployed broker → official SDK → get-my-access flow; UID/active/super_admin/101/six checks; refresh/expiry/logout/failure cleanup and frontend controller verified |
@@ -34,24 +35,22 @@ Finish P0–P4 in order; perform only the approved cases for each gate. A failed
 
 ### Repository findings that must be resolved before release
 
-- `supabase/functions/login-with-identifier/index.ts` and generated `supabase/dashboard/login-with-identifier.ts` still contain the earlier trusted-header handler. The signed version is in `supabase/review/public-login/login-with-identifier.ts` and `supabase/dashboard/login-with-identifier-gateway.ts`. This is an observed **repository release-source mismatch**, not a claim that the deployed function is wrong. Do not deploy the stale normal entry. After parity review, a separately authorized source-only promotion/regeneration and regression commit must align the authoritative entry with the verified deployment before any merge. No source promotion is implemented by this documentation change.
-- The reviewed Worker sources are `gateway/worker.mjs` and generated `gateway/dashboard-worker.mjs`. Review Dashboard deployment/version and actual code; an artifact existing in GitHub does not prove it is the deployed version.
+- The approved repository-only reconciliation makes `supabase/functions/login-with-identifier/index.ts` canonical, preserving the reviewed signed handler factory exactly. `supabase/review/public-login/login-with-identifier.ts` is now a compatibility export, not another implementation or a standalone Dashboard paste candidate. Both `supabase/dashboard/login-with-identifier.ts` and `supabase/dashboard/login-with-identifier-gateway.ts` are identical outputs of `scripts/lib/signed-broker-artifact.cjs`; either builder writes/checks both aliases. No deployment, activation, secret or live setting change accompanies this promotion.
+- Worker source and signed broker functional reviews from Step 141 are accepted. Cloudflare reference is `9452cefc`; Supabase deployment version remains UNVERIFIED. Local reconciliation does not establish exact deployed-byte/version parity or replace that missing release record. Regenerated broker headers/source labels differ from `c0a5e7d`, while the reviewed executable implementation remains unchanged. Do not redeploy merely to refresh a source label or obtain a version ID.
 - Dedicated frontend configuration remains `enabled:false`, `brokerUrl:null`, memory-only in `shared/auth-dedicated-config.js`. The production site remains on its existing configuration. Final integration needs a reviewed static Worker URL, dedicated project settings, browser-origin/CSP checks and an approved staging context; no query-string/storage override or direct-origin fallback is allowed.
 - `scripts/_public_gateway/dashboard-snippet.js` is a one-shot pinned-SDK Master helper that signs out in finally and disables auto-refresh/persistence. It does not test the actual ERP controller's long-lived refresh/expiry/restoration behavior.
 - The public API exposes generic 429s. The current eleven-request provenance helper labels only a **status pattern**. Coincident native/global throttling can mimic that pattern. There is no approved hosted server-side bucket-attribution/replay harness in the current artifacts; do not pretend the helper proves IP provenance or signed-proof replay protection.
 
-## Exact next owner action — P0, read-only, no requests
+## Exact next owner action — read-only deployment-reference follow-up
 
-**Next action: review/approve case P0-PARITY, then perform one browser-only read-only source/configuration inventory.** It sends zero login requests and changes nothing. Do not repeat the successful 403/503, SQL or Cron tests now.
+The Step 141 functional code comparisons are accepted; do not repeat the 403/503, repair/probe/Cron or full source reviews without a material change. The next owner case is **P0-DEPLOYMENT-REF**, a browser-only, zero-login-request metadata check. Review/approve that bounded read-only case before running it; the implementation approval does not authorize a hosted security test or write.
 
-1. On GitHub, open the exact commit containing this document on `feat/dedicated-supabase-auth`. Open the Worker Dashboard artifact and the **signed gateway** broker Dashboard artifact named above. Do not select the stale normal broker entry as a deployment candidate.
-2. In Cloudflare Dashboard → Workers & Pages → `taxiqaid-auth-gateway`, view the currently deployed version/code and its routes, custom domains, workers.dev URL, previews and bindings. Compare the full code and imported dependency versions privately with the pinned Dashboard artifact; a partial excerpt or visual resemblance is UNVERIFIED, not full parity. Record MATCH / DIFFERENT / UNVERIFIED and the deployment/version reference. Do not click Deploy, Save, Enable or add a binding. Confirm the visible `TAXIQAID_GATEWAY_ENABLED=false` state. Inspect public origin settings; keep all secret values masked.
-3. In the dedicated Supabase Dashboard → Edge Functions → `login-with-identifier`, view the currently deployed source/version and compare privately with `supabase/dashboard/login-with-identifier-gateway.ts`. Record MATCH / DIFFERENT / UNVERIFIED for the complete source/dependency set. Confirm from visible non-secret metadata or the owner's existing configuration record that public password admission remains disabled. Secret flags may not be viewable after creation: if hidden, record UNVERIFIED rather than unmasking/re-entering them. `verify_jwt=false` is the intentional public broker platform mode; its HMAC proof gate must remain mandatory. Do not change or redeploy `get-my-access`, whose authenticated-JWT protection stays enabled.
-4. Record **names/presence only**, never values, for the restricted DB/TLS, rate and gateway secrets. Existing 503 transport evidence supports key agreement; presence alone does not prove equal key values. Record public exact origins/paths and flag states only where safely known. Worker and broker browser allowlists must agree; the GitHub Pages origin is `https://dohanyan16.github.io`, without `/TaxiQaid/`. Origin checks operate across that origin's content and do not authenticate non-browser callers. Audit same-origin content ownership. Keep the fixed upstream target and manual redirect rejection; list aliases/old handlers/diagnostics and alternate ingress without invoking them.
-5. For the signed broker review the four readiness flags `TAXIQAID_LOGIN_ENABLED`, `TAXIQAID_SESSION_TRANSPORT_REVIEWED`, `TAXIQAID_GATEWAY_ENABLED`, `TAXIQAID_GATEWAY_REVIEWED`, and the requirement `TAXIQAID_TRUSTED_IP_HEADER_VERIFIED=false`. This requirement belongs to the signed candidate; do not set the older header-verification flag true. Record the disabled/current states, not a recommendation to change them. Keep frontend enabled=false and brokerUrl=null. Do not expose keys, DB URLs, certificates, internal emails, source containing unexpected private literals or complete settings screenshots.
-6. Return the sanitized P0 evidence record below, source-difference classification if any, and whether the owner accepts the broker-only/native-Auth boundary. Stop there. A mismatch is a source-review task, not permission to paste/deploy a replacement. Missing visibility is UNVERIFIED, not PASS.
+1. In the dedicated Supabase Dashboard open Edge Functions → `login-with-identifier` → Overview and any available Deployments/Details/history view. Read the existing deployment/version identifier and its available timestamp only. Do not press Deploy, Save, Invoke/Test or change secrets, JWT mode or flags. Do not redeploy to manufacture a new identifier.
+2. Record the identifier as owner-verified metadata if the UI exposes it. If absent, return UNVERIFIED; do not extract Management API credentials or expose account/source/log dumps. A later narrowly reviewed read-only metadata procedure may be required. Keep the already reported Cloudflare reference `9452cefc` and Step 141 functional comparison evidence; no Worker request is needed.
+3. Return only case ID, reviewed repository commit, public-code deployment reference or UNVERIFIED, existing disabled-state attestation, and sanitized outcome. Do not copy complete source, private responses, usernames/UIDs, email mappings, tokens, keys, DB URLs, certificates or raw logs.
+4. Keep Worker/public login disabled and the healthy Cron job unchanged. Before any enabled test window, explicitly decide the broker-only/native-Auth boundary below and finish the outstanding origin/topology/configuration evidence. There is no request to repeat a successful baseline test now.
 
-P0 has no reason to run SQL 04/06/07 or inspect account records. Existing function/Cron verification is accepted; routine monitoring continues under its existing ownership without reconfiguring the job.
+The prior P0-PARITY inventory remains the source/configuration checklist: exact public approved origins must agree on Worker and broker, the fixed destination/manual redirect rejection must remain, and secret presence never proves equal secret values. GitHub Pages origin is `https://dohanyan16.github.io`, without `/TaxiQaid/`; Origin is not non-browser authorization. Signed readiness requires four flags (`TAXIQAID_LOGIN_ENABLED`, `TAXIQAID_SESSION_TRANSPORT_REVIEWED`, `TAXIQAID_GATEWAY_ENABLED`, `TAXIQAID_GATEWAY_REVIEWED`) explicitly true and `TAXIQAID_TRUSTED_IP_HEADER_VERIFIED=false`; missing/disabled configuration remains fail-closed. Hidden settings stay UNVERIFIED rather than being unmasked or re-entered. Preserve broker `verify_jwt=false` with mandatory HMAC and get-my-access JWT protection. A partial excerpt/functional review does not silently become exact deployment-version parity.
 
 ## Per-case approvals and disabled testing boundary
 
@@ -120,7 +119,7 @@ Acceptance: refresh retains the same verified UID/permissions; stale/failed acce
 
 ## P4 — Final frontend integration, activation, rollback and closure
 
-After verified hosted transport/admission/session gates, separately authorize only authentication integration: canonical signed deployment entry/artifact alignment, exact static brokerUrl/dedicated configuration, explicit memory/persistence/reload policy, SDK/error/cleanup handling, CSP/connect-src and approved origins. Preserve all modules, old project, permission model and disconnected legacy integrations. No auth-only change may create operational persistence or broaden data rights.
+After verified hosted transport/admission/session gates, separately authorize only authentication integration: verification of the already reconciled canonical signed entry/artifacts, exact static brokerUrl/dedicated configuration, explicit memory/persistence/reload policy, SDK/error/cleanup handling, CSP/connect-src and approved origins. Preserve all modules, old project, permission model and disconnected legacy integrations. No auth-only change may create operational persistence or broaden data rights.
 
 The actual feature-build controller must be tested in an approved nonproduction browser context. An isolated preview host/deployment and any new origin need separate approval; do not repoint production Pages from main to the feature branch. A browser helper PASS is not the full-site staging PASS. Verify normal Master admission, all 18 authorized administrative pages, existing permission/denial bindings, unauthenticated access, session lifecycle, mobile/errors and no old-project/legacy requests in dedicated mode. Keep the dedicated public login disabled pending this evidence; preserve the current production website and old-project authentication until an explicitly approved cutover. Only a narrowly approved test window may temporarily enable required gates.
 
@@ -138,14 +137,15 @@ Use one record per approved case; no screenshots of secrets/settings, raw logs, 
 
 ```json
 {
-  "case": "P0-PARITY",
+  "case": "P0-DEPLOYMENT-REF",
   "ownerApprovalRef": "APPROVED_CASE_REFERENCE",
   "reviewedCommit": "PINNED_COMMIT",
   "startedAt": "ISO_8601_WITH_TIMEZONE",
   "finishedAt": "ISO_8601_WITH_TIMEZONE",
   "requestCount": 0,
   "state": {"workerEnabled": false, "publicLoginEnabled": false, "cron": "HEALTHY_OWNER_VERIFIED"},
-  "source": {"worker": "UNVERIFIED", "signedBroker": "UNVERIFIED", "canonicalRepoEntry": "RECONCILIATION_REQUIRED"},
+  "source": {"worker": "OWNER_FUNCTIONALLY_REVIEWED", "signedBroker": "OWNER_FUNCTIONALLY_REVIEWED", "canonicalRepoEntry": "RECONCILED_REPOSITORY_ONLY"},
+  "deployment": {"cloudflareOwnerReported": "9452cefc", "supabase": "UNVERIFIED"},
   "configuration": {"approvedOrigins": "UNVERIFIED", "fixedTarget": "UNVERIFIED", "secretPresenceOnly": "UNVERIFIED"},
   "nativeBoundaryDecision": "PENDING",
   "result": "PLANNED",
@@ -157,15 +157,36 @@ Use one record per approved case; no screenshots of secrets/settings, raw logs, 
 
 For later cases add only HTTP statuses, aggregate request/concurrency/latency results, permission counts, source-group labels, attribution booleans, session-stage statuses and cleanup status. No actual UID, username, email, Iqama, IP, password, access/refresh token, signature, nonce, connection URL or private account response. Stamp evidence as owner-verified hosted, local mocked, or not yet run. Unknown/missing evidence is never PASS.
 
-## Documentation change manifest and validation
+## Approved repository reconciliation manifest and validation
 
-Exact changed files:
+The owner explicitly approved only these 12 files, local tests, commit and feature-branch push. This is not approval to deploy or activate:
 
+- `supabase/functions/login-with-identifier/index.ts`
+- `supabase/review/public-login/login-with-identifier.ts`
+- `scripts/lib/signed-broker-artifact.cjs`
+- `scripts/build-auth-dashboard.cjs`
+- `scripts/build-public-gateway.cjs`
+- `supabase/dashboard/login-with-identifier.ts`
+- `supabase/dashboard/login-with-identifier-gateway.ts`
+- `supabase/functions/_shared/public-gateway_test.ts`
+- `tests/signed-broker-packaging.test.cjs`
 - `docs/PUBLIC_AUTHENTICATION_COMPLETION.md`
 - `docs/PUBLIC_USERNAME_LOGIN_ARCHITECTURE.md`
 - `docs/SUPABASE_AUTH_MIGRATION.md`
-- `docs/CRON_MAINTENANCE_WATERMARK_REPAIR.md`
 
-Validation passed: documentation-only diff/manifest, all changed-document local links, Markdown code-fence balance, evidence JSON parsing, whitespace checks, unchanged 107-definition/six-Driver permission catalog, and public gateway/role proposal artifact checks. No runtime/browser suites or successful live tests were repeated for these documentation-only changes; prior local regressions remain historical local evidence, not new hosted PASS. Application, Worker/Edge/SQL/generator/test sources and production configuration are byte-for-byte unchanged.
+The reviewed handler factory/server-registration source at `c0a5e7d` has SHA-256 `9682fbf8ead4fa8a330bcbf3437620f058c9d6bf951749dc7ff7558e48f33711`; canonical promotion preserves those bytes exactly. The regenerated artifact is identical to the reviewed signed bundle after only header, entry-comment and source-provenance label adjustments. Shared gateway proof, SQL adapter, permissions, rate policy, get-my-access, Worker source, frontend config, dependency versions and session logic remain unchanged.
 
-This task performed no hosted authentication/security request, credential entry, SQL, secret/provider setting/Cron change, deployment, activation, merge or branch deletion. Remote main remains `42ab3a504d76e5119733791c2262f24565336576`; GitHub reports its existing Pages build as built at that commit. Production remains [https://dohanyan16.github.io/TaxiQaid/](https://dohanyan16.github.io/TaxiQaid/). The feature branch is retained for the remaining authenticated release gates and explicit owner approvals. Documentation validation is not hosted acceptance evidence.
+Both Dashboard artifacts have SHA-256 `1708ffbf59633ad9c41bfe395a6778cd70a3f6ad5c3fad293fd771d8352a7c7a`. These are public-code fingerprints, never secret hashes or a claim of a hosted deployment. Legacy direct-origin smoke helpers are historical/negative-path tools; do not enter real credentials there or present them as the supported public login. The existing Worker-origin helper remains the public-flow test candidate after separate approval.
+
+Local validation passed:
+
+- **144 Node tests**, including five new signed-packaging cases: exact reviewed factory SHA, identical artifacts/dependency closure, both builders checking both aliases, source/artifact-drift rejection in isolated fixtures and unchanged activation/permission inventory.
+- **33 Deno tests**, including seven canonical signed-broker cases. Tests import the actual canonical entry, prove compatibility factory identity without a second server, enforce each false/missing readiness gate, reject the old trusted-header-verified=true mode and invalid proof/config before SQL/Auth, and retain signed admission/UID/revision/session cleanup behavior. Strict Deno type checking passed for both entries and generated artifacts using the existing compiler policy.
+- **PostgreSQL 15 and 16** network-isolated disposable fixtures passed. The 16 suite retained 36 managed-role and 36 repair rejection/rollback cases, all five historical CRLF fingerprints, exact CHECK constraints, maintenance/nonce/limiter/concurrency tests and preservation of accounts/mappings/counters/permissions. Restricted access remains 101 Master grants and six Driver denials. No live SQL was run.
+- **12 local browser suites** passed: workflow, UI, people, roster, support, portal, auth migration, public gateway, pooler diagnostic, local Master smoke, legacy username broker and owner username diagnostic. All 18 administrative pages remain covered; Auth/DB transport is mocked. Roster verification passed **815 synthetic PDFs and 4,974 map annotations** outside the repository.
+- **119 JavaScript syntax checks**, Python syntax, all five generated-artifact checks, unchanged 107-definition permission catalog, documentation links/JSON and whitespace checks passed. Official Cloudflare Worker type checking and local Miniflare/workerd compatibility passed; hosted Cloudflare provenance is not claimed.
+- An initial ENOSPC storage exhaustion blocked some temporary-directory/browser/container starts. Only re-downloadable public package/image caches were recycled; pinned PostgreSQL images were used and blocked checks rerun successfully. No source fix was used to conceal a failing security assertion. No critical security assertion failed; no commit was made while validation was incomplete.
+
+Only the 12 approved repository files changed. All other source/configuration/SQL/Worker/browser-helper bytes are unchanged, and no account, permission, rate limit or session-security behavior was altered relative to the reviewed signed implementation. No deployment, activation, real credentials, live Supabase/Cloudflare/SQL/Cron/secret change, main merge or branch deletion occurred. Main remains `42ab3a504d76e5119733791c2262f24565336576`; GitHub reports its existing Pages build as built for that SHA. Production remains [https://dohanyan16.github.io/TaxiQaid/](https://dohanyan16.github.io/TaxiQaid/). The feature branch is retained for the remaining hosted authentication gates.
+
+A critical security failure would stop work before commit. Rollback is a normal revert of this repository reconciliation commit, with no force push or branch deletion; it never redeploys the obsolete header handler or changes live flags/services. Reverting would restore the repository release-source blocker, not provide an authentication fallback. No hosted test or production write is performed here.
