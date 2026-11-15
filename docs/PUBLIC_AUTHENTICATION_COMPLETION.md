@@ -12,11 +12,12 @@ These are **owner-verified hosted results**, not new agent-run tests:
 | SQL 04 maintenance repair | Applied successfully; do not rerun 00, 01 or 04 |
 | SQL 06 rollback-only probe | Four PASS results; do not repeat without a relevant change |
 | Existing Cron maintenance | Enabled, healthy, two consecutive successful runs; preserve this one job and its schedule |
-| Revised login-with-identifier | Step 141: downloaded source reviewed against the pinned signed Dashboard artifact, matching functional content; Supabase deployment version remains UNVERIFIED |
+| Revised login-with-identifier | Step 141 functional source review accepted; Step 144 Dashboard showed 27 deployments without an exact identifier. Version remains UNVERIFIED; the count is not a version |
 | Worker source/version review | Step 141: active reference `9452cefc`, reviewed against `gateway/dashboard-worker.mjs` at `c0a5e7d`, with no functional discrepancies identified; no new deployment performed |
 | Unsigned direct Supabase POST | HTTP 403; baseline direct-origin denial accepted |
 | Dummy Worker POST and matching Supabase POST log | HTTP 503 at both; supports signed transport to the disabled broker, not password, SQL admission, IP fidelity, replay or browser-session readiness |
 | Current controls | Worker returned to enabled=false; public login disabled; approved browser origins configured |
+| Option A security decision | Step 144: owner accepts broker-only enforcement and residual native Auth bypass for a limited internal office pilot; no activation/test/settings approval |
 | Earlier private Master diagnostic | Existing evidence for password/UID/mapping/active Master/access/101 management grants/six Driver denials/cleanup; do not recreate it or substitute it for a public-flow test |
 
 The latest evidence supersedes older documents saying repair is pending, Cron is disabled/missing, the revised handler is undeployed or the disabled handshake is wholly untested. Preserve their historical test reports, not those outdated current-state statements. No live PASS is inferred for the remaining gates below.
@@ -25,7 +26,7 @@ The latest evidence supersedes older documents saying repair is pending, Cron is
 
 | Priority / gate | Current status | Acceptance criterion |
 | --- | --- | --- |
-| P0 — Source/config parity and scope decision | OPEN; repository reconciliation implemented | Canonical signed source/identical artifacts replace the stale entry; retain Step 141 functional-review evidence, obtain the missing Supabase deployment reference and finish configuration/native-boundary decisions |
+| P0 — Source/config parity and scope decision | OPEN traceability/configuration; repository aligned and Option A approved | Supabase version UNVERIFIED (27 is only a deployment count); preserve existing functional-review evidence, finish origin/topology/configuration evidence and close release traceability without redeploying for an ID |
 | P1 — Disabled-login ingress/proof checks | OPEN beyond the accepted 403/503 baseline | Genuine hosted allowed/denied origin/path/provenance and signature/timestamp/body-context checks, with no broker password admission; bound missing test-harness work |
 | P2 — Hosted admission, replay and pilot capacity | OPEN | Genuine trusted-IP attribution, unchanged 20/10/10 limits, one-use signed-proof replay protection, no over-admission and acceptable agreed pilot burst/refresh demand |
 | P3 — Genuine public Master and session lifecycle | OPEN | Actual Worker → deployed broker → official SDK → get-my-access flow; UID/active/super_admin/101/six checks; refresh/expiry/logout/failure cleanup and frontend controller verified |
@@ -41,16 +42,17 @@ Finish P0–P4 in order; perform only the approved cases for each gate. A failed
 - `scripts/_public_gateway/dashboard-snippet.js` is a one-shot pinned-SDK Master helper that signs out in finally and disables auto-refresh/persistence. It does not test the actual ERP controller's long-lived refresh/expiry/restoration behavior.
 - The public API exposes generic 429s. The current eleven-request provenance helper labels only a **status pattern**. Coincident native/global throttling can mimic that pattern. There is no approved hosted server-side bucket-attribution/replay harness in the current artifacts; do not pretend the helper proves IP provenance or signed-proof replay protection.
 
-## Exact next owner action — read-only deployment-reference follow-up
+## Step 144 decision and exact next owner action
 
-The Step 141 functional code comparisons are accepted; do not repeat the 403/503, repair/probe/Cron or full source reviews without a material change. The next owner case is **P0-DEPLOYMENT-REF**, a browser-only, zero-login-request metadata check. Review/approve that bounded read-only case before running it; the implementation approval does not authorize a hosted security test or write.
+**Option A is approved for a limited internal office pilot only.** Existing authorized office management accounts, strong unique individual passwords and individual least-privilege permissions are required. No new/shared account, automatic grant, Driver account or Iqama login is part of the pilot. Preserve native Auth settings, signed gateway, 20/10/10, existing SQL/Cron and all account/permission records. This risk decision is not approval to activate, test, deploy or change a setting.
 
-1. In the dedicated Supabase Dashboard open Edge Functions → `login-with-identifier` → Overview and any available Deployments/Details/history view. Read the existing deployment/version identifier and its available timestamp only. Do not press Deploy, Save, Invoke/Test or change secrets, JWT mode or flags. Do not redeploy to manufacture a new identifier.
-2. Record the identifier as owner-verified metadata if the UI exposes it. If absent, return UNVERIFIED; do not extract Management API credentials or expose account/source/log dumps. A later narrowly reviewed read-only metadata procedure may be required. Keep the already reported Cloudflare reference `9452cefc` and Step 141 functional comparison evidence; no Worker request is needed.
-3. Return only case ID, reviewed repository commit, public-code deployment reference or UNVERIFIED, existing disabled-state attestation, and sanitized outcome. Do not copy complete source, private responses, usernames/UIDs, email mappings, tokens, keys, DB URLs, certificates or raw logs.
-4. Keep Worker/public login disabled and the healthy Cron job unchanged. Before any enabled test window, explicitly decide the broker-only/native-Auth boundary below and finish the outstanding origin/topology/configuration evidence. There is no request to repeat a successful baseline test now.
+The owner already checked deployment metadata: the Dashboard showed **27 deployments but no exact Supabase identifier**. Record version UNVERIFIED and count 27 separately. Do not call it version 27, repeat the same search indefinitely, redeploy to generate an ID, request Management API credentials or silently treat functional review as exact version parity. The traceability gap remains a release item. Case preparation/read-only inventory can proceed; any later bounded login-disabled test approval must explicitly retain that evidence limitation, not imply a production waiver.
 
-The prior P0-PARITY inventory remains the source/configuration checklist: exact public approved origins must agree on Worker and broker, the fixed destination/manual redirect rejection must remain, and secret presence never proves equal secret values. GitHub Pages origin is `https://dohanyan16.github.io`, without `/TaxiQaid/`; Origin is not non-browser authorization. Signed readiness requires four flags (`TAXIQAID_LOGIN_ENABLED`, `TAXIQAID_SESSION_TRANSPORT_REVIEWED`, `TAXIQAID_GATEWAY_ENABLED`, `TAXIQAID_GATEWAY_REVIEWED`) explicitly true and `TAXIQAID_TRUSTED_IP_HEADER_VERIFIED=false`; missing/disabled configuration remains fail-closed. Hidden settings stay UNVERIFIED rather than being unmasked or re-entered. Preserve broker `verify_jwt=false` with mandatory HMAC and get-my-access JWT protection. A partial excerpt/functional review does not silently become exact deployment-version parity.
+**Next owner case: approve P1-R0 read-only inventory only**, then follow [the bounded P1 test plan](P1_HOSTED_SECURITY_TEST_PLAN.md). Inventory existing exact public origins/routes/aliases, previews/bindings and available owner-controlled caller origins; record missing callers as BLOCKED. Zero gateway/broker/Auth test requests and zero writes. Do not repeat the accepted 403/503, SQL repair/probe/Cron or full source comparisons without a material reason. Keep Worker/public login disabled and healthy Cron unchanged.
+
+The P1 plan supplies per-case requests, actual preflight caps, browser-only manual instructions and cleanup requirements. R1 route/origin cases can be planned with both gates false. Real Worker provenance needs a separately approved Worker-only enabled window while public login stays false. Signed-proof mutation tests require a separately reviewed protected server-side harness; none is implemented or deployed by Step 144. Disabled tests cannot establish SQL nonce consumption, IP buckets, 20/10/10 capacity or password/session success.
+
+The prior P0-PARITY inventory remains the source/configuration checklist: exact public approved origins must agree on Worker and broker, the fixed destination/manual redirect rejection must remain, and secret presence never proves equal secret values. GitHub Pages origin is `https://dohanyan16.github.io`, without `/TaxiQaid/`; Origin is not non-browser authorization. Signed readiness requires four flags (`TAXIQAID_LOGIN_ENABLED`, `TAXIQAID_SESSION_TRANSPORT_REVIEWED`, `TAXIQAID_GATEWAY_ENABLED`, `TAXIQAID_GATEWAY_REVIEWED`) explicitly true and `TAXIQAID_TRUSTED_IP_HEADER_VERIFIED=false`; missing/disabled configuration remains fail-closed. These requirements are descriptions, not instructions to enable them. Hidden settings stay UNVERIFIED rather than being unmasked or re-entered. Preserve broker `verify_jwt=false` with mandatory HMAC and get-my-access JWT protection.
 
 ## Per-case approvals and disabled testing boundary
 
@@ -67,18 +69,13 @@ Do not rotate secrets, change native limits, forward an unverified IP, clear cou
 
 ## P1 — Hosted ingress, provenance and proof closure
 
-Keep the existing unsigned-403 and signed-disabled-503 as accepted baselines. Retest them only after a material source/configuration change or once admission is enabled, to prove the control did not become conditional on disabled flags. Each case below uses dummy, non-account input, no real session, and at most one request per named variant unless explicitly stated.
+Use [P1_HOSTED_SECURITY_TEST_PLAN.md](P1_HOSTED_SECURITY_TEST_PLAN.md) as the detailed Step 144 case manifest. It replaces the earlier broad P1 bullets with exact source-derived expectations, caps and blocker/cleanup rules. Accepted baselines are reused, not rerun by preparing the plan. All new hosted cases remain PLANNED/BLOCKED and require separate explicit approval; any live enable/restore, caller/harness implementation or deployment requires its own approval.
 
-- **P1-ORIGIN-ROUTE:** verify the approved browser origin and rejection of an owner-controlled unapproved browser origin, unexpected query/path/method and configured alternate ingress. In the disabled-broker window, a valid path/proof can produce the already-known generic 503; blocked variants must not reach password/SQL work. Check actual browser CORS separately: browsers control Origin, so attempting to set Origin in fetch is not a genuine cross-origin test. A Dashboard request simulator is not browser-CORS evidence.
-- **P1-PROVENANCE:** verify real direct Cloudflare ingress and rejection of same-account/cross-Worker/service-binding/preview paths under the actual topology. `request.cf` alone and local mocked metadata are insufficient. A fresh Worker subrequest client or binding test requires separately reviewed temporary artifacts and explicit deployment/config approval; none is deployed by this plan. Where no test caller exists, mark the case BLOCKED, not “not applicable” solely because no binding is currently listed.
-- **P1-PROOF:** verify missing/forged proof, modified body/Origin/IP/context, stale issuance and beyond-future-skew proof cannot reach SQL/Auth. Most mutations can run with broker admission disabled. Valid stale/tampered controls require an owner-authorized server-side synthetic harness; browser DevTools must never receive the gateway key or raw signed envelope. Preserve the 60-second/five-second proof bounds and fixed destination. No redirect following or alternate upstream is acceptable.
-- **P1-ALIASES:** inventory all actually deployed broker names, default project URLs and custom-domain paths. Every reachable username broker path must enforce the same signed gate; no old handler or temporary public diagnostic remains as a bypass. Repeat direct unsigned denial after the later enablement transition for that explicit reason. Native Auth is a separately acknowledged boundary below.
-
-Bound the missing tooling to **one reviewed synthetic-only hosted test-harness proposal**, covering required proof mutations, server-side replay and sanitized source/bucket attribution. It must use fixed destinations/fixtures, no arbitrary username/password resolver, no real credentials, online administrator authentication plus explicit owner UID/short-lived authorization where exposed, no API-key-only authorization, no new broad DB/service key or private-table grants, no secret/proof reflection/logging, bounded calls and complete teardown. Proposed temporary callers and any deployment are later approval items. Existing SQL-role and gateway checks remain in place. Do not implement a public debug route or reuse the deleted private diagnostic as an unrestricted login alternative.
+The proposed service-target ceilings are R1 11, R2 5 and R3 11, with separately bounded control-plane authorization traffic before any harness is implemented. They are maxima, not an authorization to send 27 requests. No hosted PASS is claimed. No new harness, public debug/signing route, privileged key, SQL, code deployment or configuration change is implemented by the documentation update.
 
 ## P2 — Hosted IP fidelity, replay and unchanged 20/10/10 policy
 
-Run only after source/provenance prerequisites, test-harness review and the native-boundary decision. For IP/global/identifier cases, obtain server-side sanitized attribution proving which existing bucket denied admission and that spoofed client headers did not change the effective trusted source. Do not broaden browser/runtime table privileges or publish raw IPs/bucket hashes. If that evidence mechanism is not approved, mark these cases BLOCKED; HTTP 429 alone is insufficient.
+Run only after source/provenance prerequisites, test-harness review and the recorded Option A scope/monitoring constraints. For IP/global/identifier cases, obtain server-side sanitized attribution proving which existing bucket denied admission and that spoofed client headers did not change the effective trusted source. Do not broaden browser/runtime table privileges or publish raw IPs/bucket hashes. If that evidence mechanism is not approved, mark these cases BLOCKED; HTTP 429 alone is insufficient.
 
 | Case | One approved batch maximum | Required evidence |
 | --- | --- | --- |
@@ -96,16 +93,15 @@ Replaying a browser fetch through the Worker generates a fresh nonce, so it is n
 
 Capacity remains unmeasured. Record forecast peak attempts/minute, largest shared-NAT burst, concurrency and refresh demand before P2-PILOT; enrolment count alone is insufficient. Preserve global 20/minute, verified IP 10/minute, identifier 10/15 minutes. Account for adjacent-minute bursts, global-first budget-exhaustion DoS, targeted identifier lockout, restricted connection/lock limits, shared native Auth egress and Free-provider quotas. No threshold promises workforce-wide capacity. If the pilot cannot fit, stop for a separate capacity/design decision, not an unapproved limit increase. See [the capacity review](PUBLIC_LOGIN_RATE_LIMIT_CAPACITY.md).
 
-## Native Auth endpoint risk decision — required before enabled testing/production
+## Native Auth endpoint risk decision — Option A approved at Step 144
 
-The gateway seals the **custom username broker**. Supabase native password/refresh/recovery endpoints remain independently accessible. A caller knowing a technical email can attempt native password Auth without Worker IP/global/identifier controls. The user's own email claim is accepted; email secrecy and CORS are not prevention. Native rate limits are additional controls, not equivalent to gateway enforcement. Preserve the last owner-verified native settings: sign-up/sign-in operations 30/5 minutes/IP, token/password/refresh grants 150/5 minutes/IP, OTP verification 30/5 minutes/IP, anonymous sign-in 30/hour/IP and IP forwarding disabled. These are different endpoint buckets, not cumulative guaranteed capacity. Keep those settings unchanged; do not add privileged public keys or claim a Free hook seals all password grants.
+The gateway seals the **custom username broker**. Native Supabase password/refresh/recovery endpoints remain independently accessible. A caller knowing a technical email can attempt native password Auth without Worker IP/global/identifier controls. The owner explicitly accepts this residual bypass for a **limited internal office pilot**, with existing authorized office management accounts, strong unique passwords, individual permissions and monitoring of both native and broker activity. Own-session email claims are accepted; secrecy and CORS are not prevention. Native quotas are additional controls, not equivalent to gateway enforcement.
 
-Owner decision must explicitly select one boundary:
+Keep the last owner-verified native settings unchanged: sign-up/sign-in operations 30/5 minutes/IP, token/password/refresh grants 150/5 minutes/IP, OTP verification 30/5 minutes/IP, anonymous sign-in 30/hour/IP, IP forwarding disabled. Different endpoint buckets are not cumulative guaranteed capacity. Keep 20/10/10 unchanged; no privileged public key or unverified forwarding feature is added.
 
-- Accept broker-only gateway enforcement for a defined controlled pilot, plus native endpoint protections, generic account/active/permission checks and monitoring. Document residual native bypass, shared-egress/burst limits, NAT denial risk, credential-provider boundary and recovery/provisioning surface ownership. This decision is still pending; prior private/transport PASS does not imply acceptance.
-- Require every password grant to share gateway controls. Current Free architecture does not demonstrate that requirement; keep login disabled and approve a separately supported provider-level design. Do not wait indefinitely for Support or silently weaken the requirement. A paid product/hook is not proof without a reviewed model and real tests.
+Option A does not authorize login, a hosted test/window, new account/grant, code deployment or a setting change. Driver accounts are excluded. All other public-authentication gates remain. Expanding beyond this office pilot or requiring every password grant to share gateway controls requires a new explicit decision and supported design review. The current Free architecture does not establish all-native-password enforcement, and no such claim is made.
 
-Preserve no-mandatory-MFA policy; strong unique passwords and controlled recovery remain necessary. Do not expose private mappings, change native quotas or launch real-credential abuse tests to investigate this boundary. Native endpoint inventory/config review can be read-only; any active native request needs its own explicit case approval.
+Assign an operator/escalation path, private cohort/individual-permission checks, monitoring/redaction/retention and evidence-based capacity thresholds before pilot activation. Inspect native as well as broker denials/errors, refresh/session cleanup, provider resource/SQL errors and normal Cron health; direct native abuse may have no Worker event. Strong unique passwords must be attested privately, never collected/displayed or hashed into shared evidence. No mandatory MFA is introduced; controlled recovery remains necessary. A P1 diagnostic or Option A acceptance is not a pilot-readiness PASS.
 
 ## P3 — Genuine Master, access and session lifecycle
 
@@ -137,7 +133,7 @@ Use one record per approved case; no screenshots of secrets/settings, raw logs, 
 
 ```json
 {
-  "case": "P0-DEPLOYMENT-REF",
+  "case": "P1-R0",
   "ownerApprovalRef": "APPROVED_CASE_REFERENCE",
   "reviewedCommit": "PINNED_COMMIT",
   "startedAt": "ISO_8601_WITH_TIMEZONE",
@@ -145,9 +141,9 @@ Use one record per approved case; no screenshots of secrets/settings, raw logs, 
   "requestCount": 0,
   "state": {"workerEnabled": false, "publicLoginEnabled": false, "cron": "HEALTHY_OWNER_VERIFIED"},
   "source": {"worker": "OWNER_FUNCTIONALLY_REVIEWED", "signedBroker": "OWNER_FUNCTIONALLY_REVIEWED", "canonicalRepoEntry": "RECONCILED_REPOSITORY_ONLY"},
-  "deployment": {"cloudflareOwnerReported": "9452cefc", "supabase": "UNVERIFIED"},
+  "deployment": {"cloudflareOwnerReported": "9452cefc", "supabaseVersion": "UNVERIFIED", "ownerObservedDeploymentCount": 27},
   "configuration": {"approvedOrigins": "UNVERIFIED", "fixedTarget": "UNVERIFIED", "secretPresenceOnly": "UNVERIFIED"},
-  "nativeBoundaryDecision": "PENDING",
+  "nativeBoundaryDecision": "APPROVED_OPTION_A_LIMITED_OFFICE_PILOT",
   "result": "PLANNED",
   "sanitizedDiagnostic": "NONE",
   "ownerPrivateEvidenceRef": "NONE",
@@ -157,7 +153,7 @@ Use one record per approved case; no screenshots of secrets/settings, raw logs, 
 
 For later cases add only HTTP statuses, aggregate request/concurrency/latency results, permission counts, source-group labels, attribution booleans, session-stage statuses and cleanup status. No actual UID, username, email, Iqama, IP, password, access/refresh token, signature, nonce, connection URL or private account response. Stamp evidence as owner-verified hosted, local mocked, or not yet run. Unknown/missing evidence is never PASS.
 
-## Approved repository reconciliation manifest and validation
+## Repository reconciliation at `b9b7e3c` — historical manifest and validation
 
 The owner explicitly approved only these 12 files, local tests, commit and feature-branch push. This is not approval to deploy or activate:
 
@@ -190,3 +186,15 @@ Local validation passed:
 Only the 12 approved repository files changed. All other source/configuration/SQL/Worker/browser-helper bytes are unchanged, and no account, permission, rate limit or session-security behavior was altered relative to the reviewed signed implementation. No deployment, activation, real credentials, live Supabase/Cloudflare/SQL/Cron/secret change, main merge or branch deletion occurred. Main remains `42ab3a504d76e5119733791c2262f24565336576`; GitHub reports its existing Pages build as built for that SHA. Production remains [https://dohanyan16.github.io/TaxiQaid/](https://dohanyan16.github.io/TaxiQaid/). The feature branch is retained for the remaining hosted authentication gates.
 
 A critical security failure would stop work before commit. Rollback is a normal revert of this repository reconciliation commit, with no force push or branch deletion; it never redeploys the obsolete header handler or changes live flags/services. Reverting would restore the repository release-source blocker, not provide an authentication fallback. No hosted test or production write is performed here.
+
+## Step 144 documentation update
+
+Exact changed-file manifest:
+
+- [PUBLIC_AUTHENTICATION_COMPLETION.md](PUBLIC_AUTHENTICATION_COMPLETION.md): records the approved Option A scope, deployment count/version distinction, current gates and P1-R0 next action; preserves prior results as historical evidence.
+- [P1_HOSTED_SECURITY_TEST_PLAN.md](P1_HOSTED_SECURITY_TEST_PLAN.md): new bounded case manifest, guard-state limitations, browser-only instructions, caps, sanitized inventory/evidence, missing-harness requirements, monitoring and cleanup/rollback.
+- [PUBLIC_USERNAME_LOGIN_ARCHITECTURE.md](PUBLIC_USERNAME_LOGIN_ARCHITECTURE.md): current-decision notice and pilot-risk acceptance, with links to the active completion/P1 plans.
+
+Step 144 local validation passed: relative documentation links, balanced Markdown fences, JSON parsing, syntax-only checking of the one manual JavaScript example (never executed), exact three-file documentation-only scope and whitespace. Read-only catalog and Dashboard/gateway/role-proposal artifact checks passed; all 107 definitions and six Driver-only actions remain unchanged. Runtime/SQL/browser suites from `b9b7e3c` above were not rerun for this documentation-only update and are not new hosted P1 evidence.
+
+Remote main remains `42ab3a504d76e5119733791c2262f24565336576`; GitHub reports the existing Pages build as built for that SHA. No deployment, live test, production write, harness implementation, activation, merge or branch deletion is performed. The feature branch is retained for open P0–P4 gates. Rollback of these documents is a normal feature-branch revert, with no live action or force push. No other development phase starts.

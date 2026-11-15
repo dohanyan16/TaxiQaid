@@ -1,5 +1,7 @@
 # Public username login architecture — proposal, not activated
 
+> Step 144: the owner approved **Option A for a limited internal office pilot**: broker-only gateway enforcement with independently accessible native Auth endpoints and monitoring. This is not activation/testing/settings approval. Supabase version remains UNVERIFIED; the Dashboard's 27 deployments is a count, not an identifier. Current decisions and the bounded, still-unapproved P1 cases are in [the completion plan](PUBLIC_AUTHENTICATION_COMPLETION.md) and [P1 case manifest](P1_HOSTED_SECURITY_TEST_PLAN.md). Preserve native settings, 20/10/10, existing office accounts/individual permissions, healthy Cron and disabled Worker/public login; exclude Drivers. Earlier pending-native-decision wording below is historical.
+
 > Approved repository-only reconciliation: the canonical signed broker is now `supabase/functions/login-with-identifier/index.ts`. The review path is a compatibility import; both Dashboard broker filenames are identical outputs from the shared packager. Step 141 owner functional review is recorded (Worker `9452cefc`); Supabase deployment version remains unverified. No deployment or activation is performed. See [current completion gates](PUBLIC_AUTHENTICATION_COMPLETION.md); older promotion/deployment instructions below are historical, not authorization to repeat completed live tests.
 
 > Latest owner-verified state: SQL 04 repair and SQL 06 probe passed; Cron is enabled/healthy with two successful runs; the revised signed broker is deployed. An unsigned direct POST returned 403 and a dummy Worker POST returned 503 with a matching Supabase POST log. This supports disabled signed transport, not full authentication readiness. Worker is back to enabled=false and public login remains disabled; approved origins are configured. Use the [authentication-only completion plan](PUBLIC_AUTHENTICATION_COMPLETION.md) for current gates/approvals. Historical pending/disabled-Cron/undeployed wording below is superseded; do not repeat completed tests or rerun SQL 00/01/04/06 without a specific approved reason.
@@ -146,7 +148,7 @@ For transport-key rotation, disable login, update both private copies, redeploy/
 
 ## Remaining blockers before production
 
-- Explicit acceptance of the username-broker/native-Auth boundary, or a different provider-level design if all password grants must share gateway controls.
+- Option A owner acceptance of the broker-only/native-Auth boundary is recorded for the limited internal office pilot. Enforce that scope and monitoring; other release gates remain. A future all-password-enforcement or broader-pilot requirement needs a new supported design/decision.
 - Owner approval/control of the Cloudflare account and new credential-processing boundary; demonstrated hosted header/subrequest/alternate-ingress behavior and origin closure.
 - Reviewed application of the counter budget, one-use nonce/maintenance APIs and narrow ACLs; verified Cron ownership, successful recurring runs, monitoring/escalation and retention.
 - Provider log/secret review, key provisioning/source parity, measured Free CPU/request/availability budget, native shared-egress and corporate-NAT/session-refresh capacity.
