@@ -79,6 +79,7 @@ Reviewed public artifact fingerprints: Worker `51ebfe348c72a854f9a54476aa0ffc140
 - `gateway/validation.mjs`
 - `gateway/worker.mjs`
 - `scripts/_auth_validation/browser.js`
+- `scripts/_auth_validation/.gitattributes`
 - `scripts/_auth_validation/dashboard-snippet.js`
 - `scripts/build-auth-validation.cjs`
 - `scripts/build-public-gateway.cjs`
