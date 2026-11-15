@@ -31,7 +31,8 @@
  const nextMinute=()=>wait(62000-Date.now()%60000);
  async function control(caseId,spoof=false){
   if(used.has(caseId))throw new Error('DENIED');used.add(caseId);report.result='RUNNING';render();
-  const response=await guardedFetch(origin+VALIDATION_PATH,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json',...(spoof?{'cf-connecting-ip':'198.51.100.41','x-real-ip':'198.51.100.42','x-forwarded-for':'198.51.100.43','x-taxiqaid-ip':'198.51.100.44'}:{})},body:JSON.stringify({case:caseId})});
+  // Leave CF-Connecting-IP to Cloudflare ingress: supplying it can trigger edge error 1000.
+  const response=await guardedFetch(origin+VALIDATION_PATH,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json',...(spoof?{'x-real-ip':'198.51.100.42','x-forwarded-for':'198.51.100.43','x-taxiqaid-ip':'198.51.100.44'}:{})},body:JSON.stringify({case:caseId})});
   if(response.status!==200){await response.body?.cancel();report.cases[caseId]={result:'FAIL',http:response.status};throw new Error('DENIED');}
   const value=safeValidationResult(await response.json());if(value.case!==caseId||value.expiresAt*1000<=Date.now())throw new Error('DENIED');report.cases[caseId]=value;render();if(value.result!=='PASS')throw new Error('DENIED');return value;
  }
