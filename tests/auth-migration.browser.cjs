@@ -5,7 +5,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
  try{
   const page=await browser.newPage({ignoreHTTPSErrors:true,viewport:{width:1440,height:1000}}),errors=[],old=[],privateTables=[],legacy=[];let mode='management',loginCalls=0,accessCalls=0;
   page.on('pageerror',error=>errors.push(error.message));page.on('request',request=>{if(/gycijhgmmaznvcoxphlh/.test(request.url()))old.push(request.url());if(/\/rest\/v1/.test(request.url()))privateTables.push(request.url());if(/script\.google|sheets\.google/.test(request.url()))legacy.push(request.url());});
-  await page.route('**/shared/auth-dedicated-config.js',route=>route.fulfill({contentType:'text/javascript',body:"window.TAXIQAID_DEDICATED_AUTH=Object.freeze({url:'https://mqkflwsvnzcaylxtvsje.supabase.co',publicKey:'sb_publishable_c6NqjXyYvryqdXpgTUS0jg_hnfxiTWd',enabled:true,sessionStorageMode:'memory'});"}));
+  await page.route('**/shared/auth-dedicated-config.js',route=>route.fulfill({contentType:'text/javascript',body:"window.TAXIQAID_DEDICATED_AUTH=Object.freeze({url:'https://mqkflwsvnzcaylxtvsje.supabase.co',publicKey:'sb_publishable_c6NqjXyYvryqdXpgTUS0jg_hnfxiTWd',enabled:true,brokerUrl:'https://taxiqaid-auth-gateway.dohanyan.workers.dev/login-with-identifier',sessionStorageMode:'memory'});"}));
   await page.route('**/shared/auth-client.js',async route=>{await page.evaluate(()=>{
    window.migrationSession=null;window.migrationAuthListeners=[];window.fixtureActor='fixture-management';window.setSessions=0;
    supabaseClient.auth.getSession=async()=>({data:{session:migrationSession},error:null});supabaseClient.auth.getUser=async()=>({data:{user:{id:fixtureActor,email:'internal-fixture@example.test',email_confirmed_at:'2026-01-01T00:00:00Z'}},error:null});
@@ -14,14 +14,16 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
    supabaseClient.auth.onAuthStateChange=callback=>{migrationAuthListeners.push(callback);return {data:{subscription:{unsubscribe(){}}}};};
    supabaseClient.from=()=>{throw new Error('Private table access is forbidden in dedicated mode.');};
   });await route.continue();});
-  await page.route('https://mqkflwsvnzcaylxtvsje.supabase.co/functions/v1/**',async route=>{
+  const handleAccess=async route=>{
    const request=route.request();if(request.method()==='OPTIONS'){await route.fulfill({status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'apikey,authorization,content-type','Access-Control-Allow-Methods':'GET,POST,OPTIONS'}});return;}
    const headers={'Access-Control-Allow-Origin':'*','Cache-Control':'no-store'};
    if(request.url().endsWith('login-with-identifier')){loginCalls++;const body=request.postDataJSON();assert.ok(body.identifier&&!('email'in body));assert.equal(request.method(),'POST');await route.fulfill({status:mode==='invalid'?401:200,contentType:'application/json',headers,body:JSON.stringify(mode==='invalid'?{error:'internal database detail must not appear'}:{access_token:'fixture-access',refresh_token:'fixture-refresh'})});return;}
    accessCalls++;const payload=await page.evaluate(mode=>({version:1,uid:mode==='mismatch'?'another-subject':fixtureActor,account:{username:'fixtureusername',fullName:mode==='driver'?'Synthetic Driver Name':'Synthetic Management Full Name',role:mode==='driver'?'driver':'super_admin',type:mode==='driver'?'driver':'management',status:mode==='disabled'?'disabled':'active',...(mode==='driver'?{driverRecordRef:'fixture-driver-record',iqama:'1000000001'}:{})},departments:['it'],permissions:{roleDefaults:mode==='driver'?TaxiQaidPermissionCatalog.ALL.filter(p=>p.module==='driver-portal'&&p.audience!=='Management').map(p=>p.key):TaxiQaidPermissionCatalog.ALL.filter(p=>p.audience!=='Driver').map(p=>p.key),overrides:{}},scope:{departments:[],driverRecordRefs:[],documentIds:[]},validUntil:Date.now()+60000}),mode);
    if(mode==='management'||mode==='flat-missing'){Object.assign(payload,{accountType:payload.account.type,status:payload.account.status,username:payload.account.username,fullName:payload.account.fullName,role:payload.account.role,roleDefaults:payload.permissions.roleDefaults,overrides:payload.permissions.overrides});delete payload.account;delete payload.permissions;if(mode==='flat-missing'){delete payload.status;delete payload.fullName;}}
    await route.fulfill({status:200,contentType:'application/json',headers,body:JSON.stringify(payload)});
-  });
+  };
+  await page.route('https://mqkflwsvnzcaylxtvsje.supabase.co/functions/v1/**',handleAccess);
+  await page.route('https://taxiqaid-auth-gateway.dohanyan.workers.dev/login-with-identifier',handleAccess);
   await page.goto((process.env.TAXIQAID_URL||'http://127.0.0.1:8004/')+'auth-migration-preview.html');await page.waitForFunction(()=>!document.getElementById('boot-status'));
   assert.equal(await page.locator('#erp-app').isVisible(),false);assert.equal(await page.locator('#login-form input[type=email]').count(),0);
   await page.locator('#username').fill('jgarcia');await page.locator('#password').fill('fixture-password');await page.locator('#login-button').click();await page.waitForFunction(()=>document.getElementById('erp-app').style.display==='flex');

@@ -6,22 +6,22 @@ const uid='00000000-0000-4000-8000-000000000001',origin='https://review.example.
 let loaded:typeof import('../login-with-identifier/index.ts')|undefined;
 async function candidate(){if(!loaded){const previous=Deno.serve;try{Deno.serve=(()=>({})) as unknown as typeof Deno.serve;loaded=await import('../login-with-identifier/index.ts');}finally{Deno.serve=previous;}}return loaded;}
 async function fixture(mode='success'){
- const {createSignedLogin}=await candidate(),events:string[]=[],seen=new Set<string>();
+ const {createSignedLogin}=await candidate(),events:string[]=[],auditEvents:Record<string,unknown>[]=[],sqlInputs:unknown[][]=[],seen=new Set<string>();
  const values:Record<string,string>={TAXIQAID_LOGIN_ENABLED:'true',TAXIQAID_SESSION_TRANSPORT_REVIEWED:'true',TAXIQAID_GATEWAY_ENABLED:'true',TAXIQAID_GATEWAY_REVIEWED:'true',TAXIQAID_TRUSTED_IP_HEADER_VERIFIED:'false',TAXIQAID_GATEWAY_SECRET:secret,TAXIQAID_RATE_SECRET:'SYNTHETIC_RATE_SECRET_32_CHARACTERS',TAXIQAID_AUTH_ORIGINS:origin,TAXIQAID_BROKER_DB_URL:'postgresql://taxiqaid_auth_login.mqkflwsvnzcaylxtvsje:SYNTHETIC_ONLY@aws-0-fixture.pooler.supabase.com:6543/postgres'};
  const query=async(parts:TemplateStringsArray,...args:unknown[])=>{
   const text=parts.join('?');if(text.includes('session_user'))return [{login:'taxiqaid_auth_login',actor:'taxiqaid_auth_login',restricted:true}];
-  if(text.includes('begin_signed_login_attempt')){events.push('signed-sql');assert(args.length===6&&args[0]==='syntheticmanager'&&String(args[4]).length===64);const once=String(args[4]);const allowed=!seen.has(once)&&mode!=='rate-denied';seen.add(once);return [{allowed,uid:mode==='wrong-mapping'?'other':uid,email:'synthetic-private@example.invalid',status:'active',mapping_revision:'7'}];}
-  if(text.includes('get_management_access')){events.push('revision-check');if(mode==='revision-race')throw new Error('SYNTHETIC_PRIVATE_REVISION');return [{access:{version:1,uid,account:{uid,status:'active',type:'management',fullName:'Synthetic Master'},permissions:{roleDefaults:[],overrides:{}}}}];}
+  if(text.includes('begin_signed_login_attempt')){events.push('signed-sql');sqlInputs.push(args);assert(args.length===6&&args[0]==='syntheticmanager'&&String(args[4]).length===64);const once=String(args[4]);const allowed=!seen.has(once)&&mode!=='rate-denied';seen.add(once);return [{allowed,uid:mode==='wrong-mapping'?'other':uid,email:'synthetic-private@example.invalid',status:'active',mapping_revision:'7'}];}
+  if(text.includes('get_management_access')){events.push('revision-check');if(mode.startsWith('revision-race'))throw new Error('SYNTHETIC_PRIVATE_REVISION');return [{access:{version:1,uid,account:{uid,status:'active',type:'management',fullName:'Synthetic Master'},permissions:{roleDefaults:[],overrides:{}}}}];}
   if(text.includes('SET LOCAL ROLE')||text.includes('set_config'))return [];throw new Error('Unexpected SQL.');
  };
  const sql=Object.assign(query,{begin:async(_kind:string,work:(tx:unknown)=>unknown)=>await work(query),end:async()=>{events.push('close');}});
  const connect=((options:ReturnType<typeof postgres>['options'])=>{assert(options.ssl&&options.prepare===false);events.push('open');return sql;}) as unknown as typeof postgres;
  const fetcher:typeof fetch=async(input,init)=>{const url=new URL(String(input));assert(url.origin==='https://mqkflwsvnzcaylxtvsje.supabase.co'&&init?.redirect==='error');
-  if(url.pathname==='/auth/v1/token'){events.push('password-auth');return Response.json({access_token:'SYNTHETIC_ACCESS',refresh_token:'SYNTHETIC_REFRESH',token_type:'bearer',expires_in:3600,user:{id:uid,email:'synthetic-private@example.invalid'}});}
-  if(url.pathname==='/auth/v1/logout'){events.push('signout');return new Response(null,{status:204});}throw new Error('Unexpected Auth request.');
+  if(url.pathname==='/auth/v1/token'){events.push('password-auth');if(mode==='native-throttled')return Response.json({msg:'SYNTHETIC_PRIVATE_AUTH_ERROR'},{status:429});return Response.json({access_token:'SYNTHETIC_ACCESS',refresh_token:'SYNTHETIC_REFRESH',token_type:'bearer',expires_in:3600,user:{id:uid,email:'synthetic-private@example.invalid'}});}
+  if(url.pathname==='/auth/v1/logout'){events.push('signout');return mode==='revision-race-logout-error'?Response.json({msg:'SYNTHETIC_PRIVATE_LOGOUT_ERROR'},{status:500}):new Response(null,{status:204});}throw new Error('Unexpected Auth request.');
  };
- const handler=createSignedLogin(name=>values[name],connect,fetcher);
- return {handler,events,values};
+ const handler=createSignedLogin(name=>values[name],connect,fetcher,value=>auditEvents.push(JSON.parse(value)));
+ return {handler,events,values,auditEvents,sqlInputs};
 }
 async function request(nonce='a'.repeat(32)){
  const body=new TextEncoder().encode(JSON.stringify({identifier:'syntheticmanager',password:'SYNTHETIC_PASSWORD'})),proof={ip:'192.0.2.1',origin,issued:Math.floor(Date.now()/1000),nonce},mac=await signGateway(secret,proof,body);
@@ -76,4 +76,31 @@ Deno.test('canonical proof rejection covers body/origin/IP/nonce/time/MAC/query 
   if(mutation==='unapproved')values.TAXIQAID_AUTH_ORIGINS='https://unapproved.invalid';
   const result=await handler(input);assert(result.status===403&&events.length===0);assert(!(await result.text()).includes('SYNTHETIC'));
  }
+});
+
+Deno.test('actual Worker and canonical broker share an authenticated v2 trace without trusting client headers',async()=>{
+ const {createGateway}=await import('../../../gateway/worker.mjs'),f=await fixture(),gatewayEvents:Record<string,unknown>[]=[];
+ const worker=createGateway((target,init)=>f.handler(new Request(String(target),init)),Date.now,(value:string)=>gatewayEvents.push(JSON.parse(value)));
+ const env={TAXIQAID_GATEWAY_ENABLED:'true',TAXIQAID_GATEWAY_ORIGIN:origin,TAXIQAID_GATEWAY_ORIGINS:origin,TAXIQAID_GATEWAY_SECRET:secret};
+ for(const spoof of ['198.51.100.1','198.51.100.2']){
+  const input=new Request(origin+'/login-with-identifier',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json','cf-connecting-ip':'192.0.2.1','x-real-ip':spoof,'x-forwarded-for':spoof,'x-taxiqaid-ip':spoof,'x-taxiqaid-trace':'11111111-1111-4111-8111-111111111111'},body:JSON.stringify({identifier:'syntheticmanager',password:'SYNTHETIC_PASSWORD'})});Object.defineProperty(input,'cf',{value:{colo:'SYNTHETIC'}});
+  assert((await worker(input,env)).status===200);
+ }
+ assert(f.sqlInputs.length===2&&JSON.stringify(f.sqlInputs[0].slice(1,4))===JSON.stringify(f.sqlInputs[1].slice(1,4)));
+ assert(gatewayEvents.length===2&&gatewayEvents.every(event=>f.auditEvents.some(row=>row.trace===event.trace&&row.event==='PROOF_VERIFIED')));
+ const serialized=JSON.stringify([...gatewayEvents,...f.auditEvents]);for(const value of [secret,'192.0.2.1','198.51.100.',uid,'SYNTHETIC_PASSWORD','SYNTHETIC_ACCESS','synthetic-private'])assert(!serialized.includes(value));
+});
+Deno.test('proof acceptance and disabled admission are distinct private events; trace forgery has no positive linkage',async()=>{
+ const {createGateway}=await import('../../../gateway/worker.mjs'),f=await fixture();f.values.TAXIQAID_LOGIN_ENABLED='false';let signed:Request|undefined;
+ const worker=createGateway((target,init)=>{signed=new Request(String(target),init);return f.handler(signed.clone());},Date.now,()=>{});
+ const input=new Request(origin+'/login-with-identifier',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json','cf-connecting-ip':'192.0.2.1'},body:'{}'});Object.defineProperty(input,'cf',{value:{}});
+ assert((await worker(input,{TAXIQAID_GATEWAY_ENABLED:'true',TAXIQAID_GATEWAY_ORIGIN:origin,TAXIQAID_GATEWAY_ORIGINS:origin,TAXIQAID_GATEWAY_SECRET:secret})).status===503);
+ assert(f.events.length===0&&f.auditEvents.some(row=>row.event==='PROOF_VERIFIED')&&f.auditEvents.some(row=>row.event==='BROKER_DISABLED'));
+ assert(signed);const forged=signed.clone(),trace=signed.headers.get('x-taxiqaid-trace');forged.headers.set('x-taxiqaid-trace','22222222-2222-4222-8222-222222222222');assert((await f.handler(forged)).status===403);const last=f.auditEvents.at(-1);assert(last?.event==='PROOF_REJECTED'&&last.trace!==trace&&last.trace!==forged.headers.get('x-taxiqaid-trace'));
+});
+Deno.test('private outcome events distinguish atomic limiter denial from native Auth throttling',async()=>{
+ for(const mode of ['rate-denied','native-throttled']){const f=await fixture(mode);assert((await f.handler(await request())).status===429);assert(f.auditEvents.some(row=>row.event===(mode==='rate-denied'?'ADMISSION_DENIED':'AUTH_THROTTLED')));assert(!f.auditEvents.some(row=>row.event===(mode==='rate-denied'?'AUTH_THROTTLED':'ADMISSION_DENIED')));}
+});
+Deno.test('failed-flow SDK signOut returned errors are recorded as unconfirmed and never release a session',async()=>{
+ const f=await fixture('revision-race-logout-error'),response=await f.handler(await request());assert(response.status!==200&&f.events.includes('signout'));assert(f.auditEvents.some(row=>row.event==='SESSION_CLEANUP_UNCONFIRMED'));assert(!f.auditEvents.some(row=>row.event==='SESSION_CLEANUP_CONFIRMED'));assert(!(await response.text()).includes('SYNTHETIC'));
 });

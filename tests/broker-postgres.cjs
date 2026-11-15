@@ -18,7 +18,8 @@ async function concurrent(queries){return Promise.all(queries.map(query=>new Pro
 (async()=>{
  let started=false;
  try{
-  run(['run','--detach','--rm','--network','none','--name',name,'-e','POSTGRES_HOST_AUTH_METHOD=trust','-e',process.env.TAXIQAID_TEST_PUBLIC_GATEWAY==='true'?'POSTGRES_USER=supabase_admin':'POSTGRES_USER=postgres','-e','POSTGRES_DB=postgres',process.env.TAXIQAID_TEST_PUBLIC_GATEWAY==='true'?'postgres:16-alpine':'postgres:15-alpine']);started=true;
+  const signedE2E=process.env.TAXIQAID_TEST_SIGNED_E2E==='true';assert.ok(!signedE2E||process.env.TAXIQAID_TEST_PUBLIC_GATEWAY==='true','Signed E2E requires the disposable public-gateway fixture.');
+  run(['run','--detach','--rm',...(signedE2E?['--publish','127.0.0.1::5432']:['--network','none']),'--name',name,'-e','POSTGRES_HOST_AUTH_METHOD=trust','-e',process.env.TAXIQAID_TEST_PUBLIC_GATEWAY==='true'?'POSTGRES_USER=supabase_admin':'POSTGRES_USER=postgres','-e','POSTGRES_DB=postgres',process.env.TAXIQAID_TEST_PUBLIC_GATEWAY==='true'?'postgres:16-alpine':'postgres:15-alpine']);started=true;
   let ready=false;for(let n=0;n<100;n++){try{run(['exec',name,'pg_isready','-h','127.0.0.1','-U','postgres']);ready=true;break;}catch{await new Promise(resolve=>setTimeout(resolve,100));}}assert.ok(ready,'Disposable database startup failed');
   if(process.env.TAXIQAID_TEST_PUBLIC_GATEWAY==='true')sql('CREATE ROLE postgres SUPERUSER LOGIN;',{user:'supabase_admin'});
   sql(`CREATE ROLE anon NOLOGIN;CREATE ROLE authenticated NOLOGIN;CREATE ROLE taxiqaid_auth_backend NOLOGIN NOBYPASSRLS NOSUPERUSER;
@@ -134,6 +135,13 @@ INSERT INTO taxiqaid_private.role_permissions(role_key,permission_key,is_allowed
    for(const fn of ['taxiqaid_auth_api.claim_gateway_nonce('+lit(hash('blocked'))+','+epoch+')','taxiqaid_auth_api.maintain_public_login_counters(1000)','taxiqaid_auth_api.public_login_limits_healthy()'])runtime('SELECT '+fn+';',{failure:true});
    sql('SELECT taxiqaid_auth_api.maintain_public_login_counters(1001);',{failure:true});
    assert.equal(authState(),originalAuthState);process.stderr.write('PASS: signed attempts, one-use nonce race, stale cleanup admission stop, bounded backlog and private function grants.\n');
+  }
+  if(signedE2E){
+   // Restore only this disposable synthetic account after its deliberate denial tests; never touch hosted records.
+   sql(`UPDATE taxiqaid_private.user_accounts SET status='active' WHERE user_id=${lit(uid)};UPDATE taxiqaid_private.permissions SET is_active=true WHERE permission_key='fuel.view';DELETE FROM taxiqaid_private.user_permission_overrides WHERE user_id=${lit(uid)};`);
+   sql('SELECT taxiqaid_auth_api.maintain_public_login_counters(1000);');
+   const published=run(['port',name,'5432/tcp']).trim();assert.match(published,/^127\.0\.0\.1:\d+$/);const port=published.split(':')[1];
+   execFileSync(process.env.TAXIQAID_DENO||'deno',['test','--cached-only','--allow-read','--allow-env','--allow-net=127.0.0.1:'+port,path.join(root,'tests/signed-postgres.e2e.ts')],{cwd:root,env:{...process.env,TAXIQAID_LOCAL_PG_PORT:port},stdio:'inherit'});
   }
   console.log(JSON.stringify({result:'PASS',database:process.env.TAXIQAID_TEST_PUBLIC_GATEWAY==='true'?'Disposable PostgreSQL 16 managed-membership fixture, no live Supabase/Auth test':'Disposable PostgreSQL 15, no live Supabase/Auth test',managedAuth:'supabase_auth_admin owner, RLS on, FORCE off, zero policies unchanged',mapping:'Existing UID seed, authoritative source, PK/FK/email uniqueness, no passwords or grants, controlled revision/suspension/resync',parallelSessions:30,parallelIdentifierPermits:10,privileges:'No runtime/definer Auth reads or browser/runtime mapping access',checks:'101 grants, six driver denials, unknown/disabled, prelookup limiter, generic administration failures and cleanup'},null,2));
  }finally{if(started)run(['stop','--time','1',name]);}

@@ -1,6 +1,7 @@
 // Sanitized offline fixtures, never genuine username authentication.
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const contract=require('../shared/auth-contract.js'),catalog=require('../shared/permission-catalog.js'),model=require('../shared/permission-model.js'),clients=require('../shared/auth-client.js');
+const brokerUrl='https://review.example.workers.dev/login-with-identifier';
 const uid='synthetic-uid',origin='https://review.example.invalid';
 const flat=()=>({uid,accountType:'management',status:'active',role:'super_admin',username:'syntheticmanager',fullName:'Synthetic Manager',roleDefaults:catalog.ALL.filter(p=>p.audience!=='Driver').map(p=>p.key),overrides:{},departments:['it'],scope:{departments:[],driverRecordRefs:[],documentIds:[]}});
 const nested=()=>({version:1,uid,account:{uid,type:'management',status:'active',role:'super_admin',username:'syntheticmanager',fullName:'Synthetic Manager'},permissions:{roleDefaults:flat().roleDefaults,overrides:{}},departments:['it']});
@@ -20,7 +21,7 @@ test('flat boolean overrides preserve denial and dependencies; missing metadata 
  assert.throws(()=>contract.access({...flat(),uid:'another'},uid,Date.now()/1000+3600));assert.throws(()=>contract.access({...flat(),accountType:'driver',iqama:'1000000001',driverRecordRef:'invented'},uid,Date.now()/1000+3600));
 });
 test('enabled development client rejects Iqama without calling broker or creating identities',async()=>{
- let calls=0;const client=clients.create({client:{auth:{}},url:origin,key:'public',enabled:true,fetcher:async()=>{calls++;throw new Error('Forbidden.');}});await assert.rejects(client.login('1000000001','synthetic'),/provisioning/);assert.equal(calls,0);client.destroy();
+ let calls=0;const client=clients.create({client:{auth:{}},url:origin,key:'public',enabled:true,brokerUrl,fetcher:async()=>{calls++;throw new Error('Forbidden.');}});await assert.rejects(client.login('1000000001','synthetic'),/provisioning/);assert.equal(calls,0);client.destroy();
 });
 test('successful broker returns only official session transport fields after committed attempt and own access',async()=>{
  const {handler,events}=await harness(),response=await handler(request()),data=await response.json();assert.equal(response.status,200);assert.deepEqual(events,['attempt','auth','access']);assert.deepEqual(Object.keys(data).sort(),['access_token','refresh_token','token_type']);assert.equal(JSON.stringify(data).includes('@'),false);assert.match(response.headers.get('Cache-Control'),/no-store/);
@@ -56,7 +57,7 @@ test('trusted IP requires reviewed server configuration, rejects forwarded lists
  assert.equal(trustedClientIp(make({'cf-connecting-ip':'192.0.2.1'}),'cf-connecting-ip',false),null);assert.equal(trustedClientIp(make({'x-forwarded-for':'192.0.2.1'}),'x-forwarded-for',true),null);assert.equal(trustedClientIp(make({'cf-connecting-ip':'192.0.2.1, 198.51.100.1'}),'cf-connecting-ip',true),null);assert.equal(trustedClientIp(make({'cf-connecting-ip':'2001:0db8:0000::1'}),'cf-connecting-ip',true),'2001:db8::1');assert.equal(trustedClientIp(make({'cf-connecting-ip':'::ffff:192.0.2.1'}),'cf-connecting-ip',true),'192.0.2.1');
 });
 test('a broker response arriving after logout cannot restore authority and its SDK session is discarded',async()=>{
- let finish,session=null,accessCalls=0;const client=clients.create({client:{auth:{setSession:async value=>{session=value;return {error:null};},signOut:async()=>{session=null;return {error:null};}}},url:origin,key:'public',enabled:true,fetcher:async url=>{if(url.endsWith('get-my-access')){accessCalls++;throw new Error('Late authority forbidden.');}return new Promise(resolve=>finish=resolve);}});
+ let finish,session=null,accessCalls=0;const client=clients.create({client:{auth:{getSession:async()=>({data:{session},error:null}),setSession:async value=>{session=value;return {error:null};},signOut:async()=>{session=null;return {error:null};}}},url:origin,key:'public',enabled:true,brokerUrl,fetcher:async url=>{if(url.endsWith('get-my-access')){accessCalls++;throw new Error('Late authority forbidden.');}return new Promise(resolve=>finish=resolve);}});
  const pending=client.login('syntheticmanager','synthetic');await new Promise(resolve=>setImmediate(resolve));await client.logout();finish(Response.json({access_token:'SYNTHETIC_ACCESS',refresh_token:'SYNTHETIC_REFRESH'}));await assert.rejects(pending,/Unable to sign in/);assert.equal(session,null);assert.equal(client.getContext(),null);assert.equal(accessCalls,0);client.destroy();
 });
 test('malformed or inherited department/scope identifiers cannot create record authority',()=>{

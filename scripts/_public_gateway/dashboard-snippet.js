@@ -207,11 +207,12 @@ if(typeof module!=='undefined'&&module.exports)module.exports=TaxiQaidAuthContra
  password.id='broker-password';password.type='password';password.autocomplete='off';passwordLabel.htmlFor=password.id;
  form.autocomplete='off';run.type='submit';copy.type='button';copy.disabled=true;summary.readOnly=true;summary.rows=22;summary.id='broker-summary';output.id='broker-result';output.textContent='READY';
  form.append(userLabel,node('br'),user,node('br'),passwordLabel,node('br'),password,node('br'),run);main.append(title,intro,form,output,summary,node('br'),copy);document.body.replaceChildren(main);
- const statuses={},http={},counts={},presence={};let started=false,issuedToken=null,client=null;
+ const statuses={},http={},counts={},presence={},used={broker:0,identity:0,access:0,session:0,signout:0},caps={broker:1,identity:6,access:2,session:1,signout:2};let started=false,issuedToken=null,client=null;
  const nativeFetch=globalThis.fetch.bind(globalThis),stages=new Map([['/login-with-identifier','broker'],['/functions/v1/get-my-access','access'],['/auth/v1/user','identity'],['/auth/v1/logout','signout'],['/auth/v1/token','session']]);
  async function guardedFetch(input,init={}){
   const target=new URL(typeof input==='string'?input:input instanceof URL?input.href:input.url),stage=stages.get(target.pathname);
   if((stage==='broker'?target.origin!==gateway:target.origin!==project)||!stage||target.username||target.password||[...target.searchParams.keys()].some(key=>!['scope','grant_type'].includes(key))||target.pathname==='/auth/v1/token'&&target.searchParams.get('grant_type')!=='refresh_token')throw new Error('REQUEST_REJECTED');
+  if(used[stage]>=caps[stage])throw new Error('REQUEST_CAP_REACHED');used[stage]++;counts.requests={...used};
   http[stage]=null;const response=await nativeFetch(input,{...init,credentials:'omit',redirect:'error',cache:'no-store',signal:init.signal||AbortSignal.timeout(15000)});http[stage]=response.status;return response;
  }
  function render(){const sanitized={test:'username_broker',statuses:{...statuses},http:{...http},counts:{...counts},fieldPresence:{...presence}};summary.value=JSON.stringify(sanitized,null,2);output.textContent=statuses.overall||'RUNNING';}
@@ -238,7 +239,19 @@ if(typeof module!=='undefined'&&module.exports)module.exports=TaxiQaidAuthContra
    const grants=new Set(context.roleDefaults);for(const [key,effect]of Object.entries(context.overrides)){if(effect==='allow')grants.add(key);if(effect==='deny')grants.delete(key);}
    counts.management=TaxiQaidPermissionCatalog.ALL.filter(p=>p.audience!=='Driver'&&TaxiQaidPermissionModel.draftDecision(p.key,context).allowed).length;
    counts.driverDenied=TaxiQaidPermissionCatalog.ALL.filter(p=>p.audience==='Driver'&&!grants.has(p.key)).length;statuses.permissions=counts.management===101&&counts.driverDenied===6?'PASS':'FAIL';
+   if(!['uid','active','master','permissions'].every(key=>statuses[key]==='PASS'))reject('profile','MASTER_SCOPE_NOT_VERIFIED');
    phase='mfa';const assurance=await client.auth.mfa.getAuthenticatorAssuranceLevel();statuses.passwordOnly=!assurance.error&&assurance.data?.currentLevel==='aal1'?'PASS':'NOT VERIFIED';render();
+   phase='refresh';const renewed=await client.auth.refreshSession();
+   if(typeof renewed.data?.session?.access_token==='string')issuedToken=renewed.data.session.access_token;
+   if(renewed.error||!renewed.data?.session?.access_token||renewed.data.user?.id!==uid)reject('refresh','REFRESH_NOT_VERIFIED');
+   const refreshedUser=await client.auth.getUser();if(refreshedUser.error||refreshedUser.data?.user?.id!==uid)reject('refresh','REFRESH_UID_MISMATCH');
+   const refreshedAccess=await guardedFetch(project+'/functions/v1/get-my-access',{method:'GET',headers:{apikey:publishable,Authorization:'Bearer '+issuedToken}});
+   if(refreshedAccess.status!==200){await refreshedAccess.body?.cancel();reject('refresh','REFRESH_ACCESS_REJECTED');}
+   raw=await refreshedAccess.json();let refreshedContext;try{refreshedContext=TaxiQaidAuthContract.access(raw,uid,renewed.data.session.expires_at);}catch{reject('refresh','REFRESH_CONTRACT_REJECTED');}raw=null;
+   const refreshedGrants=new Set(refreshedContext.roleDefaults);for(const [key,effect]of Object.entries(refreshedContext.overrides)){if(effect==='allow')refreshedGrants.add(key);if(effect==='deny')refreshedGrants.delete(key);}
+   counts.refreshedManagement=TaxiQaidPermissionCatalog.ALL.filter(p=>p.audience!=='Driver'&&TaxiQaidPermissionModel.draftDecision(p.key,refreshedContext).allowed).length;
+   counts.refreshedDriverDenied=TaxiQaidPermissionCatalog.ALL.filter(p=>p.audience==='Driver'&&!refreshedGrants.has(p.key)).length;
+   if(refreshedContext.role!=='super_admin'||counts.refreshedManagement!==101||counts.refreshedDriverDenied!==6)reject('refresh','REFRESH_PERMISSIONS_REJECTED');statuses.refresh='PASS';render();
   }catch{if(!statuses.diagnostic){statuses[phase]='FAIL';statuses.diagnostic=Object.values(http).some(value=>value===null)?'NETWORK_OR_CORS':'SANITIZED_TEST_FAILURE';}}
   finally{
    identifier='';privatePassword='';tokens=null;raw=null;
@@ -247,10 +260,10 @@ if(typeof module!=='undefined'&&module.exports)module.exports=TaxiQaidAuthContra
     if(statuses.signout!=='PASS')try{const cleanup=await guardedFetch(project+'/auth/v1/logout?scope=local',{method:'POST',headers:{apikey:publishable,Authorization:'Bearer '+issuedToken}});statuses.signout=[200,204].includes(cleanup.status)?'PASS':'FAIL';await cleanup.body?.cancel();}catch{statuses.signout='FAIL';}
    }else statuses.signout='NOT NEEDED';
    issuedToken=null;await client.auth.stopAutoRefresh().catch(()=>{});if(statuses.signout==='FAIL')statuses.diagnostic='SIGNOUT_NOT_CONFIRMED';
-   statuses.overall=['broker','identity','access','profile','uid','active','master','permissions','passwordOnly','signout'].every(key=>statuses[key]==='PASS')?'PASS':'FAIL / NOT VERIFIED';render();copy.disabled=false;
+   statuses.overall=['broker','identity','access','profile','uid','active','master','permissions','passwordOnly','refresh','signout'].every(key=>statuses[key]==='PASS')?'PASS':'FAIL / NOT VERIFIED';render();copy.disabled=false;
   }
  });
- addEventListener('pagehide',()=>{form.reset();if(issuedToken)nativeFetch(project+'/auth/v1/logout?scope=local',{method:'POST',headers:{apikey:publishable,Authorization:'Bearer '+issuedToken},keepalive:true,credentials:'omit',redirect:'error',cache:'no-store'}).catch(()=>{});issuedToken=null;});
+ addEventListener('pagehide',()=>{form.reset();if(issuedToken)guardedFetch(project+'/auth/v1/logout?scope=local',{method:'POST',headers:{apikey:publishable,Authorization:'Bearer '+issuedToken},keepalive:true}).catch(()=>{});issuedToken=null;});
 })();
 
 })();

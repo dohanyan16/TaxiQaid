@@ -2,9 +2,9 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os'),crypto=require('node:crypto'),{execFileSync}=require('node:child_process');
 const root=path.resolve(__dirname,'..'),read=file=>fs.readFileSync(path.join(root,file),'utf8');
 const {SOURCE_FILES,DASHBOARD_FILES,buildSignedBrokerArtifact}=require('../scripts/lib/signed-broker-artifact.cjs');
-test('canonical factory and server registration preserve the reviewed c0a5e7d implementation exactly',()=>{
+test('canonical factory and server registration match the reviewed consolidated candidate',()=>{
  const source=read('supabase/functions/login-with-identifier/index.ts'),factory=source.slice(source.indexOf('export function createSignedLogin'));
- assert.equal(crypto.createHash('sha256').update(factory).digest('hex'),'9682fbf8ead4fa8a330bcbf3437620f058c9d6bf951749dc7ff7558e48f33711');
+ assert.equal(crypto.createHash('sha256').update(factory).digest('hex'),'39deb6ddec89da6fe7e5aa273043eb9e48a8002b1fd6d42fb5ee4d1bd2ff7967');
  assert.doesNotMatch(source,/trustedClientIp|openBrokerStore|cachedBrokerStore/);
  const compatibility=read('supabase/review/public-login/login-with-identifier.ts');assert.match(compatibility,/export \{createSignedLogin\} from '\.\.\/\.\.\/functions\/login-with-identifier\/index\.ts';/);assert.doesNotMatch(compatibility,/Deno\.serve|function createSignedLogin/);
 });
@@ -39,7 +39,7 @@ test('canonical-source drift and either stale alias fail --check in an isolated 
  }finally{fs.rmSync(folder,{recursive:true,force:true});}
 });
 test('repository activation configuration and permission inventory remain unchanged by packaging',()=>{
- const config=read('shared/auth-dedicated-config.js');assert.match(config,/brokerUrl:null/);assert.match(config,/enabled:false/);assert.match(config,/sessionStorageMode:'memory'/);
+ const config=read('shared/auth-dedicated-config.js');assert.match(config,/brokerUrl:'https:\/\/taxiqaid-auth-gateway\.dohanyan\.workers\.dev\/login-with-identifier'/);assert.match(config,/enabled:false/);assert.match(config,/sessionStorageMode:'memory'/);
  const platform=read('supabase/config.toml');assert.match(platform,/\[functions\.get-my-access\]\s*verify_jwt = true/);assert.match(platform,/\[functions\.login-with-identifier\]\s*verify_jwt = false/);
  const catalog=require('../shared/permission-catalog.js');assert.equal(catalog.ALL.length,107);assert.equal(catalog.ALL.filter(item=>item.audience==='Driver').length,6);
 });

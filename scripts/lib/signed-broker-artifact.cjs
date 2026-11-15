@@ -2,6 +2,7 @@
 const fs=require('node:fs'),path=require('node:path');
 const DASHBOARD_FILES=Object.freeze(['supabase/dashboard/login-with-identifier.ts','supabase/dashboard/login-with-identifier-gateway.ts']);
 const SOURCE_FILES=Object.freeze([
+ 'supabase/functions/_shared/auth-audit.mjs',
  'supabase/functions/_shared/security.mjs',
  'supabase/functions/_shared/handlers.mjs',
  'supabase/functions/_shared/broker-store.ts',

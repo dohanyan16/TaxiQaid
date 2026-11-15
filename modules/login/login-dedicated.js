@@ -11,12 +11,13 @@ const TaxiQaidDedicatedLogin=(()=>{
   else {$('erp-app').style.display='none';$('driver-portal').hidden=false;}
  }
  const auth=TaxiQaidAuthClient.create({client:supabaseClient,url:settings.url,key:settings.publicKey,brokerUrl:settings.brokerUrl??null,enabled:settings.enabled,
-  onClear:()=>{hide();$('login-screen').style.display='flex';if(preferDriver&&typeof TaxiQaidDriverPortal!=='undefined')TaxiQaidDriverPortal.openLogin();},onAccess:route});
+  onClear:()=>{hide();$('login-screen').style.display='flex';if(preferDriver&&typeof TaxiQaidDriverPortal!=='undefined')TaxiQaidDriverPortal.openLogin();},onAccess:route,
+  onCleanup:result=>{if(!result.localCleared||!result.remoteRevoked){$('error-message').textContent='TaxiQaid is locked. Server session cleanup could not be confirmed. Contact your administrator.';$('error-message').hidden=false;}}});
  const toggle=$('sidebar-toggle');toggle.addEventListener('click',()=>{const collapsed=$('sidebar').classList.toggle('collapsed');toggle.textContent=collapsed?'›':'‹';toggle.setAttribute('aria-expanded',String(!collapsed));toggle.setAttribute('aria-label',collapsed?'Expand sidebar':'Collapse sidebar');});
  async function submit(event,driver=false){
   event.preventDefault();preferDriver=driver;const identifier=$(driver?'portal-iqama':'username').value,password=$(driver?'portal-password':'password'),status=$(driver?'portal-login-status':'error-message');const value=password.value;password.value='';status.hidden=true;
   const button=event.target.querySelector('[type=submit]');button.disabled=true;
-  try{await auth.login(identifier,value);}catch(error){status.textContent=error.message;status.hidden=false;if(driver){$('driver-portal').hidden=false;$('portal-login').hidden=false;$('portal-content').hidden=true;$('login-screen').style.display='none';}}
+  try{await auth.login(identifier,value);}catch(error){const cleanup=auth.getCleanupState();status.textContent=cleanup.remoteRevoked===false||!cleanup.localCleared?'TaxiQaid is locked. Session cleanup could not be confirmed. Close this tab and contact your administrator.':error.message;status.hidden=false;if(driver){$('driver-portal').hidden=false;$('portal-login').hidden=false;$('portal-content').hidden=true;$('login-screen').style.display='none';}}
   finally{button.disabled=false;}
  }
  $('driver-signin-entry').addEventListener('click',()=>{preferDriver=true;});$('portal-management-login').addEventListener('click',()=>{preferDriver=false;});

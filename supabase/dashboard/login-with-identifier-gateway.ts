@@ -4,6 +4,17 @@
 import {isIP} from 'node:net';
 import postgres from 'npm:postgres@4.1.0';
 import {createClient} from 'npm:@supabase/supabase-js@2.119.0';
+// Source: supabase/functions/_shared/auth-audit.mjs
+/** Fixed private telemetry only. Never accept caller payloads, errors, identifiers, IPs or proof values. */
+const AUTH_TRACE_HEADER='x-taxiqaid-trace';
+function validAuthTrace(value){return typeof value==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(value);}
+const AUTH_EVENTS=new Set(['ROUTE_REJECTED','ORIGIN_REJECTED','GATEWAY_DISABLED','PROVENANCE_REJECTED','UPSTREAM_RESPONSE','UPSTREAM_REDIRECT_REJECTED','UPSTREAM_UNAVAILABLE','SESSION_FILTER_REJECTED','PROOF_REJECTED','PROOF_VERIFIED','BROKER_DISABLED','DATABASE_UNAVAILABLE','INPUT_REJECTED','ADMISSION_ALLOWED','ADMISSION_DENIED','AUTH_REJECTED','AUTH_THROTTLED','AUTH_UNAVAILABLE','IDENTITY_REJECTED','ACCESS_REJECTED','SESSION_ISSUED','SESSION_CLEANUP_CONFIRMED','SESSION_CLEANUP_UNCONFIRMED']);
+function authAudit(component,trace,sink=value=>console.info(value)){
+ return (event,http)=>{if(!['gateway','broker'].includes(component)||!validAuthTrace(trace)||!AUTH_EVENTS.has(event)||!Number.isInteger(http)||http<100||http>599)return;
+  try{sink(JSON.stringify({schema:'taxiqaid-auth-audit-v1',component,trace,event,http}));}catch{/* Telemetry must not change admission or leak a logger error. */}
+ };
+}
+
 // Source: supabase/functions/_shared/security.mjs
 /** Server-only request controls. No password, token, account identifier or database error logging. */
 const FAILURE='Unable to sign in. Check your credentials or contact your administrator.';
@@ -44,6 +55,7 @@ function createLoginHandler(deps){
   const origin=originFor(request,deps.origins);if(!origin)return response(403,{error:FAILURE});
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Headers':'content-type,apikey','Access-Control-Allow-Methods':'POST,OPTIONS',Vary:'Origin','Cache-Control':'no-store'}});
   const started=Date.now();let signedIn=false,phase='configuration';
+  const audit=(event,status)=>{try{deps.audit?.(event,status);}catch{/* A diagnostic sink never changes authorization. */}};
   try{
    if(!deps.ready||new URL(request.url).search)throw new Error('not-ready');
    phase='input';const input=await readCredentials(request);
@@ -51,22 +63,25 @@ function createLoginHandler(deps){
    const keys=await Promise.all([bucket(deps.rateSecret,'v1:ip:'+clientIp),bucket(deps.rateSecret,'v1:account:'+input.identifier),bucket(deps.rateSecret,'v1:global')]);
    phase='database';const attempt=await deps.beginAttempt(input.identifier,keys);
    if(!attempt||typeof attempt.allowed!=='boolean')throw new Error('attempt');
-   if(!attempt.allowed)return response(429,{error:FAILURE},origin);
+   if(!attempt.allowed){audit('ADMISSION_DENIED',429);return response(429,{error:FAILURE},origin);}
+   audit('ADMISSION_ALLOWED',200);
    const account=attempt.account;
    if(account&&(typeof account.mappingRevision!=='string'||!/^[1-9][0-9]{0,18}$/.test(account.mappingRevision)||BigInt(account.mappingRevision)>9223372036854775807n))throw new Error('mapping-not-verified');
    // Reserved .invalid domain is a server-only timing equalizer, never a provisioned identity or browser mapping.
    phase='auth';const result=await deps.passwordSignIn(account?.email||'unavailable@taxiqaid.invalid',input.password);input.password='';
    signedIn=Boolean(result?.session);
-   if(result?.error){const status=Number(result.error.status);return response(status===429?429:status>=500||status===0?503:401,{error:FAILURE},origin);}
+   if(result?.error){const status=Number(result.error.status),http=status===429?429:status>=500||status===0?503:401;audit(http===429?'AUTH_THROTTLED':http===503?'AUTH_UNAVAILABLE':'AUTH_REJECTED',http);return response(http,{error:FAILURE},origin);}
    phase='credentials';
    if(!result?.user?.id||!account||result.user.id!==account.uid||account.status!=='active'||!signedIn)throw new Error('credentials');
    phase='database';const access=await deps.loadAccess(result.user.id,account.mappingRevision);
    if(access?.uid!==account.uid||access.account?.status!=='active'||access.account?.type!=='management')throw new Error('access');
-   phase='session';const body=safeTokenSession(result.session);const outgoing=response(200,body,origin);signedIn=false;return outgoing;
+   phase='session';const body=safeTokenSession(result.session);const outgoing=response(200,body,origin);audit('SESSION_ISSUED',200);signedIn=false;return outgoing;
   }catch{
-   return response(['configuration','database','auth','session'].includes(phase)?503:401,{error:FAILURE},origin);
+   const http=['configuration','database','auth','session'].includes(phase)?503:401;
+   audit(phase==='input'?'INPUT_REJECTED':phase==='database'?'DATABASE_UNAVAILABLE':phase==='access'?'ACCESS_REJECTED':phase==='credentials'?'IDENTITY_REJECTED':'AUTH_UNAVAILABLE',http);
+   return response(http,{error:FAILURE},origin);
   }finally{
-   if(signedIn)try{await deps.signOut();}catch{}
+   if(signedIn)try{const result=await deps.signOut();audit(result?.error?'SESSION_CLEANUP_UNCONFIRMED':'SESSION_CLEANUP_CONFIRMED',result?.error?503:200);}catch{audit('SESSION_CLEANUP_UNCONFIRMED',503);}
    // This is timing padding, not a constant-time or anti-enumeration proof.
    const remaining=350+crypto.getRandomValues(new Uint8Array(1))[0]-(Date.now()-started);
    if(remaining>0)await new Promise(resolve=>setTimeout(resolve,remaining));
@@ -151,15 +166,20 @@ async function gatewayBody(request){
 }
 const gatewayHex=bytes=>[...new Uint8Array(bytes)].map(x=>x.toString(16).padStart(2,'0')).join('');
 async function gatewayKey(secret){if(typeof secret!=='string'||!/^[a-f0-9]{64}$/.test(secret))throw new Error('REJECTED');return await crypto.subtle.importKey('raw',Uint8Array.from(secret.match(/../g),x=>parseInt(x,16)),{name:'HMAC',hash:'SHA-256'},false,['sign','verify']);}
-async function gatewayMessage({ip,origin,issued,nonce},body){return new TextEncoder().encode(['taxiqaid-gateway-v1','POST',GATEWAY_TARGET,origin,ip,String(issued),nonce,gatewayHex(await crypto.subtle.digest('SHA-256',body))].join('\n'));}
+async function gatewayMessage({ip,origin,issued,nonce,trace},body){
+ if(trace!==undefined&&!validAuthTrace(trace))throw new Error('REJECTED');
+ // v1 remains verifiable for the existing deployment; v2 binds an independent, non-secret trace.
+ return new TextEncoder().encode([trace===undefined?'taxiqaid-gateway-v1':'taxiqaid-gateway-v2','POST',GATEWAY_TARGET,origin,ip,String(issued),nonce,gatewayHex(await crypto.subtle.digest('SHA-256',body)),...(trace===undefined?[]:[trace])].join('\n'));
+}
 async function signGateway(secret,proof,body){return gatewayHex(await crypto.subtle.sign('HMAC',await gatewayKey(secret),await gatewayMessage(proof,body)));}
 async function verifyGateway(request,secret,now=Date.now()){
  const target=new URL(request.url);if(![new URL(GATEWAY_TARGET).pathname,GATEWAY_PATH].includes(target.pathname)||target.search||request.method!=='POST')return null;
- const h=request.headers,ip=canonicalGatewayIp(h.get('x-taxiqaid-ip')),origin=h.get('origin'),stamp=h.get('x-taxiqaid-issued'),nonce=h.get('x-taxiqaid-nonce'),mac=h.get('x-taxiqaid-mac');
+ const h=request.headers,ip=canonicalGatewayIp(h.get('x-taxiqaid-ip')),origin=h.get('origin'),stamp=h.get('x-taxiqaid-issued'),nonce=h.get('x-taxiqaid-nonce'),mac=h.get('x-taxiqaid-mac'),trace=h.get(AUTH_TRACE_HEADER)??undefined;
+ if(trace!==undefined&&!validAuthTrace(trace))return null;
  if(!ip||ip!==h.get('x-taxiqaid-ip')||typeof origin!=='string'||!/^https:\/\/[^\s\n]+$/.test(origin)||!/^\d{10}$/.test(stamp||'')||!/^[0-9a-f]{32}$/.test(nonce||'')||!/^[0-9a-f]{64}$/.test(mac||''))return null;
  try{if(new URL(origin).origin!==origin)return null;}catch{return null;}
  const issued=Number(stamp);if(issued*1000>now+5000||issued*1000<now-60000)return null;
- try{const body=await gatewayBody(request.clone()),valid=await crypto.subtle.verify('HMAC',await gatewayKey(secret),Uint8Array.from(mac.match(/../g),x=>parseInt(x,16)),await gatewayMessage({ip,origin,issued,nonce},body));return valid?{ip,origin,issued,nonce}:null;}catch{return null;}
+ try{const body=await gatewayBody(request.clone()),valid=await crypto.subtle.verify('HMAC',await gatewayKey(secret),Uint8Array.from(mac.match(/../g),x=>parseInt(x,16)),await gatewayMessage({ip,origin,issued,nonce,trace},body));return valid?{ip,origin,issued,nonce,...(trace===undefined?{}:{trace})}:null;}catch{return null;}
 }
 
 // Source: supabase/functions/_shared/signed-broker-store.ts
@@ -186,19 +206,21 @@ function signedBrokerStore(sql:SignedSql,proof:{nonce:string;issued:number},rate
 
 // Source: supabase/functions/login-with-identifier/index.ts
 /** Canonical signed broker. Deployment and activation require separate owner approval. */
-function createSignedLogin(env:(name:string)=>string|undefined,connect:typeof postgres=postgres,fetcher:typeof fetch=fetch){return async(request:Request)=>{
+function createSignedLogin(env:(name:string)=>string|undefined,connect:typeof postgres=postgres,fetcher:typeof fetch=fetch,auditSink:((value:string)=>void)|undefined=undefined){return async(request:Request)=>{
  const origins=configuredOrigins(env('TAXIQAID_AUTH_ORIGINS')),origin=request.headers.get('origin'),rate=env('TAXIQAID_RATE_SECRET')||'';
  const configured=['TAXIQAID_LOGIN_ENABLED','TAXIQAID_SESSION_TRANSPORT_REVIEWED','TAXIQAID_GATEWAY_ENABLED','TAXIQAID_GATEWAY_REVIEWED'].every(key=>env(key)==='true')&&rate.length>=32&&env('TAXIQAID_TRUSTED_IP_HEADER_VERIFIED')==='false';
  const proof=await verifyGateway(request,env('TAXIQAID_GATEWAY_SECRET'));
- if(!proof||!origins.includes(proof.origin))return response(403,{error:FAILURE});
- if(!configured)return response(503,{error:FAILURE},proof.origin);
+ const audit=authAudit('broker',proof?.trace??crypto.randomUUID(),auditSink);
+ if(!proof||!origins.includes(proof.origin)){audit('PROOF_REJECTED',403);return response(403,{error:FAILURE});}
+ audit('PROOF_VERIFIED',200);
+ if(!configured){audit('BROKER_DISABLED',503);return response(503,{error:FAILURE},proof.origin);}
  let sql:ReturnType<typeof postgres>|null=null;
  try{
   sql=connect({...brokerConnectionOptions(env('TAXIQAID_BROKER_DB_URL')||'',env('TAXIQAID_BROKER_DB_CA')),max:1,idle_timeout:1,max_lifetime:60});
   const store=signedBrokerStore(sql,proof,rate),auth=createClient('https://mqkflwsvnzcaylxtvsje.supabase.co','sb_publishable_c6NqjXyYvryqdXpgTUS0jg_hnfxiTWd',{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false,debug:false},global:{fetch:(input,init)=>fetcher(input,{...init,credentials:'omit',redirect:'error',cache:'no-store',signal:AbortSignal.timeout(10000)})}});
-  return await createLoginHandler({origins,ready:true,rateSecret:rate,clientIp:()=>proof.ip,beginAttempt:store.beginAttempt,loadAccess:store.loadAccess,
+  return await createLoginHandler({origins,ready:true,rateSecret:rate,audit,clientIp:()=>proof.ip,beginAttempt:store.beginAttempt,loadAccess:store.loadAccess,
    passwordSignIn:async(email:string,password:string)=>{const {data,error}=await auth.auth.signInWithPassword({email,password});return {...data,error:error?{status:error.status||0}:null};},signOut:()=>auth.auth.signOut({scope:'local'})})(request);
- }catch{return response(503,{error:FAILURE},proof.origin);}
+ }catch{audit('DATABASE_UNAVAILABLE',503);return response(503,{error:FAILURE},proof.origin);}
  finally{if(sql)try{await sql.end({timeout:1});}catch{}}
 };}
 Deno.serve(createSignedLogin(name=>Deno.env.get(name)));

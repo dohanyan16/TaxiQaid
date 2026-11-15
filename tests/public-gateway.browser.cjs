@@ -6,36 +6,39 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
   const snippet=fs.readFileSync(path.resolve(__dirname,'../scripts/_public_gateway/dashboard-snippet.js'),'utf8').replaceAll('REPLACE_WITH_REVIEWED_WORKER_ORIGIN','https://review.example.workers.dev'),catalog=require('../shared/permission-catalog.js'),management=catalog.ALL.filter(p=>p.audience!=='Driver').map(p=>p.key),project='https://mqkflwsvnzcaylxtvsje.supabase.co',gateway='https://review.example.workers.dev';
   const uid='00000000-0000-4000-8000-000000000001',email='synthetic-private@example.invalid',password='SYNTHETIC_PRIVATE_PASSWORD',refresh='SYNTHETIC_PRIVATE_REFRESH';
   const results=[];
-  for(const scenario of ['flat-success','nested-success','wrong-password','broker-429','broker-503','access-401','missing-profile-fields','driver-granted','logout-500']){
-   const page=await browser.newPage(),errors=[],logs=[],requests=[];let logouts=0;
+  for(const scenario of ['flat-success','nested-success','wrong-password','broker-429','broker-503','access-401','missing-profile-fields','driver-granted','logout-500','refresh-400','refresh-uid','refresh-access-401','refresh-driver-granted']){
+   const page=await browser.newPage(),errors=[],logs=[],requests=[];let logouts=0,refreshed=false;
    const jwt=[Buffer.from('{"alg":"HS256","typ":"JWT"}').toString('base64url'),Buffer.from(JSON.stringify({sub:uid,aal:'aal1',role:'authenticated',aud:'authenticated',email,iat:Math.floor(Date.now()/1000),exp:Math.floor(Date.now()/1000)+3600,amr:[{method:'password',timestamp:Math.floor(Date.now()/1000)}]})).toString('base64url'),'c3ludGhldGljLXNpZ25hdHVyZQ'].join('.');
+   const jwt2=[jwt.split('.')[0],Buffer.from(JSON.stringify({...JSON.parse(Buffer.from(jwt.split('.')[1],'base64url')),jti:'synthetic-rotation'})).toString('base64url'),jwt.split('.')[2]].join('.');
    page.on('pageerror',error=>errors.push(error.message));page.on('console',message=>logs.push(message.text()));await page.addInitScript(()=>{window.storageWrites=[];Storage.prototype.setItem=function(){storageWrites.push('storage');};indexedDB.open=function(){storageWrites.push('indexedDB');throw new Error('Prohibited.');};});
    await page.route('**/*',async route=>{
     const request=route.request(),target=new URL(request.url());assert.equal(target.origin,target.pathname==='/login-with-identifier'?gateway:project);requests.push(target.pathname);
     const headers={'Cache-Control':'no-store','Content-Security-Policy':"default-src 'none'; connect-src 'self' https://mqkflwsvnzcaylxtvsje.supabase.co; form-action 'none'"};
     if(request.isNavigationRequest()){await route.fulfill({status:503,headers,contentType:'application/json',body:'{"error":"Unavailable."}'});return;}
-    assert.ok(['/login-with-identifier','/functions/v1/get-my-access','/auth/v1/user','/auth/v1/logout'].includes(target.pathname));
+    assert.ok(['/login-with-identifier','/functions/v1/get-my-access','/auth/v1/user','/auth/v1/logout','/auth/v1/token'].includes(target.pathname));
     if(target.pathname==='/login-with-identifier'){
      const input=request.postDataJSON();assert.deepEqual(input,{identifier:'syntheticmanager',password});
      const status=scenario==='wrong-password'?401:scenario==='broker-429'?429:scenario==='broker-503'?503:200;
      await route.fulfill({status,headers,contentType:'application/json',body:JSON.stringify(status===200?{access_token:jwt,refresh_token:refresh,token_type:'bearer',expires_in:3600}:{error:password+email+refresh})});return;
     }
-    assert.equal(request.headers().authorization,'Bearer '+jwt);
+    if(target.pathname==='/auth/v1/token'){assert.equal(target.searchParams.get('grant_type'),'refresh_token');assert.equal(request.postDataJSON().refresh_token,refresh);refreshed=true;await route.fulfill({status:scenario==='refresh-400'?400:200,headers,contentType:'application/json',body:JSON.stringify(scenario==='refresh-400'?{msg:'SYNTHETIC_PRIVATE_ERROR'}:{access_token:jwt2,refresh_token:refresh+'_ROTATED',token_type:'bearer',expires_in:3600,user:{id:scenario==='refresh-uid'?'other-subject':uid,email}})});return;}
+    assert.ok([jwt,jwt2].some(value=>request.headers().authorization==='Bearer '+value));
     if(target.pathname==='/auth/v1/user'){await route.fulfill({status:200,headers,contentType:'application/json',body:JSON.stringify({id:uid,email,role:'authenticated',aud:'authenticated',factors:[]})});return;}
     if(target.pathname==='/auth/v1/logout'){logouts++;await route.fulfill({status:scenario==='logout-500'?500:204,headers,...(scenario==='logout-500'?{contentType:'application/json',body:JSON.stringify({error:password+refresh})}:{})});return;}
-    const defaults=scenario==='driver-granted'?catalog.ALL.map(p=>p.key):management;
+    const defaults=scenario==='driver-granted'||scenario==='refresh-driver-granted'&&refreshed?catalog.ALL.map(p=>p.key):management;
     const flat={uid,accountType:'management',status:'active',role:'super_admin',username:'syntheticmanager',fullName:'SYNTHETIC_PRIVATE_NAME',roleDefaults:defaults,overrides:{},departments:['it']};
     if(scenario==='missing-profile-fields'){delete flat.status;delete flat.fullName;delete flat.username;}
     const data=scenario==='nested-success'?{version:1,uid,account:{uid,type:'management',status:'active',role:'super_admin',username:'syntheticmanager',fullName:'SYNTHETIC_PRIVATE_NAME'},departments:['it'],permissions:{roleDefaults:defaults,overrides:{}},validUntil:Date.now()+60000}:flat;
-    await route.fulfill({status:scenario==='access-401'?401:200,headers,contentType:'application/json',body:JSON.stringify(scenario==='access-401'?{error:email+password}:{...data,private_debug:email+refresh+password})});
+    const denied=scenario==='access-401'||scenario==='refresh-access-401'&&refreshed;
+    await route.fulfill({status:denied?401:200,headers,contentType:'application/json',body:JSON.stringify(denied?{error:email+password}:{...data,private_debug:email+refresh+password})});
    });
    await page.goto(gateway+'/login-with-identifier');
    // Same DevTools protocol evaluation used by a browser Snippet; no installed tooling is needed by its owner.
    const session=await page.context().newCDPSession(page);await session.send('Runtime.evaluate',{expression:snippet,awaitPromise:true});
    await page.locator('#broker-username').fill('SyntheticManager');await page.locator('#broker-password').fill(password);await page.getByRole('button',{name:'Run Once and Sign Out'}).click();await page.waitForFunction(()=>!document.querySelector('button[type=button]').disabled,{},{timeout:45000});
    const result=JSON.parse(await page.locator('#broker-summary').inputValue());assert.equal(result.statuses.overall,['flat-success','nested-success'].includes(scenario)?'PASS':'FAIL / NOT VERIFIED');
-   const visible=await page.locator('body').innerText(),combined=visible+JSON.stringify(result)+logs.join('');for(const privateValue of [uid,email,password,refresh,jwt,'SYNTHETIC_PRIVATE_NAME'])assert.equal(combined.includes(privateValue),false,'Private fixture leaked');assert.equal(await page.locator('#broker-password').inputValue(),'');assert.equal(await page.locator('#broker-username').inputValue(),'');assert.deepEqual(await page.evaluate(()=>storageWrites),[]);assert.deepEqual(errors,[]);
-   if(['flat-success','nested-success'].includes(scenario)){assert.equal(result.counts.management,101);assert.equal(result.counts.driverDenied,6);assert.equal(result.statuses.signout,'PASS');assert.equal(result.statuses.passwordOnly,'PASS');}
+   const visible=await page.locator('body').innerText(),combined=visible+JSON.stringify(result)+logs.join('');for(const privateValue of [uid,email,password,refresh,jwt,jwt2,'SYNTHETIC_PRIVATE_NAME'])assert.equal(combined.includes(privateValue),false,'Private fixture leaked');assert.equal(await page.locator('#broker-password').inputValue(),'');assert.equal(await page.locator('#broker-username').inputValue(),'');assert.deepEqual(await page.evaluate(()=>storageWrites),[]);assert.deepEqual(errors,[]);
+   if(['flat-success','nested-success'].includes(scenario)){assert.equal(result.counts.management,101);assert.equal(result.counts.driverDenied,6);assert.equal(result.counts.refreshedManagement,101);assert.equal(result.counts.refreshedDriverDenied,6);assert.equal(result.statuses.refresh,'PASS');assert.equal(result.statuses.signout,'PASS');assert.equal(result.statuses.passwordOnly,'PASS');assert.ok(result.counts.requests.broker===1&&result.counts.requests.session===1&&result.counts.requests.access===2&&result.counts.requests.identity<=6&&result.counts.requests.signout<=2);}
    if(['wrong-password','broker-429','broker-503'].includes(scenario))assert.equal(logouts,0);else assert.ok(logouts>0);
    if(scenario==='broker-429')assert.equal(result.http.broker,429);if(scenario==='broker-503')assert.equal(result.http.broker,503);if(scenario==='missing-profile-fields')assert.deepEqual(result.fieldPresence,{activeStatus:false,fullName:false,username:false});
    results.push({scenario,result:'PASS'});await page.close();

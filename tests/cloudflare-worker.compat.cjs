@@ -9,7 +9,7 @@ const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),asse
   // No DOM/Node RequestInit merging, compiler suppression or ts-nocheck is used.
   for(const file of ['gateway/worker.mjs','gateway/dashboard-worker.mjs']){
    const source=fs.readFileSync(path.join(root,file),'utf8'),expression=source.match(/const upstream=await (fetcher\(GATEWAY_TARGET,[\s\S]*?\));/);assert.ok(expression,'Upstream fetch expression missing');
-   const declarations="declare const fetcher: typeof fetch; declare const GATEWAY_TARGET: string; declare const approved: string; declare const ip: string; declare const proof: {issued:number;nonce:string}; declare const mac: string; const body=new Uint8Array(1);\n";
+   const declarations="declare const fetcher: typeof fetch; declare const GATEWAY_TARGET: string; declare const AUTH_TRACE_HEADER: string; declare const trace: string; declare const approved: string; declare const ip: string; declare const proof: {issued:number;nonce:string}; declare const mac: string; const body=new Uint8Array(1);\n";
    const fixture=path.join(folder,path.basename(file)+'.ts');fs.writeFileSync(fixture,declarations+'async function check(){return await '+expression[1]+';}\n');
    const args=['--strict','--noEmit','--target','ES2022','--module','NodeNext','--moduleResolution','NodeNext','--lib','ES2022',fixture,types];execFileSync(process.execPath,[tsCli,...args],{stdio:'pipe'});
    const broken=declarations+'async function check(){return await '+expression[1].replace("redirect:'manual'","credentials:'omit',redirect:'manual'")+';}\n';fs.writeFileSync(fixture,broken);let rejected=false;
