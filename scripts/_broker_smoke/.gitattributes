@@ -1,0 +1,2 @@
+# The pinned SDK contains meaningful whitespace inside a multiline string. Its exact bytes are SHA-256 checked.
+dashboard-snippet.js whitespace=-blank-at-eol

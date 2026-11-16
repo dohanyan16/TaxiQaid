@@ -1,0 +1,2 @@
+# Preserve meaningful literal whitespace in the pinned, checksum-verified SDK bytes.
+dashboard-snippet.js whitespace=-blank-at-eol

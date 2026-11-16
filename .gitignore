@@ -5,3 +5,10 @@
 *.pdf
 *.zip
 roster-private/
+
+# Authentication secrets and local tooling are never part of the public Pages source.
+.env
+.env.*
+supabase/.env*
+supabase/.temp/
+node_modules/

@@ -42,10 +42,13 @@ const SCRIPT_ORDER = [
   "shared/people-preview.js",
   "shared/permission-catalog.js",
   "shared/permission-model.js",
+  "shared/auth-contract.js",
+  "shared/user-admin-model.js",
+  "shared/auth-client.js",
   "shared/access-runtime.js",
   "assets/vendor/phone/libphonenumber-max.js",
   "modules/driver-portal/portal-policy.js",
-  "modules/login/login.js",
+  window.TAXIQAID_DEDICATED_AUTH?.enabled === true ? "modules/login/login-dedicated.js" : "modules/login/login.js",
   "shared/navigation.js",
   "modules/dashboard/dashboard.js",
   "modules/drivers/drivers.js",
@@ -98,6 +101,23 @@ async function initializeApplication() {
   const bootStatus = document.getElementById("boot-status");
 
   try {
+    if (typeof window.supabase?.createClient !== "function") {
+      throw new Error("The authentication SDK is unavailable.");
+    }
+    // Reject an incomplete enabled setup before exposing a form without its authentication handler.
+    // Disabled settings are deliberately ignored, preserving the existing project's entry path.
+    if (window.TAXIQAID_DEDICATED_AUTH?.enabled === true) {
+      const settings = window.TAXIQAID_DEDICATED_AUTH;
+      if (typeof settings.url !== "string" || typeof settings.brokerUrl !== "string" || typeof settings.publicKey !== "string" || !settings.publicKey.trim()) {
+        throw new Error("Dedicated authentication configuration is incomplete.");
+      }
+      const project = new URL(settings.url), gateway = new URL(settings.brokerUrl);
+      if (project.protocol !== "https:" || project.origin !== settings.url || !settings.publicKey ||
+          gateway.protocol !== "https:" || !gateway.hostname.endsWith(".workers.dev") ||
+          gateway.username || gateway.password || gateway.port || gateway.pathname !== "/login-with-identifier" || gateway.search || gateway.hash) {
+        throw new Error("Dedicated authentication configuration is incomplete.");
+      }
+    }
     // Shared app shell and login form are inserted before feature views.
     const loginMarkup = await getFragment("modules/login/login.html");
     const shellMarkup = await getFragment("shared/shell.html");
@@ -127,8 +147,14 @@ async function initializeApplication() {
     workspace.appendChild(portalMarkup);
 
     // Load classic scripts one by one to preserve cross-file global bindings.
-    for (const path of SCRIPT_ORDER) await addScript(path);
+    for (const path of SCRIPT_ORDER) {
+      await addScript(path);
+      if (path === "modules/login/login-dedicated.js" && (typeof TaxiQaidDedicatedLogin === "undefined" || !TaxiQaidDedicatedLogin.auth)) {
+        throw new Error("The dedicated authentication controller is unavailable.");
+      }
+    }
     initializeFrontendPreview();
+    document.dispatchEvent(new CustomEvent("taxiqaid:app-ready"));
 
     workspace.hidden = false;
     bootStatus.remove();
