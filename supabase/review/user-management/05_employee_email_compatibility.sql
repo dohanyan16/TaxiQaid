@@ -179,6 +179,8 @@ BEGIN
  IF p_action='create-reserve' THEN
   item:=p_data->'account';target:=op;v_lease:=(p_data->>'lease')::uuid;
   PERFORM taxiqaid_auth_api.admin_validate_account(item);
+  IF item->>'contactEmail' IS NULL THEN RAISE EXCEPTION 'EMPLOYEE_EMAIL_REQUIRED';END IF;
+  IF EXISTS(SELECT FROM taxiqaid_private.auth_login_identities WHERE user_id<>target AND lower(technical_email)=lower(item->>'contactEmail')) THEN RAISE EXCEPTION 'EMPLOYEE_EMAIL_ALREADY_USED' USING ERRCODE='23505';END IF;
   IF item->>'role' NOT IN ('manager','supervisor') OR item->>'status' NOT IN ('active','disabled') OR item->>'username' !~ '^[a-z][a-z0-9]{1,47}$' OR length(item->>'fullName') NOT BETWEEN 1 AND 150 OR jsonb_typeof(item->'departments')<>'array' OR jsonb_array_length(item->'departments') NOT BETWEEN 1 AND 7 THEN RAISE EXCEPTION 'INVALID_ACCOUNT'; END IF;
   FOR dep IN SELECT jsonb_array_elements_text(item->'departments') LOOP IF NOT dep=ANY(names) OR NOT EXISTS(SELECT FROM taxiqaid_private.departments WHERE department_key=dep AND is_active) THEN RAISE EXCEPTION 'INVALID_DEPARTMENT'; END IF; END LOOP;
   SELECT * INTO prior FROM taxiqaid_private.user_admin_operations WHERE id=op FOR UPDATE;
