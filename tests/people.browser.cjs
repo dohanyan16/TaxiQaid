@@ -15,7 +15,9 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
    const open=indexedDB.open.bind(indexedDB);indexedDB.open=(...args)=>{operationalStorageWrites.push('indexedDB:'+args[0]);return open(...args);};
   });
   await page.route('https://*.supabase.co/**',r=>r.abort());
-  await page.goto(process.env.TAXIQAID_URL||'http://127.0.0.1:8001/');await page.waitForFunction(()=>!document.getElementById('boot-status'));
+  // Legacy compatibility fixture: release defaults to dedicated Auth, but this suite tests the disabled legacy path.
+   await page.route('**/shared/auth-dedicated-config.js',route=>route.fulfill({contentType:'text/javascript',body:"window.TAXIQAID_DEDICATED_AUTH=Object.freeze({enabled:false});"}));
+   await page.goto(process.env.TAXIQAID_URL||'http://127.0.0.1:8001/');await page.waitForFunction(()=>!document.getElementById('boot-status'));
   // The existing Supabase SDK probes storage availability once, then removes its probe.
   assert.equal(await page.evaluate(()=>operationalStorageWrites.every(key=>/^storage:lswt-/.test(key))),true);
   await page.evaluate(()=>{
