@@ -14,7 +14,9 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
   page.on('pageerror',e=>errors.push(e.message));page.on('download',d=>downloads.push(d.suggestedFilename()));
   page.on('request',r=>{if(/script\.google|sheets\.google|docs\.google/.test(r.url()))legacy.push(r.url());if(/supabase.co/.test(r.url())&&r.method()!=='GET')writes.push(r.url());});
   await page.route('https://*.supabase.co/**',r=>r.abort());
-  await page.goto(process.env.TAXIQAID_URL || 'http://127.0.0.1:8001/');await page.waitForFunction(()=>!document.getElementById('boot-status'));
+  // Legacy compatibility fixture: release defaults to dedicated Auth, but this suite tests the disabled legacy path.
+   await page.route('**/shared/auth-dedicated-config.js',route=>route.fulfill({contentType:'text/javascript',body:"window.TAXIQAID_DEDICATED_AUTH=Object.freeze({enabled:false});"}));
+   await page.goto(process.env.TAXIQAID_URL || 'http://127.0.0.1:8001/');await page.waitForFunction(()=>!document.getElementById('boot-status'));
   await page.evaluate(()=>{
    supabaseClient.auth.signInWithPassword=async()=>({data:{user:{id:'test-only'}},error:null});
    supabaseClient.auth.signOut=async()=>({error:null});
