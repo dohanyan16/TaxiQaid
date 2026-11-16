@@ -44,8 +44,10 @@ export async function administrativeAction(actor:string,action:string,data:Recor
  const credential=()=>{const bytes=crypto.getRandomValues(new Uint8Array(24));return [...bytes].map(x=>x.toString(16).padStart(2,'0')).join('')+'aA9!';};
  if(action==='create'){
   const lease=crypto.randomUUID(),operation=data.operation,account=model.account(data.account);
-  const domain=env('TAXIQAID_TECHNICAL_EMAIL_DOMAIN');if(!domain||domain.length>190||!/^[a-z0-9][a-z0-9.-]+\.[a-z]{2,}$/.test(domain))throw new Error('ADMIN_UNAVAILABLE');
-  const email='taxiqaid-'+operation+'@'+domain;if(account.contactEmail?.toLowerCase()===email.toLowerCase())throw new Error('INVALID_INPUT');const reserved=await rpc(actor,'create-reserve',{operation,lease,account});if(reserved.completed)return {...reserved,credentialDelivery:'unavailable-on-replay'};let password=credential(),owned=false;
+  // Management accounts use the real employee email rather than a fictitious technical mailbox.
+  if(!account.contactEmail)throw new Error('INVALID_INPUT');
+  const email=account.contactEmail.toLowerCase();
+  const reserved=await rpc(actor,'create-reserve',{operation,lease,account});if(reserved.completed)return {...reserved,credentialDelivery:'unavailable-on-replay'};let password=credential(),owned=false;
   try{
    let found=await auth.getUserById(operation);
    if(found.error&&found.error.status!==404)throw new Error('AUTH_UNAVAILABLE');
@@ -65,6 +67,11 @@ export async function administrativeAction(actor:string,action:string,data:Recor
   if(!data.patch||typeof data.patch!=='object'||Array.isArray(data.patch)||Object.values(data.patch).some(v=>typeof v!=='boolean'))throw new Error('INVALID_INPUT');return await rpc(actor,action,data);
  }
  if(action==='edit'||action==='sync-auth'){
+  // Email changes need a separate, verified Auth/SQL migration: never silently desynchronize identities.
+  if(action==='edit'&&data.account){
+   const identity=await rpc(actor,'identity',{uid:data.uid});
+   if(!identity?.email||typeof data.account.contactEmail!=='string'||data.account.contactEmail.trim().toLowerCase()!==identity.email.toLowerCase())throw new Error('INVALID_INPUT');
+  }
   const result=await rpc(actor,action==='edit'?'edit':'reset-reserve',data);if(result.replayed)return {...result,authSyncPending:true};const user=result.user,identity=await rpc(actor,'identity',{uid:data.uid});
   try{const existing=await auth.getUserById(data.uid);if(existing.error||existing.data?.user?.id!==data.uid||existing.data?.user?.email!==identity?.email)throw new Error('AUTH_IDENTITY_MISMATCH');const updated=await auth.updateUserById(data.uid,{ban_duration:user.status==='active'?'none':'876000h'});if(updated.error||updated.data?.user?.id!==data.uid||updated.data?.user?.email!==identity.email)throw new Error('AUTH_UNAVAILABLE');
    return await rpc(actor,'auth-synced',{operation:crypto.randomUUID(),uid:user.uid,etag:user.etag,version:user.version});
