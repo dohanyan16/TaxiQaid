@@ -1,5 +1,7 @@
 # Dedicated Supabase authentication migration — not activated
 
+> Latest main-entry preparation: [MASTER_PILOT_RUNBOOK.md](MASTER_PILOT_RUNBOOK.md) records the owner's B2/B3 hosted PASS and the disabled `index.html` integration. Both HTML entries now load the pinned SDK/public dedicated configuration, but only exact boolean `enabled === true` selects that project/controller. `enabled:false` retains the legacy path. No activation, deployment, merge or new hosted test is authorized; earlier entry-presence/pending-success descriptions below are historical.
+
 > Current phase is exclusively public authentication completion. Owner-verified repair/probe/Cron and disabled signed transport evidence are recorded in [PUBLIC_AUTHENTICATION_COMPLETION.md](PUBLIC_AUTHENTICATION_COMPLETION.md); earlier pending wording below is historical. The normal repository broker entry is now the reviewed canonical signed handler; the review path re-exports it and both Dashboard broker artifacts are identical. Step 141 owner functional source review is accepted, while the Supabase deployment version remains unverified. No deployment, activation, account/database development, main merge or branch deletion is authorized.
 
 ## Current owner-verified private success and public proposal

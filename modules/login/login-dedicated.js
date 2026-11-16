@@ -1,11 +1,13 @@
 /** Dormant migration controller. Administrative admission follows verified access, never a submitted identifier. */
 const TaxiQaidDedicatedLogin=(()=>{
  const $=id=>document.getElementById(id),settings=window.TAXIQAID_DEDICATED_AUTH;
+ if(settings?.enabled !== true)return Object.freeze({active:false});
  let preferDriver=location.hash==='#driver-portal';
- const hide=()=>{$('erp-app').style.display='none';$('driver-portal').hidden=true;TaxiQaidAccess.reset();loggedInUserName='';};
+ const hide=()=>{$('erp-app').style.display='none';$('driver-portal').hidden=true;$('authenticated-role').hidden=true;$('authenticated-role').textContent='';TaxiQaidAccess.reset();loggedInUserName='';};
  function route(context,session){
   if(TaxiQaidAccess.renewAuthorizedContext(context)){loggedInUserName=context.fullName;return;}
   TaxiQaidAccess.observeIdentity('SIGNED_IN',session);TaxiQaidAccess.applyAuthorizedContext(context);loggedInUserName=context.fullName;
+  $('authenticated-role').textContent=context.role==='super_admin'?'Master':'';$('authenticated-role').hidden=context.role!=='super_admin';
   $('login-screen').style.display='none';
   if(context.accountType==='Management'){$('erp-app').hidden=false;$('erp-app').style.display='flex';TaxiQaidPermissionBindings.reconcile();}
   else {$('erp-app').style.display='none';$('driver-portal').hidden=false;}
@@ -24,6 +26,6 @@ const TaxiQaidDedicatedLogin=(()=>{
  $('login-form').addEventListener('submit',event=>submit(event));$('portal-login-form').addEventListener('submit',event=>submit(event,true));
  $('logout-button').addEventListener('click',async()=>{await auth.logout();$('login-form').reset();});
  // Canonical department IDs are identity metadata, not automatic access grants.
- document.addEventListener('taxiqaid:app-ready',()=>{document.querySelector('label[for=um-create-login]').textContent='Username / Login Identifier';document.querySelectorAll('select option[value="Quality"]').forEach(option=>option.textContent='QHSE');auth.start();}, {once:true});
+ document.addEventListener('taxiqaid:app-ready',()=>{document.querySelector('label[for=um-create-login]').textContent='Username / Login Identifier';document.querySelectorAll('select option[value="Quality"]').forEach(option=>option.textContent='QHSE');document.querySelectorAll('select option[value="Super Administrator"]').forEach(option=>option.textContent='Master');auth.start();}, {once:true});
  return Object.freeze({auth});
 })();

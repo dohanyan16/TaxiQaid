@@ -1,7 +1,7 @@
 /** TaxiQaid: legacy transport is disabled; existing authorization is preserved. */
 
 async function requireAuthorizedUser() {
-  if(window.TAXIQAID_DEDICATED_AUTH){
+  if(window.TAXIQAID_DEDICATED_AUTH?.enabled === true){
     const context=await TaxiQaidDedicatedLogin.auth.refresh();
     return {id:context.uid,fullName:context.fullName};
   }

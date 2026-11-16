@@ -1,5 +1,17 @@
 # Master pilot — consolidated implementation and operator runbook
 
+## Main frontend integration — prepared, not activated
+
+Latest owner-reported evidence: **B2 all six hosted controls PASS; B3 genuine public Master login PASS, 101 Management permissions, six Driver denials, refresh and logout PASS.** All five B3 admission flags were restored false; main/Pages remained unchanged. These are owner results, not new agent-run hosted tests. Earlier pending-control wording below is historical and must not cause those successful tests to be repeated.
+
+The feature branch now prepares **`index.html` itself** with official SDK `@supabase/supabase-js@2.119.0` and `shared/auth-dedicated-config.js`, whose contents remain unchanged with `enabled:false`. Only the exact boolean `enabled === true` selects the dedicated URL/key/options and controller. False, absent, string or numeric values preserve the original project, legacy login/role check, action authorization, Driver-disabled messaging/logout and existing identity/department previews. Loading the config object alone neither initializes nor connects the dedicated system. No URL/storage parameter activates it. Enabled but incomplete configuration, missing SDK or missing dedicated controller keeps the workspace hidden; no unhandled credential form is exposed and no legacy/direct-broker fallback is introduced.
+
+In dedicated mode the existing controller binds the actual main form and all 18 views. It retains the official SDK memory session, Worker-only username/password transport, UID-bound access, refresh/lease/JWT expiry, late-response fences and safe logout/error reporting. Internal role `super_admin` is unchanged; the verified role badge and visible proposed-role labels show **Master**. Label changes grant nothing: explicit Deny, module dependencies and six Driver-only denials still apply. No permissions, departments, accounts, schemas, server handlers, secrets, Cron or cloud resources change. Driver/Iqama sign-in stays unavailable.
+
+`node scripts/auth-pilot-local.cjs` now serves the real `index.html`, reusing the pinned SDK and synthetic transport. Its enabled override exists **only in its loopback HTTP response**; repository configuration stays false. `start({enabled:false})` exercises the original project with the same real SDK and synthetic legacy Auth/role transport. Both contexts deny external network. Local tests include main-index positive/negative/session scenarios, 18-view desktop/mobile navigation, 101/6, explicit Deny/dependencies, strict disabled-gate variants, legacy action/portal logout, and missing SDK/Worker failures. No genuine Supabase/Cloudflare request is made. Legacy operational requests stay disconnected.
+
+Future publication still needs explicit owner authorization for the final release/configuration changes and any supervised production smoke. B2/B3 are retained, not rerun here. The exact published main-index/origin/CSP/CDN/session behavior and Pages release for its eventual SHA cannot receive a new hosted PASS from these local tests. Keep the old project available, use the existing Option A pilot scope/monitoring and approved rollback; no new schema/account work starts in this task.
+
 Latest evidence/device: [PROTECTED_AUTH_VALIDATION.md](PROTECTED_AUTH_VALIDATION.md) supersedes the older candidate rate/replay batches below. Owner's **2026-11-15 22:23:59 CET** trace-matched `UPSTREAM_RESPONSE` 503 → `PROOF_VERIFIED` 200 → `BROKER_DISABLED` 503 is **PASS for signed communication and disabled rejection only**. No repeat is needed. The new six-case device reuses the same two services, requires online verified Master authorization plus a server grant of at most 15 minutes, and keeps both public gates false. Hosted execution/publication/temporary grant remain unapproved. Its complete ceiling is 29 HTTP, including internal calls and cleanup, plus 213 client SQL statements (including durable per-case quotas that survive nonce cleanup). The old 17:37:35 timing-only evidence and earlier local counts/fingerprints below are historical, not updated hosted claims.
 
 Repository implementation is authorized on `feat/dedicated-supabase-auth`. **No deployment, hosted authentication request, activation, hosted SQL, account/permission/secret/Cron change, main merge, Pages publication or branch deletion was performed.** Production and the old project remain unchanged. Both new login gates remain disabled according to owner evidence; dedicated frontend activation remains `enabled:false`.
@@ -60,10 +72,34 @@ Public-code SHA-256: signed Dashboard broker `3a8697f8501b0b9f971a16bff54c2704ad
 
 **B. Supervised hosted verification and restoration (separate grouped approval).** Approve the runnable case matrix, any indispensable protected temporary fixture/caller, all internal/control/Auth/setup request caps, public reachability, deadline and restore actions together. Start with Worker-only enabled/broker-disabled proof/provenance checks and matched HMAC-bound trace events. Open actual broker admission only after those prerequisites for approved rate/replay/Master cases. Existing candidate rate batches are 11 IP, 21 global and 11 identifier requests plus four replay submissions, separated by real window/native recovery, never a blind combined load. Do not reset records. Use `scripts/_public_gateway/dashboard-snippet.js` as a reviewed browser Sources → Snippets script on the exact approved Worker `/login-with-identifier` document, replacing its origin placeholder only with the existing reviewed Worker origin. The owner alone enters credentials after this group's approval; no key/token is entered or copied. Its 12-call cap covers one login/refresh/access/sign-out flow and cleanup. Keep the tab open until completion. After creating any separately approved longer-lived frontend test session, both admission gates can be closed while official native refresh/access/expiry/logout tests finish under their own agreed budget. Restore broker=false then Worker=false after each supervised open window (maximum 15 minutes); natural expiry can use a separately bounded continuation with admissions closed. Record only enums/status/counts, private trace-match attestation and cleanup. Stop on bypass, leak, cap breach, unknown external traffic, wrong permissions or inconclusive mandatory attribution. No test is activated by this runbook.
 
-**C. Frontend cutover/main/Pages (only after accepted hosted results).** Approve the final static entry/flag change, merge/publication and capped production smoke together. The already tested dedicated entry needs the same pinned SDK/config inclusion at the root: in `index.html` pin the SDK to `@supabase/supabase-js@2.119.0` and load `shared/auth-dedicated-config.js` before bootstrap; set its existing `enabled` flag true only in this approved release. The broker URL is already pinned. Preserve the old project/resources and modules. Verify exact remote main SHA, Pages build for that SHA and genuine production login/session; a built Pages job alone is not authentication success. No branch deletion is included.
+**C. Frontend cutover/main/Pages (not authorized by repository integration).** SDK/config inclusion at the root is now prepared as described above. Any future `enabled` flag change, admission-gate change, merge/publication and capped production smoke still need explicit owner approval. The broker URL is already pinned and both public systems remain disabled by owner evidence. Preserve the old project/resources and modules. Verify exact remote main SHA, Pages build for that SHA and genuine published main-entry behavior; a built Pages job alone is not authentication success. No branch deletion is included.
 
 For all groups use existing browser Dashboards/GitHub; no owner software installation or credential sharing. If a required fixture, source context, log event or metadata is unavailable, report that concrete blocker and stop dependent cases rather than repeating historical reviews.
 
 ## Rollback
 
 Preapprove the closing writes before an enabled test. Deny broker admission first, then Worker=false; flags do not revoke existing sessions. Clear/sign out the specific test session and report any unconfirmed cleanup; never revoke everyone or alter account credentials. Restore only the approved prior frontend release through ordinary commits/Pages publication if cutover occurred. Restore only a validated signed code baseline if a code rollback is necessary; never the obsolete header/unsigned handler or direct-broker fallback. Preserve native controls, SQL/roles/RLS/accounts/mappings/permissions, counters and normal healthy Cron. Temporary resources may be removed only if created under that approved test scope. Repository rollback is a normal feature-branch revert; no force push, merge or deletion is performed here.
+
+## Main-entry validation results
+
+Completed locally: **168 Node tests; nine browser suites** (`workflow`, `ui`, `people`, `roster`, `support`, `portal`, `auth-migration`, `master-pilot`, `main-auth-gate`); strict Deno checks; **135 JavaScript syntax checks**; unchanged 107-definition/six-Driver catalog and all affected packaging checks. The actual main-entry/pinned-SDK suite has 13 success/failure/session/permission scenarios, and the activation suite has seven legacy-gate/missing-dependency scenarios. Both report `hostedAuthenticationVerified:false`. Desktop/mobile navigation covered all 18 views. Roster regression artifacts remain private and synthetic: 815 PDFs and 4,974 map annotations verified. No Supabase/Cloudflare/hosted SQL test was repeated and no live credential was used.
+
+## Main-entry file manifest
+
+- `docs/MASTER_PILOT_RUNBOOK.md`
+- `docs/SUPABASE_AUTH_MIGRATION.md`
+- `index.html`
+- `modules/administration/user-management/user-management.js`
+- `modules/customer/helpdesk/helpdesk.js`
+- `modules/driver-portal/driver-portal.js`
+- `modules/login/login-dedicated.js`
+- `scripts/_auth_pilot/fixture.js`
+- `scripts/auth-pilot-local.cjs`
+- `shared/bootstrap.js`
+- `shared/config.js`
+- `shared/shell.html`
+- `shared/write-guard.js`
+- `tests/auth-entry.test.cjs`
+- `tests/auth-migration.browser.cjs`
+- `tests/main-auth-gate.browser.cjs`
+- `tests/master-pilot.browser.cjs`

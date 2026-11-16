@@ -81,9 +81,9 @@ const TaxiQaidDriverPortal = (() => {
   function openLogin(){clear();shell(false,false);$('portal-iqama').focus();}
   $('driver-signin-entry').addEventListener('click',openLogin);
   $('portal-management-login').addEventListener('click',()=>{clear();$('login-screen').style.display='flex';});
-  if(!window.TAXIQAID_DEDICATED_AUTH)$('portal-login-form').addEventListener('submit',event=>{event.preventDefault();$('portal-password').value='';show('portal-login-status','Driver account authentication is not configured yet.');});
+  if(window.TAXIQAID_DEDICATED_AUTH?.enabled !== true)$('portal-login-form').addEventListener('submit',event=>{event.preventDefault();$('portal-password').value='';show('portal-login-status','Driver account authentication is not configured yet.');});
   $('portal-recovery').addEventListener('click',()=>show('portal-login-status','Secure account recovery integration pending. Contact your administrator.'));
-  $('portal-signout').addEventListener('click',async()=>{if(window.TAXIQAID_DEDICATED_AUTH)await TaxiQaidDedicatedLogin.auth.logout();else await supabaseClient.auth.signOut();TaxiQaidAccess.reset();clear();$('erp-app').style.display='none';$('login-screen').style.display='flex';});
+  $('portal-signout').addEventListener('click',async()=>{if(window.TAXIQAID_DEDICATED_AUTH?.enabled === true)await TaxiQaidDedicatedLogin.auth.logout();else await supabaseClient.auth.signOut();TaxiQaidAccess.reset();clear();$('erp-app').style.display='none';$('login-screen').style.display='flex';});
   $('portal-return').addEventListener('click',()=>{clear();$('erp-app').hidden=false;$('erp-app').style.display='flex';});
   $('portal-preview-empty').addEventListener('click',()=>{
     if(!TaxiQaidAccess.hasLegacyManagementSession()&&TaxiQaidAccess.getContext()?.accountType!=='Management')return;

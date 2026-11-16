@@ -6,10 +6,11 @@
  * Edit only the features owned by this file. See docs/PROJECT_GUIDE.md.
  */
 
-    const SUPABASE_URL = window.TAXIQAID_DEDICATED_AUTH?.url || "https://gycijhgmmaznvcoxphlh.supabase.co";
-    const SUPABASE_PUBLIC_KEY = window.TAXIQAID_DEDICATED_AUTH?.publicKey || "sb_publishable_HzPfzuV-3Z-6aCuvGWcBHQ_R5gF7F7T";
+    const dedicatedAuthSettings = window.TAXIQAID_DEDICATED_AUTH?.enabled === true ? window.TAXIQAID_DEDICATED_AUTH : null;
+    const SUPABASE_URL = dedicatedAuthSettings ? dedicatedAuthSettings.url : "https://gycijhgmmaznvcoxphlh.supabase.co";
+    const SUPABASE_PUBLIC_KEY = dedicatedAuthSettings ? dedicatedAuthSettings.publicKey : "sb_publishable_HzPfzuV-3Z-6aCuvGWcBHQ_R5gF7F7T";
     const { createClient } = supabase;
-    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, window.TAXIQAID_DEDICATED_AUTH ? {auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'taxiqaid-dedicated-auth'}} : undefined);
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, dedicatedAuthSettings ? {auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'taxiqaid-dedicated-auth'}} : undefined);
 
     // Legacy data endpoints are intentionally disconnected.
     const GOOGLE_SHEET_DRIVERS_URL = "";
