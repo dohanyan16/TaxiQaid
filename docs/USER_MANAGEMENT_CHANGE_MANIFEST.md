@@ -2,7 +2,7 @@
 
 Base: `886c4aa8e9a8c86339564c7f1e012568a958ab85`. Feature branch only: `feat/dedicated-supabase-auth`.
 
-Exact file set for this implementation (42 files). Generated broker/diagnostic/browser bundles change only because they embed the shared department/catalog contract; no hosted artifact is deployed. No existing permission identifiers, Master grants, broker rate-policy SQL, admission flags or production files on main are changed.
+Exact file set for this implementation (43 files). Generated broker/diagnostic/browser bundles change only because they embed the shared department/catalog contract; no hosted artifact is deployed. No existing permission identifiers, Master grants, broker rate-policy SQL, admission flags or production files on main are changed.
 
 - `AGENTS.md`
 - `docs/TAXIQAID_WORKFLOW_SPEC.md`
@@ -36,6 +36,7 @@ Exact file set for this implementation (42 files). Generated broker/diagnostic/b
 - `supabase/review/user-management/02_departments.sql`
 - `supabase/review/user-management/03_access_compatibility.sql`
 - `supabase/review/user-management/04_verify.sql`
+- `supabase/review/user-management/05_employee_email_compatibility.sql` — reviewed proposal; unexecuted
 - `tests/_user-admin-fixture.cjs`
 - `tests/auth-migration.browser.cjs`
 - `tests/broker-postgres.cjs`
