@@ -3,8 +3,8 @@ import {administrativeAction,createAdminHandler,adminConnectionOptions} from '..
 import {syncSheets} from '../supabase/functions/manage-users/sheets.mjs';
 import assert from 'node:assert/strict';
 const actor='00000000-0000-4000-8000-000000000154',target='10000000-0000-4000-8000-000000000001',origin='https://dohanyan16.github.io';
-const account={username:'syntheticmanager',fullName:'Synthetic Manager',contactEmail:null,role:'manager',status:'active',departments:['fleet']};
-const values:Record<string,string>={TAXIQAID_USER_ADMIN_ENABLED:'true',TAXIQAID_AUTH_ORIGINS:origin,TAXIQAID_TECHNICAL_EMAIL_DOMAIN:'example.invalid'},env=(key:string)=>values[key];
+const account={username:'syntheticmanager',fullName:'Synthetic Manager',contactEmail:'manager@example.invalid',role:'manager',status:'active',departments:['fleet']};
+const values:Record<string,string>={TAXIQAID_USER_ADMIN_ENABLED:'true',TAXIQAID_AUTH_ORIGINS:origin},env=(key:string)=>values[key];
 const user={id:actor,role:'authenticated',aud:'authenticated'},request=(body:unknown,headers:Record<string,string>={})=>new Request('https://local.invalid/functions/v1/manage-users',{method:'POST',headers:{origin,authorization:'Bearer synthetic.jwt','content-type':'application/json',...headers},body:JSON.stringify(body)});
 Deno.test('online JWT is mandatory, submitted authority rejected, disabled/origin failures precede SQL',async()=>{
  let queries=0,verified=0;const rpc=async()=>{queries++;return {users:[]};},verify=async()=>{verified++;return {data:{user}};};
@@ -25,18 +25,25 @@ function fixture(options:{mismatch?:boolean;finishFailure?:boolean;ambiguous?:bo
  return {rpc,auth,calls,authCalls,identities};
 }
 Deno.test('provisioning reserves before Auth, preserves UID mapping, returns credential once without SQL persistence',async()=>{
- const f=fixture(),result=await administrativeAction(actor,'create',{operation:target,account},f.rpc,f.auth,env);assert.equal(result.credentialDelivery,'one-time');assert.ok(result.temporaryPassword.length>=48);assert.equal(f.calls[1].action,'create-reserve');assert.equal(f.authCalls[0].id,target);assert.equal(f.authCalls[0].ban_duration,'876000h');assert.equal(f.authCalls[1].ban_duration,'none');assert.equal(JSON.stringify(f.calls).includes(result.temporaryPassword),false);assert.equal(JSON.stringify(f.calls).includes('taxiqaid-'+target+'@'),true);assert.equal(f.calls.find(c=>c.action==='create-finish')!.data.authUid,target);
+ const f=fixture(),result=await administrativeAction(actor,'create',{operation:target,account},f.rpc,f.auth,env);assert.equal(result.credentialDelivery,'one-time');assert.ok(result.temporaryPassword.length>=48);assert.equal(f.calls[1].action,'create-reserve');assert.equal(f.authCalls[0].id,target);assert.equal(f.authCalls[0].ban_duration,'876000h');assert.equal(f.authCalls[1].ban_duration,'none');assert.equal(JSON.stringify(f.calls).includes(result.temporaryPassword),false);assert.equal(f.authCalls[0].email,account.contactEmail);assert.equal(f.calls.find(c=>c.action==='create-finish')!.data.technicalEmail,account.contactEmail);assert.equal(f.calls.find(c=>c.action==='create-finish')!.data.authUid,target);
  const count=f.authCalls.length,replay=await administrativeAction(actor,'create',{operation:target,account},f.rpc,f.auth,env);assert.equal(replay.temporaryPassword,undefined);assert.equal(f.authCalls.length,count);
 });
 Deno.test('mismatched identities, Auth failure and private commit failure fail closed with recovery; ambiguous commit is not duplicated',async()=>{
  for(const options of [{mismatch:true},{finishFailure:true},{createFailure:true}]){const f=fixture(options);await assert.rejects(administrativeAction(actor,'create',{operation:target,account},f.rpc,f.auth,env),/RECOVERY_REQUIRED/);assert.equal(f.calls.some(c=>c.action==='create-recover'),true);if(options.finishFailure)assert.equal(f.authCalls.at(-1).ban_duration,'876000h');if(options.mismatch)assert.equal(f.authCalls.length,1);}
  const f=fixture({ambiguous:true}),result=await administrativeAction(actor,'create',{operation:target,account},f.rpc,f.auth,env);assert.equal(result.completed,true);assert.equal(result.temporaryPassword,undefined);assert.equal(f.authCalls.at(-1).ban_duration,'none');
- const bad=fixture();await assert.rejects(administrativeAction(actor,'create',{operation:target,account},bad.rpc,bad.auth,()=>undefined));assert.equal(bad.authCalls.length,0);assert.equal(bad.calls.length,1);
+ const bad=fixture();await assert.rejects(administrativeAction(actor,'create',{operation:target,account:{...account,contactEmail:null}},bad.rpc,bad.auth,env),/INVALID_INPUT/);assert.equal(bad.authCalls.length,0);assert.equal(bad.calls.length,1);
 });
 Deno.test('replayed edits never reapply stale Auth status; reset replay cannot redeliver a password; sync failures remain pending',async()=>{
  let called=0;const auth={getUserById:async()=>{called++;throw new Error('offline');}};
  for(const action of ['edit','sync-auth','reset-password']){const result=await administrativeAction(actor,action,{uid:target},async(_a,a)=>a==='authorize'?{}:{replayed:true,user:{uid:target,status:'active'}},auth,env);assert.equal(result.temporaryPassword,undefined);assert.equal(called,0);}
  const result=await administrativeAction(actor,'edit',{uid:target},async(_a,a)=>a==='authorize'?{}:a==='identity'?{email:'private@example.invalid'}:{user:{uid:target,status:'disabled'}},auth,env);assert.equal(result.authSyncPending,true);
+});
+
+Deno.test('office email is immutable: reject changes before private SQL write or Auth mutation',async()=>{
+ const calls:string[]=[],auth=fixture().auth;
+ const rpc=async(_actor:string,action:string)=>{calls.push(action);if(action==='identity')return {email:account.contactEmail};return {};};
+ await assert.rejects(administrativeAction(actor,'edit',{uid:target,account:{...account,contactEmail:'other@example.invalid'}},rpc,auth,env),/INVALID_INPUT/);
+ assert.deepEqual(calls,['authorize','identity']);
 });
 Deno.test('Sheets remains disconnected; fixed-row RAW retries are idempotent and payload secrets rejected',async()=>{
  let calls:any[]=[];const fake:typeof fetch=async(url,init)=>{calls.push({url:String(url),init});return new Response('{}',{status:200});};
