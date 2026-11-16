@@ -52,8 +52,8 @@
     event.preventDefault();
     if (!recoveryReady || busy) return;
     const value = password.value;
-    if (value.length < 12 || value.length > 256 || value !== confirmation.value) {
-      message('Passwords must match and have at least 12 characters.', 'error');
+    if (value.length < 6 || value.length > 256 || value !== confirmation.value) {
+      message('Passwords must match and have at least 6 characters.', 'error');
       return;
     }
     busy = true;
