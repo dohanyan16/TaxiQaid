@@ -1,0 +1,30 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
+test('Delete User is an explicit typed confirmation restricted to office accounts',()=>{
+ const html=fs.readFileSync('modules/administration/user-management/user-management.html','utf8');
+ const ui=fs.readFileSync('modules/administration/user-management/user-management.js','utf8');
+ assert.match(html,/id="um-delete-user" hidden/);
+ assert.match(html,/id="um-delete-confirmation" hidden/);
+ assert.match(html,/id="um-delete-username"/);
+ assert.match(ui,/user\.role==='super_admin'/);
+ assert.match(ui,/\$\('um-delete-username'\)\.value!==user\.username/);
+ assert.match(ui,/api\('archive-user'/);
+ assert.match(ui,/closePreviewModal\(\$\('um-user-modal'\)\)/);
+ assert.doesNotMatch(ui,/auth\.admin|deleteUserById|service_role/);
+ new Function(ui);
+});
+test('archive SQL retains identities, audit and history with Master-only authorization and CAS',()=>{
+ const sql=fs.readFileSync('supabase/review/user-management/06_safe_archive_users.sql','utf8');
+ const runtime=fs.readFileSync('supabase/functions/manage-users/runtime.ts','utf8');
+ assert.match(sql,/ADMIN_ARCHIVE_SOURCE_REVIEW_REQUIRED/);
+ assert.match(sql,/snapshot->>'etag'/);
+ assert.match(sql,/archive-user/);
+ assert.match(sql,/archived_at=clock_timestamp\(\)/);
+ assert.match(sql,/is_enabled=false,revision=revision\+1/);
+ assert.match(sql,/user-management\.change-status/);
+ assert.match(sql,/role'\) NOT IN \('manager','supervisor'\)/);
+ assert.match(sql,/ADMIN_ARCHIVE_SECURITY_METADATA_CHANGED/);
+ assert.doesNotMatch(sql,/DELETE FROM taxiqaid_private\.user_accounts/);
+ assert.doesNotMatch(runtime,/auth\.deleteUser\(/);
+ assert.match(runtime,/ban_duration:'876000h'/);
+ assert.match(runtime,/return \{archived:true,authSyncPending:true\}/);
+});
