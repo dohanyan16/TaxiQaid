@@ -23,7 +23,9 @@ const path = require('node:path');
   page.on('download', d=>downloads.push(d.suggestedFilename()));
   page.on('dialog', d=>{dialogs.push(d.message()); d.accept();});
   await page.route('https://*.supabase.co/**', route=>route.abort());
-  await page.goto(process.env.TAXIQAID_URL || 'http://127.0.0.1:8000/');
+  // Legacy compatibility fixture: release defaults to dedicated Auth, but this suite tests the disabled legacy path.
+   await page.route('**/shared/auth-dedicated-config.js',route=>route.fulfill({contentType:'text/javascript',body:"window.TAXIQAID_DEDICATED_AUTH=Object.freeze({enabled:false});"}));
+   await page.goto(process.env.TAXIQAID_URL || 'http://127.0.0.1:8000/');
   await page.waitForFunction(()=>!document.getElementById('boot-status'));
   await page.evaluate(()=>{
    window.authCalls=[]; window.roleAllowed=true;
