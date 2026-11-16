@@ -7,7 +7,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),{sta
   const a=await page(),p=a.p;
   assert.equal(await p.locator('#username').getAttribute('readonly'),'');assert.equal(await p.locator('#password').getAttribute('readonly'),'');
   await p.locator('#login-button').click();await p.waitForFunction(()=>TaxiQaidDedicatedLogin.auth.getContext()?.role==='super_admin');
-  assert.equal(await p.locator('#authenticated-role').innerText(),'Master');assert.equal(await p.locator('#um-role-template option[value="Super Administrator"]').innerText(),'Master');assert.equal(await p.evaluate(()=>SUPABASE_URL),'https://mqkflwsvnzcaylxtvsje.supabase.co');
+  assert.equal(await p.locator('#authenticated-role').innerText(),'Master');assert.deepEqual(await p.locator('#um-create-role option').allTextContents(),['Manager','Supervisor']);assert.equal(await p.evaluate(()=>SUPABASE_URL),'https://mqkflwsvnzcaylxtvsje.supabase.co');
   assert.equal(await p.evaluate(()=>TaxiQaidPermissionCatalog.ALL.filter(permission=>TaxiQaidPermissionModel.draftDecision(permission.key,TaxiQaidAccess.getContext()).allowed).length),101);
   assert.equal(await p.evaluate(()=>TaxiQaidPermissionCatalog.ALL.filter(permission=>permission.audience==='Driver'&&!TaxiQaidAccess.can(permission.key)).length),6);
   for(const view of await p.locator('[data-view]').evaluateAll(nodes=>nodes.map(node=>node.dataset.view))){const link=p.locator('[data-view="'+view+'"] a');await link.evaluate(el=>el.closest('details')?.setAttribute('open',''));await link.click();assert.equal(await p.locator('#view-'+view).isVisible(),true,'Local Master navigation '+view);}

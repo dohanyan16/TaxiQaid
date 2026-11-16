@@ -84,7 +84,9 @@ const TaxiQaidPermissionCatalog = (() => {
   const MODULES=Object.freeze(modules),ALL=Object.freeze(modules.flatMap(module=>module.permissions.map(permission=>Object.freeze({...permission,module:module.id}))));
   const BY_KEY=Object.freeze(Object.fromEntries(ALL.map(permission=>[permission.key,permission])));
   const ROLE_TEMPLATES=Object.freeze(['Super Administrator','Administrator','Department Manager','Supervisor','Staff','Driver']);
-  return Object.freeze({MODULES,ALL,BY_KEY,ROLE_TEMPLATES});
+  const MANAGEMENT_ROLES=Object.freeze({manager:'Manager',supervisor:'Supervisor'});
+  const DEPARTMENTS=Object.freeze({operation:'Operation',fleet:'Fleet',maintenance:'Maintenance',finance:'Finance',hr:'HR',qhse:'QHSE',it:'IT'});
+  return Object.freeze({MODULES,ALL,BY_KEY,ROLE_TEMPLATES,MANAGEMENT_ROLES,DEPARTMENTS});
 })();
 if(typeof module!=='undefined'&&module.exports)module.exports=TaxiQaidPermissionCatalog;
 
@@ -153,8 +155,11 @@ if(typeof module!=='undefined'&&module.exports)module.exports=TaxiQaidPermission
 /** Dedicated-project wire contract. A parsed response is never a substitute for backend authorization. */
 const TaxiQaidAuthContract=(()=>{
  const catalog=typeof TaxiQaidPermissionCatalog!=='undefined'?TaxiQaidPermissionCatalog:require('./permission-catalog.js');
- const DEPARTMENTS=Object.freeze({customer_service:'Customer Service',finance:'Finance',financial:'Financial',hr:'HR',it:'IT',maintenance:'Maintenance',operation:'Operation',planning:'Planning',qhse:'QHSE'});
- const department=value=>{const key=String(value||'').trim().toLowerCase().replace(/[ -]+/g,'_'),aliases={quality:'qhse',customer_care:'customer_service'};return Object.hasOwn(aliases,key)?aliases[key]:(Object.hasOwn(DEPARTMENTS,key)?key:null);};
+ const DEPARTMENTS=catalog.DEPARTMENTS;
+ // Read compatibility only: never silently reassign existing memberships to a new department.
+ const LEGACY_DEPARTMENTS=Object.freeze({customer_service:'Customer Service',financial:'Financial',planning:'Planning'});
+ const knownDepartment=key=>Object.hasOwn(DEPARTMENTS,key)||Object.hasOwn(LEGACY_DEPARTMENTS,key);
+ const department=value=>{const key=String(value||'').trim().toLowerCase().replace(/[ -]+/g,'_'),aliases={quality:'qhse',customer_care:'customer_service'};return Object.hasOwn(aliases,key)?aliases[key]:(knownDepartment(key)?key:null);};
  function identifier(value){const normalized=String(value||'').trim().toLowerCase();if(!/^(?:[a-z][a-z0-9]{1,47}|\d{10})$/.test(normalized))throw new Error('Enter a valid username or ten-digit Driver Iqama.');return normalized;}
  function credentials(value,password){const normalized=identifier(value);if(typeof password!=='string'||!password.length||password.length>1024)throw new Error('Enter your password.');return {identifier:normalized,password};}
  function normalize(raw,now){
@@ -177,19 +182,19 @@ const TaxiQaidAuthContract=(()=>{
   if(raw?.version!==1||raw.uid!==uid||typeof uid!=='string'||!uid||!account||account.status!=='active'||account.type!=='management'||typeof account.fullName!=='string'||!account.fullName.trim())throw new Error('Authorized active account information is unavailable.');
   if(!Number.isFinite(raw.validUntil)||raw.validUntil<=now||raw.validUntil>now+120000||!Number.isFinite(sessionExpiresAt)||sessionExpiresAt*1000<=now)throw new Error('Access information has expired.');
   const defaults=raw.permissions?.roleDefaults,overrides=raw.permissions?.overrides;
-  if(!Array.isArray(defaults)||!overrides||typeof overrides!=='object'||Array.isArray(overrides)||!Array.isArray(raw.departments)||raw.departments.some(id=>typeof id!=='string'||!Object.hasOwn(DEPARTMENTS,id)))throw new Error('Invalid access response.');
+  if(!Array.isArray(defaults)||!overrides||typeof overrides!=='object'||Array.isArray(overrides)||!Array.isArray(raw.departments)||raw.departments.some(id=>typeof id!=='string'||!knownDepartment(id)))throw new Error('Invalid access response.');
   for(const effect of Object.values(overrides))if(!['inherit','allow','deny'].includes(effect))throw new Error('Invalid permission override.');
   if(account.uid!==undefined&&account.uid!==uid)throw new Error('Account identity does not match.');
   if(typeof account.role!=='string'||!account.role||typeof account.username!=='string'||!account.username)throw new Error('Verified account metadata unavailable.');
   const scope=raw.scope??{};for(const key of ['departments','driverRecordRefs','documentIds'])if(scope[key]!==undefined&&(!Array.isArray(scope[key])||scope[key].some(id=>typeof id!=='string'||!id)))throw new Error('Invalid record scope.');
-  if((scope.departments||[]).some(id=>!Object.hasOwn(DEPARTMENTS,id)))throw new Error('Invalid department scope.');
+  if((scope.departments||[]).some(id=>!knownDepartment(id)))throw new Error('Invalid department scope.');
   const known=key=>typeof key==='string'&&Object.hasOwn(catalog.BY_KEY,key);
   return {source:'authorized-backend',verified:true,uid,accountType:account.type==='management'?'Management':'Driver',accountStatus:'Active',role:account.role,username:account.username,fullName:account.fullName,
    departments:[...new Set(raw.departments)].sort(),roleDefaults:[...new Set(defaults.filter(known))].sort(),overrides:Object.fromEntries(Object.entries(overrides).filter(([key])=>known(key)).sort(([a],[b])=>a.localeCompare(b))),
    driverRecordRef:account.driverRecordRef||null,iqama:account.iqama||null,expiresAt:Math.min(raw.validUntil,sessionExpiresAt*1000),
    scope:{departments:[...(scope.departments||[])],driverRecordRefs:[...(scope.driverRecordRefs||[])],documentIds:[...(scope.documentIds||[])]}};
  }
- return Object.freeze({DEPARTMENTS,department,identifier,credentials,access});
+ return Object.freeze({DEPARTMENTS,LEGACY_DEPARTMENTS,department,identifier,credentials,access});
 })();
 if(typeof module!=='undefined'&&module.exports)module.exports=TaxiQaidAuthContract;
 

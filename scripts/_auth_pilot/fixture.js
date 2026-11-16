@@ -4,7 +4,7 @@
  const nativeFetch=window.fetch.bind(window),project='https://mqkflwsvnzcaylxtvsje.supabase.co',legacyProject='https://gycijhgmmaznvcoxphlh.supabase.co',gateway='https://taxiqaid-auth-gateway.dohanyan.workers.dev',uid='00000000-0000-4000-8000-000000000154';
  const password='LOCAL_SYNTHETIC_PASSWORD',username='syntheticmaster',tokens=new Map(),refreshes=new Map();
  let catalog=[],mode='success',leaseMs=60000,serial=0,heldBroker=null,holdBroker=false,heldRefresh=null,holdRefresh=false;
- const counts={broker:0,identity:0,access:0,refresh:0,logout:0,blocked:0,legacyPassword:0,legacyRole:0,legacyIdentity:0,legacyLogout:0},headers={'Cache-Control':'no-store'};
+ const counts={broker:0,identity:0,access:0,refresh:0,logout:0,blocked:0,legacyPassword:0,legacyRole:0,legacyIdentity:0,legacyLogout:0,admin:0},headers={'Cache-Control':'no-store'};
  const json=(body,status=200)=>Response.json(body,{status,headers});
  const jwtPart=value=>btoa(JSON.stringify(value)).replaceAll('=','').replaceAll('+','-').replaceAll('/','_');
  function session(id){
@@ -47,6 +47,9 @@
    counts.logout++;if(mode==='logout-error')return json({error:'Synthetic logout unavailable.'},500);
    for(const row of refreshes.values())if(row.id===current.id)row.revoked=true;
    return new Response(null,{status:204,headers});
+  }
+  if(target.pathname==='/functions/v1/manage-users'&&request.method==='POST'){
+   counts.admin++;if(typeof window.TaxiQaidLocalAdmin==='function')return await window.TaxiQaidLocalAdmin(body);return json({error:'Administrative service not activated in this fixture.'},503);
   }
   if(target.pathname==='/functions/v1/get-my-access'&&request.method==='GET'){
    counts.access++;if(mode==='access-denied')return json({error:'Synthetic access rejected.'},403);

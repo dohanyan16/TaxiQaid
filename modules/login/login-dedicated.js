@@ -26,6 +26,6 @@ const TaxiQaidDedicatedLogin=(()=>{
  $('login-form').addEventListener('submit',event=>submit(event));$('portal-login-form').addEventListener('submit',event=>submit(event,true));
  $('logout-button').addEventListener('click',async()=>{await auth.logout();$('login-form').reset();});
  // Canonical department IDs are identity metadata, not automatic access grants.
- document.addEventListener('taxiqaid:app-ready',()=>{document.querySelector('label[for=um-create-login]').textContent='Username / Login Identifier';document.querySelectorAll('select option[value="Quality"]').forEach(option=>option.textContent='QHSE');document.querySelectorAll('select option[value="Super Administrator"]').forEach(option=>option.textContent='Master');auth.start();}, {once:true});
+ document.addEventListener('taxiqaid:app-ready',()=>{document.querySelector('label[for=um-create-login]').textContent='Username / Login Identifier';document.querySelectorAll('select option[value="Quality"]').forEach(option=>option.textContent='QHSE');auth.start();}, {once:true});
  return Object.freeze({auth});
 })();

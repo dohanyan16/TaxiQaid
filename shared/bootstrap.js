@@ -43,6 +43,7 @@ const SCRIPT_ORDER = [
   "shared/permission-catalog.js",
   "shared/permission-model.js",
   "shared/auth-contract.js",
+  "shared/user-admin-model.js",
   "shared/auth-client.js",
   "shared/access-runtime.js",
   "assets/vendor/phone/libphonenumber-max.js",

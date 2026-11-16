@@ -37,6 +37,8 @@ const TaxiQaidPermissionCatalog = (() => {
   const MODULES=Object.freeze(modules),ALL=Object.freeze(modules.flatMap(module=>module.permissions.map(permission=>Object.freeze({...permission,module:module.id}))));
   const BY_KEY=Object.freeze(Object.fromEntries(ALL.map(permission=>[permission.key,permission])));
   const ROLE_TEMPLATES=Object.freeze(['Super Administrator','Administrator','Department Manager','Supervisor','Staff','Driver']);
-  return Object.freeze({MODULES,ALL,BY_KEY,ROLE_TEMPLATES});
+  const MANAGEMENT_ROLES=Object.freeze({manager:'Manager',supervisor:'Supervisor'});
+  const DEPARTMENTS=Object.freeze({operation:'Operation',fleet:'Fleet',maintenance:'Maintenance',finance:'Finance',hr:'HR',qhse:'QHSE',it:'IT'});
+  return Object.freeze({MODULES,ALL,BY_KEY,ROLE_TEMPLATES,MANAGEMENT_ROLES,DEPARTMENTS});
 })();
 if(typeof module!=='undefined'&&module.exports)module.exports=TaxiQaidPermissionCatalog;

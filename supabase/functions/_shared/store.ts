@@ -2,7 +2,7 @@
 import postgres from 'npm:postgres@4.1.0';
 import verifiedMapping from '../../baseline/schema-mapping.example.json' with {type:'json'};
 export type Mapping=Record<string,Record<string,string>>;
-const departments=new Set(['customer_service','finance','financial','hr','it','maintenance','operation','planning','qhse']);
+const departments=new Set(['customer_service','finance','financial','fleet','hr','it','maintenance','operation','planning','qhse']);
 export function readMapping(serialized:string):Mapping{
  const mapping=JSON.parse(serialized) as Mapping;
  if(!mapping||typeof mapping!=='object'||Object.keys(mapping).sort().join(',')!==Object.keys(verifiedMapping).sort().join(','))throw new Error('Verified column mapping required.');

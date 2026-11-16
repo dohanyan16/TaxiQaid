@@ -1,0 +1,16 @@
+-- READ ONLY. No credentials/account responses. Run only after separately approved migrations.
+SELECT count(*) AS definitions FROM taxiqaid_private.permissions;
+SELECT count(*) AS master_grants FROM taxiqaid_private.role_permissions r JOIN taxiqaid_private.user_accounts a USING(role_key) WHERE a.role_key='super_admin' AND r.is_allowed;
+SELECT department_key,is_active,count(m.user_id) AS memberships FROM taxiqaid_private.departments d LEFT JOIN taxiqaid_private.user_departments m USING(department_key) GROUP BY 1,2 ORDER BY 1;
+SELECT relname,relrowsecurity,relforcerowsecurity,pg_get_userbyid(relowner) AS owner FROM pg_class WHERE relnamespace='taxiqaid_private'::regnamespace AND relkind IN ('r','p') AND (relname LIKE 'user_admin_%' OR relname='driver_profile_requests');
+SELECT r.rolname,r.rolsuper,r.rolbypassrls,r.rolinherit,r.rolcanlogin FROM pg_roles r WHERE rolname LIKE 'taxiqaid_user_admin_%';
+SELECT has_function_privilege('anon','taxiqaid_auth_api.admin_dispatch(uuid,text,jsonb)','EXECUTE') AS anon_must_be_false,has_function_privilege('authenticated','taxiqaid_auth_api.admin_dispatch(uuid,text,jsonb)','EXECUTE') AS browser_must_be_false,has_function_privilege('taxiqaid_auth_login','taxiqaid_auth_api.admin_dispatch(uuid,text,jsonb)','EXECUTE') AS broker_must_be_false;
+SELECT state,count(*) FROM taxiqaid_private.user_admin_operations GROUP BY state;
+SELECT status,count(*) FROM taxiqaid_private.driver_profile_requests GROUP BY status;
+SELECT kind,count(*),max(attempts) AS max_attempts FROM taxiqaid_private.user_admin_outbox GROUP BY kind;
+
+SELECT count(*)=0 AS master_driver_grants_must_be_absent FROM taxiqaid_private.role_permissions WHERE role_key='super_admin' AND is_allowed AND permission_key IN ('driver-portal.request-changes','driver-portal.files.view','driver-portal.sign','driver-portal.schedule.view','driver-portal.schedule.download','driver-portal.submit-appeal');
+SELECT p.oid::regprocedure,pg_get_userbyid(p.proowner) AS owner,p.prosecdef,p.proconfig,p.proacl FROM pg_proc p WHERE p.pronamespace='taxiqaid_auth_api'::regnamespace AND left(p.proname,6)='admin_' ORDER BY 1;
+SELECT has_schema_privilege('taxiqaid_user_admin_owner','taxiqaid_private','CREATE') AS temporary_private_create_must_be_false,has_schema_privilege('taxiqaid_user_admin_owner','taxiqaid_auth_api','CREATE') AS temporary_api_create_must_be_false;
+SELECT granted.rolname AS granted_role,member.rolname AS member,grantor.rolname AS grantor,m.admin_option,m.inherit_option,m.set_option FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid JOIN pg_roles member ON member.oid=m.member JOIN pg_roles grantor ON grantor.oid=m.grantor WHERE granted.rolname LIKE 'taxiqaid_user_admin_%' OR member.rolname LIKE 'taxiqaid_user_admin_%' ORDER BY 1,2,3;
+SELECT r.role_name,t.table_name,has_table_privilege(r.role_name,'taxiqaid_private.'||t.table_name,'SELECT,INSERT,UPDATE,DELETE') AS direct_access_must_be_false FROM (VALUES('anon'),('authenticated'),('taxiqaid_auth_backend'),('taxiqaid_user_admin_backend'),('taxiqaid_user_admin_login')) r(role_name) CROSS JOIN (VALUES('user_admin_metadata'),('user_admin_operations'),('driver_profile_requests'),('user_admin_audit'),('user_admin_outbox')) t(table_name);

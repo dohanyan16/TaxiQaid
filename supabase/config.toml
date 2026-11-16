@@ -16,3 +16,7 @@ verify_jwt = true
 # No preexisting user JWT can be replaced by an API key. Existing function settings remain unchanged.
 [functions.check-owner-username]
 verify_jwt = false
+
+# Review-only administrative API. Online Auth plus authoritative SQL capabilities are also mandatory.
+[functions.manage-users]
+verify_jwt = true

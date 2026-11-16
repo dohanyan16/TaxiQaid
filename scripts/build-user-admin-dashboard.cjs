@@ -1,0 +1,8 @@
+// Deterministic review-only Dashboard packaging. Strict source checks run before use; never deploys.
+const fs=require('node:fs'),path=require('node:path'),root=path.resolve(__dirname,'..'),check=process.argv.includes('--check');
+const files=['shared/permission-catalog.js','shared/permission-model.js','shared/user-admin-model.js','supabase/functions/_shared/security.mjs','supabase/functions/_shared/broker-store.ts','supabase/functions/manage-users/sheets.mjs','supabase/functions/manage-users/runtime.ts','supabase/functions/manage-users/index.ts'],imports=new Set(),bodies=[];
+for(const file of files){let source=fs.readFileSync(path.join(root,file),'utf8').replace(/^import .* from ['"]([^'"]+)['"];\n/gm,(line,target)=>{if(!target.startsWith('.')&&!line.includes('createRequire'))imports.add(line.trim());return '';}).replace(/^export /gm,'');
+ if(file.endsWith('/runtime.ts'))source=source.replace(/^const require=createRequire\(import.meta.url\),model=require\('[^']+'\);$/m,'const model=TaxiQaidUserAdminModel;');bodies.push('// Source: '+file+'\n'+source);}
+const artifact='// @ts-nocheck\n// GENERATED REVIEW-ONLY administrative bundle. Source modules receive strict Deno checking.\n// Default gate is disabled; no deployment or account operation is authorized.\n'+[...imports].join('\n')+'\n'+bodies.join('\n'),file=path.join(root,'supabase/dashboard/manage-users.ts');
+if(check){if(fs.readFileSync(file,'utf8')!==artifact)throw new Error('Administrative Dashboard artifact drift.');}else fs.writeFileSync(file,artifact);
+console.log('PASS: administrative Dashboard artifact matches strict-checked source modules.');
