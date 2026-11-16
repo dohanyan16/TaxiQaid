@@ -23,3 +23,22 @@ test('admin migration permits only the exact owner-reviewed role CHECK without w
  assert.match(fixture,/unexpected_role/);
  assert.match(fixture,/sql\(proposal\);assert\.equal\(admin\(constraintQuery\),expectedConstraint\)/);
 });
+
+test('employee email is mandatory for office provisioning and pinned across SQL/Auth identity',()=>{
+ const runtime=fs.readFileSync('supabase/functions/manage-users/runtime.ts','utf8');
+ const upgrade=fs.readFileSync('supabase/review/user-management/05_employee_email_compatibility.sql','utf8');
+ const html=fs.readFileSync('modules/administration/user-management/user-management.html','utf8');
+ assert.match(runtime,/if\(!account\.contactEmail\)throw new Error\('INVALID_INPUT'\)/);
+ assert.match(runtime,/const email=account\.contactEmail\.toLowerCase\(\)/);
+ assert.doesNotMatch(runtime,/TAXIQAID_TECHNICAL_EMAIL_DOMAIN/);
+ assert.match(runtime,/data\.account\.contactEmail\.trim\(\)\.toLowerCase\(\)!==identity\.email\.toLowerCase\(\)/);
+ assert.match(upgrade,/ADMIN_EMAIL_SOURCE_REVIEW_REQUIRED/);
+ assert.match(upgrade,/EMPLOYEE_EMAIL_REQUIRED/);
+ assert.match(upgrade,/EMPLOYEE_EMAIL_ALREADY_USED/);
+ assert.match(upgrade,/CONTACT_EMAIL_IMMUTABLE/);
+ assert.match(upgrade,/ADMIN_EMAIL_ACL_CHANGED/);
+ assert.match(upgrade,/BEGIN;[\s\S]*COMMIT;/);
+ assert.match(html,/Employee Email \(required for new accounts\)/);
+ assert.match(html,/id="um-create-email"[^>]+required/);
+ assert.doesNotMatch(upgrade,/CREATE ROLE|ALTER ROLE|DROP TABLE|DROP ROLE/);
+});
