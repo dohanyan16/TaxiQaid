@@ -2,13 +2,36 @@
 BEGIN;
 SET LOCAL lock_timeout='3s';
 SET LOCAL statement_timeout='30s';
-DO $$ BEGIN
+-- The reference is session-local and disappears at COMMIT/ROLLBACK; no live account constraint is altered.
+-- PostgreSQL prints both parsed CHECK expressions on the same server, avoiding brittle format/version guesses.
+CREATE TEMP TABLE taxiqaid_admin_expected_role_check (
+ account_type text, role_key text,
+ CONSTRAINT approved_role_check CHECK (
+  ((account_type = 'management'::text) AND
+   (role_key = ANY (ARRAY['super_admin'::text,'admin'::text,'manager'::text,'supervisor'::text,'staff'::text])))
+   OR ((account_type = 'driver'::text) AND (role_key = 'driver'::text))
+ )
+) ON COMMIT DROP;
+DO $ BEGIN
  IF current_user<>'postgres' OR session_user<>'postgres' OR (SELECT rolsuper FROM pg_roles WHERE rolname=current_user) THEN RAISE EXCEPTION 'Ordinary Dashboard postgres required'; END IF;
  IF current_setting('server_version_num')::integer<160000 THEN RAISE EXCEPTION 'PostgreSQL 16 required'; END IF;
  IF EXISTS(SELECT FROM pg_proc WHERE pronamespace='taxiqaid_auth_api'::regnamespace AND left(proname,6)='admin_') THEN RAISE EXCEPTION 'Administrative function collision';END IF;
  IF EXISTS(SELECT FROM pg_class WHERE oid IN ('taxiqaid_private.user_accounts'::regclass,'taxiqaid_private.departments'::regclass,'taxiqaid_private.user_departments'::regclass,'taxiqaid_private.permissions'::regclass,'taxiqaid_private.role_permissions'::regclass,'taxiqaid_private.user_permission_overrides'::regclass,'taxiqaid_private.auth_login_identities'::regclass) AND NOT relrowsecurity) THEN RAISE EXCEPTION 'Existing private RLS required';END IF;
  IF EXISTS(SELECT FROM pg_roles WHERE rolname IN ('taxiqaid_user_admin_owner','taxiqaid_user_admin_backend','taxiqaid_user_admin_login')) THEN RAISE EXCEPTION 'Already applied or role collision'; END IF;
- IF EXISTS(SELECT FROM pg_constraint c JOIN pg_attribute a ON a.attrelid=c.conrelid AND a.attnum=ANY(c.conkey) WHERE c.conrelid='taxiqaid_private.user_accounts'::regclass AND a.attname='role_key' AND c.contype IN ('c','f')) THEN RAISE EXCEPTION 'ROLE_CONSTRAINT_REVIEW_REQUIRED: inspect existing constraints before proposing manager/supervisor'; END IF;
+ -- Match the owner's reviewed account-type/role CHECK against a temporary PostgreSQL-parsed reference.
+ -- Never trust a constraint name or a list of permitted role strings alone; changed grouping/FKs must fail closed.
+ IF NOT EXISTS (
+  SELECT 1 FROM pg_constraint existing
+  JOIN pg_constraint approved ON approved.conrelid='pg_temp.taxiqaid_admin_expected_role_check'::regclass
+   AND approved.conname='approved_role_check' AND approved.contype='c'
+  WHERE existing.conrelid='taxiqaid_private.user_accounts'::regclass
+   AND existing.conname='user_accounts_check' AND existing.contype='c'
+   AND pg_get_constraintdef(existing.oid)=pg_get_constraintdef(approved.oid)
+ ) OR EXISTS (
+  SELECT 1 FROM pg_constraint c JOIN pg_attribute a ON a.attrelid=c.conrelid AND a.attnum=ANY(c.conkey)
+  WHERE c.conrelid='taxiqaid_private.user_accounts'::regclass
+   AND a.attname='role_key' AND c.contype IN ('c','f') AND c.conname<>'user_accounts_check'
+ ) THEN RAISE EXCEPTION 'ROLE_CONSTRAINT_REVIEW_REQUIRED: only the exact reviewed user_accounts_check is accepted'; END IF;
  IF EXISTS(SELECT lower(btrim(username)) FROM taxiqaid_private.user_accounts GROUP BY lower(btrim(username)) HAVING count(*)>1) OR EXISTS(SELECT user_id,department_key FROM taxiqaid_private.user_departments GROUP BY 1,2 HAVING count(*)>1) OR EXISTS(SELECT user_id,permission_key FROM taxiqaid_private.user_permission_overrides GROUP BY 1,2 HAVING count(*)>1) THEN RAISE EXCEPTION 'Duplicate identity/membership/override review required'; END IF;
  IF EXISTS(SELECT FROM taxiqaid_private.user_accounts WHERE account_type='management' AND (username IS NULL OR username !~ '^[a-z][a-z0-9]{1,47}$')) THEN RAISE EXCEPTION 'USERNAME_NORMALIZATION_REVIEW_REQUIRED';END IF;
  IF EXISTS(SELECT FROM taxiqaid_private.role_permissions WHERE role_key='super_admin' AND is_allowed AND permission_key IN ('driver-portal.request-changes','driver-portal.files.view','driver-portal.sign','driver-portal.schedule.view','driver-portal.schedule.download','driver-portal.submit-appeal')) THEN RAISE EXCEPTION 'MASTER_DRIVER_DENIALS_REVIEW_REQUIRED';END IF;
