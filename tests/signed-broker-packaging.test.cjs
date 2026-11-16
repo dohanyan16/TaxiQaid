@@ -40,7 +40,8 @@ test('canonical-source drift and either stale alias fail --check in an isolated 
  }finally{fs.rmSync(folder,{recursive:true,force:true});}
 });
 test('repository activation configuration and permission inventory remain unchanged by packaging',()=>{
- const config=read('shared/auth-dedicated-config.js');assert.match(config,/brokerUrl:'https:\/\/taxiqaid-auth-gateway\.dohanyan\.workers\.dev\/login-with-identifier'/);assert.match(config,/enabled:false/);assert.match(config,/sessionStorageMode:'memory'/);
+ const config=read('shared/auth-dedicated-config.js');assert.match(config,/brokerUrl:'https:\/\/taxiqaid-auth-gateway\.dohanyan\.workers\.dev\/login-with-identifier'/);assert.match(config,/enabled:true/);assert.match(config,/sessionStorageMode:'memory'/);
+ for(const builder of ['scripts/build-auth-dashboard.cjs','scripts/build-public-gateway.cjs']){execFileSync(process.execPath,[path.join(root,builder),'--check'],{cwd:root,stdio:'pipe'});assert.equal(read('shared/auth-dedicated-config.js'),config,'Packaging must preserve the approved frontend activation configuration');}
  const platform=read('supabase/config.toml');assert.match(platform,/\[functions\.get-my-access\]\s*verify_jwt = true/);assert.match(platform,/\[functions\.login-with-identifier\]\s*verify_jwt = false/);
  const catalog=require('../shared/permission-catalog.js');assert.equal(catalog.ALL.length,107);assert.equal(catalog.ALL.filter(item=>item.audience==='Driver').length,6);
 });

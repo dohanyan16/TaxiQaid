@@ -57,3 +57,12 @@ Deno.test('Sheets remains disconnected; fixed-row RAW retries are idempotent and
 Deno.test('separate restricted database role and TLS; broad/broker/browser roles rejected',()=>{
  const options=adminConnectionOptions('postgresql://taxiqaid_user_admin_login:SYNTHETIC@db.mqkflwsvnzcaylxtvsje.supabase.co:5432/postgres');assert.equal(options.username,'taxiqaid_user_admin_login');assert.equal(options.ssl.rejectUnauthorized,true);for(const role of ['postgres','taxiqaid_auth_login','service_role','authenticated'])assert.throws(()=>adminConnectionOptions('postgresql://'+role+':SYNTHETIC@db.mqkflwsvnzcaylxtvsje.supabase.co:5432/postgres'));
 });
+
+Deno.test('frontend cutover cannot activate the administrative backend: closed gates perform no Auth or SQL work',async()=>{
+ for(const gate of [undefined,'false','TRUE','1']){
+  let calls=0,keyReads=0;const forbidden=async()=>{calls++;throw new Error('Unexpected administrative operation');};
+  const handler=createAdminHandler(k=>{if(k==='TAXIQAID_AUTH_ADMIN_KEY')keyReads++;return k==='TAXIQAID_USER_ADMIN_ENABLED'?gate:env(k);},{verify:forbidden,rpc:forbidden,admin:{createUser:forbidden,updateUserById:forbidden}});
+  for(const body of [{action:'list'},{action:'create',operation:target,account},{action:'permissions',operation:target,uid:target,version:1,etag:'a'.repeat(64),patch:{'fuel.view':true}}]){const result=await handler(request(body));assert.equal(result.status,503);assert.equal((await result.json()).error,'Administration is not activated.');}
+  assert.equal(calls,0);assert.equal(keyReads,0);
+ }
+});

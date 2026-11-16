@@ -1,9 +1,9 @@
 // Actual entry/configuration scripts with synthetic SDK/DOM boundaries. No hosted request.
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const read=file=>fs.readFileSync(file,'utf8'),config=read('shared/config.js'),bootstrap=read('shared/bootstrap.js');
-test('main entry pins the official SDK and loads disabled dedicated settings before bootstrap',()=>{
+test('main entry pins the official SDK and loads the enabled cutover candidate before bootstrap',()=>{
  const html=read('index.html');assert.match(html,/@supabase\/supabase-js@2\.119\.0/);assert.equal((html.match(/@supabase\/supabase-js@/g)||[]).length,1);
- assert.ok(html.indexOf('shared/auth-dedicated-config.js')<html.indexOf('shared/bootstrap.js'));assert.match(read('shared/auth-dedicated-config.js'),/enabled:false/);
+ assert.ok(html.indexOf('shared/auth-dedicated-config.js')<html.indexOf('shared/bootstrap.js'));const window={};vm.runInNewContext(read('shared/auth-dedicated-config.js'),{window});assert.equal(window.TAXIQAID_DEDICATED_AUTH.enabled,true);assert.equal(window.TAXIQAID_DEDICATED_AUTH.sessionStorageMode,'memory');assert.equal(Object.isFrozen(window.TAXIQAID_DEDICATED_AUTH),true);
 });
 test('only boolean true selects the dedicated project, memory options and controller',()=>{
  for(const settings of [undefined,null,{}, {enabled:false},{enabled:'true'},{enabled:1},{enabled:true}]){
