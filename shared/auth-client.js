@@ -1,7 +1,7 @@
 /** Official SDK sessions and UID-bound access. Logout fences late work before touching the network. */
 const TaxiQaidAuthClient=(()=>{
  const contract=typeof TaxiQaidAuthContract!=='undefined'?TaxiQaidAuthContract:require('./auth-contract.js');
- function create({client,url,key,brokerUrl=null,enabled=false,fetcher=fetch,onAccess=()=>{},onClear=()=>{},onCleanup=()=>{},now=Date.now}){
+ function create({client,url,key,brokerUrl=null,enabled=false,accountType=null,fetcher=fetch,onAccess=()=>{},onClear=()=>{},onCleanup=()=>{},now=Date.now}){
   if(brokerUrl!==null){const target=new URL(brokerUrl);if(target.protocol!=='https:'||!target.hostname.endsWith('.workers.dev')||target.username||target.password||target.port||target.pathname!=='/login-with-identifier'||target.search||target.hash)throw new Error('Invalid authentication gateway configuration.');}
   if(enabled&&!brokerUrl)throw new Error('The signed authentication gateway must be configured before activation.');
   let generation=0,loggingIn=false,subscription=null,timer=null,leaseTimer=null,context=null,pending=null,cleanupTask=null,started=false,destroyed=false,acceptSession=true;
@@ -41,6 +41,7 @@ const TaxiQaidAuthClient=(()=>{
     const session=data.session,{data:identity,error:identityError}=await client.auth.getUser();if(identityError||!identity?.user?.id)throw generic();
     const response=await request('get-my-access',{token:session.access_token});
     const next=contract.access(response,identity.user.id,session.expires_at,now());
+    if(accountType&&next.accountType!==accountType)throw generic();
     if(current!==generation||!acceptSession||destroyed)throw generic();
     if(cleanupState.localCleared){sessionRevision++;cleanupState={localCleared:false,remoteRevoked:null};}
     context=next;armLease();onAccess(next,{user:{id:identity.user.id}});return next;

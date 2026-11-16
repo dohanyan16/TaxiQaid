@@ -8,14 +8,15 @@ async function start({port=0,enabled}={}){
  const server=http.createServer((request,response)=>{
   const send=(status,body,type='text/plain')=>{response.writeHead(status,{'Content-Type':type,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'self'; script-src 'self'; connect-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'; base-uri 'none'"});response.end(body);};
   if(request.headers.host!==new URL(origin).host||!['GET','HEAD'].includes(request.method)){send(403,'Local preview request rejected.');return;}
-  const target=new URL(request.url,origin);if(target.search){send(403,'Local preview request rejected.');return;}
+  const target=new URL(request.url,origin);if(target.search&&!/^\?v=[a-f0-9]{12,64}$/.test(target.search)){send(403,'Local preview request rejected.');return;}
   const name=target.pathname;
   if(name==='/__pilot__/sdk.js'){send(200,sdk,'text/javascript');return;}
   if(name==='/__pilot__/fixture.js'){send(200,fs.readFileSync(path.join(root,'scripts/_auth_pilot/fixture.js')),'text/javascript');return;}
   if(name==='/__pilot__/catalog.json'){send(200,JSON.stringify(require('../shared/permission-catalog.js').ALL),'application/json');return;}
-  if(name==='/'||name==='/index.html'||name==='/auth-migration-preview.html'){
-   let html=fs.readFileSync(path.join(root,name==='/auth-migration-preview.html'?'auth-migration-preview.html':'index.html'),'utf8');
+  if(name==='/'||name==='/index.html'||name==='/auth-migration-preview.html'||name==='/driver.html'){
+   let html=fs.readFileSync(path.join(root,name==='/auth-migration-preview.html'?'auth-migration-preview.html':name==='/driver.html'?'driver.html':'index.html'),'utf8');
    // Only the official pinned SDK is needed for authentication; operational export libraries stay unavailable here.
+   html=html.replace(/(<script defer src="assets\/vendor\/supabase\/[^"]+"[^>]*><\/script>)/,'<script src="/__pilot__/fixture.js"></script>$1');
    html=html.replace(/<script src="https:[^"]+"><\/script>/g,tag=>tag.includes('@supabase/supabase-js@2.119.0')?'<script src="/__pilot__/fixture.js"></script><script src="/__pilot__/sdk.js"></script>':'');
    send(200,html,'text/html');return;
   }

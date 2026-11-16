@@ -11,17 +11,13 @@ const policy=require('../modules/customer/support-policy.js');
   await page.addInitScript(()=>{window.supportStorage=[];const set=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){supportStorage.push(key);return set.call(this,key,value);};const open=indexedDB.open.bind(indexedDB);indexedDB.open=(...args)=>{supportStorage.push('indexedDB:'+args[0]);return open(...args);};});
   await page.route('https://*.supabase.co/**',r=>r.abort());
   // Capture only the public auth subscription boundary, before either support module initializes.
-  await page.route('**/modules/customer/customer-care/customer-care.js',async route=>{
-   const response=await route.fetch();
-   // Inject at classic-script execution time; downloads are concurrent and are not initialization boundaries.
-   await route.fulfill({response,body:"window.supportAuthListeners=[];supabaseClient.auth.onAuthStateChange=callback=>{supportAuthListeners.push(callback);return {data:{subscription:{unsubscribe(){}}}};};\n"+await response.text()});
-  });
+  await require('./lazy-fixtures.cjs').instrument(page,'modules/customer/customer-care/customer-care.js',()=>{window.supportAuthListeners=[];supabaseClient.auth.onAuthStateChange=callback=>{supportAuthListeners.push(callback);return {data:{subscription:{unsubscribe(){}}}};};});
   // Legacy compatibility fixture: release defaults to dedicated Auth, but this suite tests the disabled legacy path.
-   await page.route('**/shared/auth-dedicated-config.js',route=>route.fulfill({contentType:'text/javascript',body:"window.TAXIQAID_DEDICATED_AUTH=Object.freeze({enabled:false});"}));
+   await page.route('**/shared/auth-dedicated-config.js*',route=>route.fulfill({contentType:'text/javascript',body:"window.TAXIQAID_DEDICATED_AUTH=Object.freeze({enabled:false});"}));
    await page.goto(process.env.TAXIQAID_URL||'http://127.0.0.1:8003/');await page.waitForFunction(()=>!document.getElementById('boot-status'));
   await page.evaluate(()=>{supportStorage=[];supabaseClient.auth.signInWithPassword=async()=>({data:{user:{id:'synthetic-user'}},error:null});supabaseClient.auth.signOut=async()=>({error:null});supabaseClient.from=()=>({select:()=>({eq:()=>({maybeSingle:async()=>({data:{role:'admin'},error:null})})})});});
-  await page.locator('#username').fill('preview');await page.locator('#password').fill('test-only');await page.locator('#login-button').click();
-  async function nav(view){const link=page.locator(`[data-view="${view}"] a`);await link.evaluate(el=>{const group=el.closest('details');if(group)group.open=true;});await link.click();}
+  await page.locator('#username').fill('preview');await page.locator('#password').fill('test-only');await page.locator('#login-button').click();await page.waitForFunction(()=>TaxiQaidAccess.hasLegacyManagementSession());await require('./lazy-fixtures.cjs').initializeAuthorized(page);
+  async function nav(view){const link=page.locator(`[data-view="${view}"] a`);await link.evaluate(el=>{const group=el.closest('details');if(group)group.open=true;});await link.click();await page.locator('#view-'+view+'.active[data-ready=true]').waitFor();}
   async function options(id){return page.locator('#'+id+' option').evaluateAll(nodes=>nodes.filter(node=>node.value!=='').map(node=>node.textContent));}
   async function notify(user){await page.evaluate(user=>supportAuthListeners.forEach(callback=>callback(user?'SIGNED_IN':'SIGNED_OUT',user?{user}:null)),user);}
   await notify({id:'synthetic-user',email:'unverified@example.test',user_metadata:{department:'IT'}});

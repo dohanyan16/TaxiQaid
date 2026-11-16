@@ -24,7 +24,7 @@ const path = require('node:path');
   page.on('dialog', d=>{dialogs.push(d.message()); d.accept();});
   await page.route('https://*.supabase.co/**', route=>route.abort());
   // Legacy compatibility fixture: release defaults to dedicated Auth, but this suite tests the disabled legacy path.
-   await page.route('**/shared/auth-dedicated-config.js',route=>route.fulfill({contentType:'text/javascript',body:"window.TAXIQAID_DEDICATED_AUTH=Object.freeze({enabled:false});"}));
+   await page.route('**/shared/auth-dedicated-config.js*',route=>route.fulfill({contentType:'text/javascript',body:"window.TAXIQAID_DEDICATED_AUTH=Object.freeze({enabled:false});"}));
    await page.goto(process.env.TAXIQAID_URL || 'http://127.0.0.1:8000/');
   await page.waitForFunction(()=>!document.getElementById('boot-status'));
   await page.evaluate(()=>{
@@ -39,7 +39,7 @@ const path = require('node:path');
   await page.waitForFunction(()=>!document.getElementById('error-message').hidden);
   assert.equal(await page.locator('#erp-app').isVisible(),false);
   await page.evaluate(()=>window.roleAllowed=true); await login();
-  await page.waitForFunction(()=>document.getElementById('erp-app').style.display==='flex');
+  await page.waitForFunction(()=>document.getElementById('erp-app').style.display==='flex');await require('./lazy-fixtures.cjs').initializeAuthorized(page);
   assert.ok((await page.evaluate(()=>authCalls)).includes('role:taxiqaid_roles'));
   // All sidebar destinations remain usable, including grouped pages.
   const views=await page.locator('.sidebar-menu li[data-view]').evaluateAll(items=>items.map(item=>item.dataset.view));

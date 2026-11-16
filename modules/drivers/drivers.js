@@ -41,26 +41,26 @@
 
       const fullName = driver["Full Name"] || driver["name"] || "Driver";
       document.getElementById("profile-driver-name").textContent = fullName + " - Profile";
-      document.getElementById("val-iqama").innerHTML = driver["Iqama Number"] || driver["iqama"] || "-";
-      document.getElementById("val-name").innerHTML = fullName;
-      document.getElementById("val-nationality").innerHTML = driver["Nationality"] || driver["nationality"] || "-";
-      document.getElementById("val-passport").innerHTML = driver["Passport Number"] || driver["passport number"] || "-";
-      document.getElementById("val-tid").innerHTML = driver["TID"] || driver["tid"] || "-";
-      document.getElementById("val-passport-exp").innerHTML = formatDateForDisplay(driver["Passport Expiry Date"] || driver["passport expiry date"]);
-      document.getElementById("val-iqama-issue").innerHTML = formatDateForDisplay(driver["Iqama Issue Date"] || driver["iqama issue date"]);
-      document.getElementById("val-dob").innerHTML = formatDateForDisplay(driver["Date of Birth"] || driver["date of birth"],{calendar:true});
-      document.getElementById("val-iqama-exp").innerHTML = formatDateForDisplay(driver["Iqama Expiry Date"] || driver["iqama expiry date"]);
-      document.getElementById("val-work-start").innerHTML = formatDateForDisplay(driver["Employment Start Date"] || driver["employment start date"]);
-      document.getElementById("val-phone").innerHTML = driver["Phone Number"] || driver["phone number"] || "-";
-      document.getElementById("val-driver-id").innerHTML = driver["Driver ID"] || driver["driver id"] || "-";
-      document.getElementById("val-arrangement").innerHTML = driver["Arrangement"] || driver["arrangement"] || "-";
+      document.getElementById("val-iqama").textContent = driver["Iqama Number"] || driver["iqama"] || "-";
+      document.getElementById("val-name").textContent = fullName;
+      document.getElementById("val-nationality").textContent = driver["Nationality"] || driver["nationality"] || "-";
+      document.getElementById("val-passport").textContent = driver["Passport Number"] || driver["passport number"] || "-";
+      document.getElementById("val-tid").textContent = driver["TID"] || driver["tid"] || "-";
+      document.getElementById("val-passport-exp").textContent = formatDateForDisplay(driver["Passport Expiry Date"] || driver["passport expiry date"]);
+      document.getElementById("val-iqama-issue").textContent = formatDateForDisplay(driver["Iqama Issue Date"] || driver["iqama issue date"]);
+      document.getElementById("val-dob").textContent = formatDateForDisplay(driver["Date of Birth"] || driver["date of birth"],{calendar:true});
+      document.getElementById("val-iqama-exp").textContent = formatDateForDisplay(driver["Iqama Expiry Date"] || driver["iqama expiry date"]);
+      document.getElementById("val-work-start").textContent = formatDateForDisplay(driver["Employment Start Date"] || driver["employment start date"]);
+      document.getElementById("val-phone").textContent = driver["Phone Number"] || driver["phone number"] || "-";
+      document.getElementById("val-driver-id").textContent = driver["Driver ID"] || driver["driver id"] || "-";
+      document.getElementById("val-arrangement").textContent = driver["Arrangement"] || driver["arrangement"] || "-";
 
       const licenseVal = driver["KSA Driving License Date"] || driver["ksa driving license date"];
-      document.getElementById("val-license-date").innerHTML = (licenseVal && licenseVal !== "Not Yet") ? formatDateForDisplay(licenseVal) : "Not Yet";
+      document.getElementById("val-license-date").textContent = (licenseVal && licenseVal !== "Not Yet") ? formatDateForDisplay(licenseVal) : "Not Yet";
 
-      document.getElementById("val-shift").innerHTML = driver["Shift"] || driver["shift"] || "-";
-      document.getElementById("val-car-plate").innerHTML = driver["Car Plate"] || driver["car plate"] || "-";
-      document.getElementById("val-status").innerHTML = driver["Status"] || driver["status"] || "-";
+      document.getElementById("val-shift").textContent = driver["Shift"] || driver["shift"] || "-";
+      document.getElementById("val-car-plate").textContent = driver["Car Plate"] || driver["car plate"] || "-";
+      document.getElementById("val-status").textContent = driver["Status"] || driver["status"] || "-";
 
       profileContainer.style.display = "block";
     }
@@ -73,24 +73,12 @@
       cancelEditBtn.style.display = "inline-block";
 
       const d = currentActiveDriver;
-      document.getElementById("val-phone").innerHTML = `<input type="text" id="edit-phone" value="${d["Phone Number"] || d["phone number"] || ''}">`;
-
-      const arrVal = d["Arrangement"] || d["arrangement"] || "";
-      document.getElementById("val-arrangement").innerHTML = `<select id="edit-arrangement"><option value="Salary" ${arrVal==="Salary"?"selected":""}>Salary</option><option value="270 SAR per day" ${arrVal==="270 SAR per day"?"selected":""}>270 SAR per day</option></select>`;
-
-      const shiftVal = d["Shift"] || d["shift"] || "";
-      document.getElementById("val-shift").innerHTML = `<select id="edit-shift"><option value="Night Shift" ${shiftVal==="Night Shift"?"selected":""}>Night Shift</option><option value="Day Shift" ${shiftVal==="Day Shift"?"selected":""}>Day Shift</option></select>`;
-
-      let plateOptions = `<option value="">-- Unassigned --</option>`;
-      fleetDatabase.forEach(v => {
-        const vPlate = v["Plate"] || v["plate"];
-        const sel = (normalizePlate(d["Car Plate"] || d["car plate"]) === normalizePlate(vPlate)) ? "selected" : "";
-        plateOptions += `<option value="${vPlate}" ${sel}>${vPlate} (${v["Model"] || v["model"]})</option>`;
-      });
-      document.getElementById("val-car-plate").innerHTML = `<select id="edit-car-plate">${plateOptions}</select>`;
-
-      const statusVal = d["Status"] || d["status"] || "";
-      document.getElementById("val-status").innerHTML = `<select id="edit-status"><option value="Available" ${statusVal==="Available"?"selected":""}>Available</option><option value="Not Available" ${statusVal==="Not Available"?"selected":""}>Not Available</option><option value="No Longer in the Project" ${statusVal==="No Longer in the Project"?"selected":""}>No Longer in the Project</option></select>`;
+      TaxiQaidDOM.field('val-phone',{id:'edit-phone',value:d['Phone Number']||d['phone number']||''});
+      const select=(host,id,value,values)=>TaxiQaidDOM.field(host,{id,value,options:values.map(value=>({value}))});
+      select('val-arrangement','edit-arrangement',d.Arrangement||d.arrangement||'', ['Salary','270 SAR per day']);
+      select('val-shift','edit-shift',d.Shift||d.shift||'', ['Night Shift','Day Shift']);
+      TaxiQaidDOM.field('val-car-plate',{id:'edit-car-plate',value:d['Car Plate']||d['car plate']||'',options:[{value:'',label:'-- Unassigned --'},...fleetDatabase.map(v=>({value:v.Plate||v.plate,label:(v.Plate||v.plate)+' ('+(v.Model||v.model||'')+')'}))]});
+      select('val-status','edit-status',d.Status||d.status||'', ['Available','Not Available','No Longer in the Project']);
     }
 
     async function saveEditedDriver() {
@@ -107,8 +95,9 @@
     });
 
 // Load records and update the synchronization badge for this module.
-    async function fetchDrivers() {
+    async function refreshDriverPreview() {
   driversDatabase = [];
+  driverSearch.clear();
   document.getElementById("sync-status").textContent = "No records available — database not connected";
 
   return false;
@@ -126,3 +115,5 @@
       XLSX.utils.book_append_sheet(workbook, worksheet, "Drivers Database");
       XLSX.writeFile(workbook, "Drivers_Database.xlsx");
     }));
+
+TaxiQaidModules.register('drivers',{onEnter:async()=>{await fetchDrivers();return {connected:false,message:'Database integration pending — no operational source is connected.'};},onReset:()=>{driversDatabase=[];driverSearch.clear();currentActiveDriver=null;profileContainer.style.display='none';document.querySelectorAll('#driver-profile-container [id^=val-]').forEach(e=>e.replaceChildren());}});

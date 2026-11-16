@@ -6,7 +6,7 @@
 
 The application is pure HTML, CSS, and JavaScript. It uses a **feature-folder architecture** rather than a build tool or a frontend framework.
 
-`index.html` loads CSS and external browser libraries, then `shared/bootstrap.js`. Bootstrap retrieves the HTML fragments over HTTP(S), inserts all screen sections and their modals into the DOM, and only then fetches the classic JavaScript files concurrently while executing them in their declared order (`async=false`). This preserves the existing classic-script global functions and event listeners. Do not add independent `<script>` tags to feature HTML; put feature logic into its `.js` file.
+`index.html` loads shared/login CSS and the pinned local authentication SDK, then `shared/bootstrap.js`. Bootstrap initializes the login and shared shell only. Verified navigation lazily loads each allowed module’s HTML/CSS/classic scripts through `shared/module-runtime.js`, preserving dependency order and one-time initialization. Run `node scripts/build-asset-versions.cjs` after asset changes; [the runtime guide](FRONTEND_RUNTIME.md) documents lifecycle, cache/integrity and separate Driver admission. This preserves the existing classic-script global functions and event listeners. Do not add independent `<script>` tags to feature HTML; put feature logic into its `.js` file.
 
 ## 2. Feature folders
 

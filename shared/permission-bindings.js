@@ -1,6 +1,6 @@
 /** Stable selectors map real business controls to capabilities; local navigation/clear/cancel is excluded. */
 const TaxiQaidPermissionBindings = (() => {
-  const bindings=[];
+  const bindings=[];const permissionHidden=new WeakMap(),readonlyControls=new WeakMap();
   const bind=(selector,...keys)=>bindings.push({selector,keys});
   const map={
     'refresh-fleet-btn':'fleet.view','export-fleet-excel-btn':'fleet.export','edit-fleet-btn':'fleet.edit',
@@ -34,7 +34,7 @@ const TaxiQaidPermissionBindings = (() => {
   bind('#appeals-save',()=>{const form=document.getElementById('appeals-form');return ['driver-appeals.view',...[...form.querySelectorAll('select')].filter(select=>!select.disabled&&select.value!==select.dataset.originalValue).map(select=>({'appeal-detail-department':'driver-appeals.assign','appeal-detail-classification':'driver-appeals.classify','appeal-detail-status':'driver-appeals.update-status'}[select.id]))];});
   bind('#add-acc-maintenance','accidents.send-maintenance');bind('#bdw-send-to-maintenance','breakdowns.send-maintenance');
   bind('#care-status',()=>document.getElementById('care-status').value==='Closed'?'customer-care.close':'customer-care.edit');
-  bind('#um-create-submit',()=>document.getElementById('um-user-form').dataset.mode==='edit'?'user-management.edit-user':'user-management.create-user');bind('#um-request-refresh,#um-request-next','user-management.profile-requests.view');bind('#um-user-next','user-management.view');bind('#um-recovery-refresh','user-management.edit-user');
+  bind('#um-create-submit',()=>document.getElementById('um-user-form').dataset.mode==='edit'?'user-management.edit-user':'user-management.create-user');bind('#um-request-refresh,#um-request-next','user-management.profile-requests.view');bind('#um-user-next','user-management.view');bind('#um-recovery-refresh,#um-delete-user,#um-delete-confirm,#um-delete-pending','user-management.edit-user');
   bind('#roster-manage-stops','roster.manage-stops');bind('#roster-day-file,#roster-night-file','roster.import');bind('#roster-pdf-open','roster.download-pdf');bind('#roster-whatsapp','roster.view');bind('#roster-whatsapp-modal input,#roster-whatsapp-settings-modal input','roster.whatsapp-config');
   bind('#training-drivers-table input,#training-select-filtered,#training-deselect-all,#training-selected-table button','training.manage-enrollment');
   bind('#care-save',()=>document.getElementById('care-id').value?'customer-care.edit':'customer-care.create');
@@ -62,25 +62,26 @@ const TaxiQaidPermissionBindings = (() => {
     const elements=[...document.querySelectorAll('button,select,input,a,form,.view-section,[role=tabpanel],.modal-overlay')].filter(element=>element._taxiqaidPermissionKeys);
     elements.forEach(element=>{
       const keys=keysFor(element);element.dataset.permissionBound=keys.join(' ');
-      const denied=Boolean(context?.verified&&!keys.every(key=>TaxiQaidAccess.can(key,resource(element))));
+      const legacy=!context?.verified&&window.TAXIQAID_DEDICATED_AUTH?.enabled!==true&&TaxiQaidAccess.hasLegacyManagementSession();
+      const adminWrite=keys.some(key=>key.startsWith('user-management.')&&!['user-management.view','user-management.profile-requests.view'].includes(key)||['driver-profile.approve','driver-profile.reject'].includes(key));
+      const denied=!legacy&&(!context?.verified||!keys.every(key=>TaxiQaidAccess.can(key,resource(element)))||(adminWrite&&context.role!=='super_admin'));
+      if(element.tagName==='FORM'){element.toggleAttribute('data-permission-denied',denied);for(const control of element.querySelectorAll('input,select,textarea')){if(denied){if(!readonlyControls.has(control))readonlyControls.set(control,{disabled:control.disabled,readOnly:control.readOnly});if(control.tagName==='SELECT'||['checkbox','radio'].includes(control.type))control.disabled=true;else control.readOnly=true;}else if(readonlyControls.has(control)){Object.assign(control,readonlyControls.get(control));readonlyControls.delete(control);}}element.dataset.permissionBound=keys.join(' ');return;}
+      if(denied){if(!permissionHidden.has(element))permissionHidden.set(element,element.hidden);if(!element.hidden)element.hidden=true;element.inert=true;}else if(permissionHidden.has(element)){element.hidden=permissionHidden.get(element);permissionHidden.delete(element);element.inert=false;}
       element.toggleAttribute('data-permission-denied',denied);
       if(element.matches('button,select,input,a')){element.inert=denied;if(denied)element.setAttribute('aria-disabled','true');else element.removeAttribute('aria-disabled');}
     });
-    // Only a verified Driver context invokes driver routing; legacy management admission stays separate.
-    document.getElementById('erp-app').hidden=context?.accountType==='Driver';
-    if(context?.accountType==='Management') {
-      const active=document.querySelector('.sidebar-menu li.active[data-view] a');
-      if(active?.hasAttribute('data-permission-denied'))document.querySelector('.sidebar-menu li[data-view] a:not([data-permission-denied])')?.click();
-    }
+    document.querySelectorAll('.sidebar-menu li[data-view]').forEach(item=>{const denied=Boolean(item.querySelector('a')?.hasAttribute('data-permission-denied'));if(item.hidden!==denied)item.hidden=denied;});
+    document.querySelectorAll('details.sidebar-group').forEach(group=>{const empty=![...group.querySelectorAll('li[data-view]')].some(item=>!item.hidden);if(group.hidden!==empty)group.hidden=empty;});
+    document.querySelectorAll('[role=tablist]').forEach(list=>{const selected=list.querySelector('[role=tab][aria-selected=true]');if(selected?.hasAttribute('data-permission-denied'))[...list.querySelectorAll('[role=tab]')].find(t=>!t.hidden&&!t.hasAttribute('data-permission-denied'))?.click();});
   }
   let queued=false;
   function schedule(){if(queued)return;queued=true;queueMicrotask(()=>{queued=false;reconcile();});}
   ['click','keydown','change','submit'].forEach(type=>document.addEventListener(type,event=>{
     if(type==='keydown'&&['Tab','Escape'].includes(event.key))return;
-    const element=event.target.closest?.('[data-permission-bound]');
-    if(TaxiQaidAccess.getContext()?.verified&&element&&!keysFor(element).every(key=>TaxiQaidAccess.can(key,resource(element)))){event.preventDefault();event.stopImmediatePropagation();}
+    const element=event.target.closest?.('[data-permission-bound]');if(element?.tagName==='FORM'&&type!=='submit')return;
+    if(element&&!(!TaxiQaidAccess.getContext()?.verified&&window.TAXIQAID_DEDICATED_AUTH?.enabled!==true&&TaxiQaidAccess.hasLegacyManagementSession())&&!keysFor(element).every(key=>TaxiQaidAccess.can(key,resource(element)))){event.preventDefault();event.stopImmediatePropagation();}
   },true));
   TaxiQaidAccess.subscribe(schedule);
-  new MutationObserver(schedule).observe(document.getElementById('workspace'),{childList:true,subtree:true});
+  new MutationObserver(schedule).observe(document.getElementById('workspace'),{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});
   schedule();return Object.freeze({bindings,reconcile});
 })();

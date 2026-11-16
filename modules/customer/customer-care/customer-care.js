@@ -88,3 +88,5 @@ const TaxiQaidCustomerCare = (() => {
   });
   return Object.freeze({setAuthorizedSnapshot,clearPrivateData});
 })();
+
+TaxiQaidModules.register('customer-care',{onReset:()=>{TaxiQaidCustomerCare.clearPrivateData();}});

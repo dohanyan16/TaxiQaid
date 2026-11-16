@@ -65,3 +65,5 @@ const TaxiQaidHelpdesk = (() => {
   });
   return Object.freeze({setAuthorizedSnapshot,clearPrivateData});
 })();
+
+TaxiQaidModules.register('helpdesk',{onReset:()=>{TaxiQaidHelpdesk.clearPrivateData();}});

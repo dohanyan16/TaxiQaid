@@ -2,7 +2,7 @@
 
 async function requireAuthorizedUser() {
   if(window.TAXIQAID_DEDICATED_AUTH?.enabled === true){
-    const context=await TaxiQaidDedicatedLogin.auth.refresh();
+    const context=TaxiQaidDedicatedLogin.auth.getContext?.()||await TaxiQaidDedicatedLogin.auth.refresh();
     return {id:context.uid,fullName:context.fullName};
   }
   const { data: userData, error: userError } = await supabaseClient.auth.getUser();

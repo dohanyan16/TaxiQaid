@@ -83,8 +83,8 @@
 <div class="wizard-step active-step" data-step="1">
 <div class="wizard-step-title">Select Inspection Type</div>
 <div class="choice-boxes-container">
-<div class="choice-box selected" onclick="selectWizardChoice('tc-type', 'Pre-Trip', this)">Pre-Trip Check</div>
-<div class="choice-box" onclick="selectWizardChoice('tc-type', 'Post-Trip', this)">Post-Trip Check</div>
+<div class="choice-box selected" data-wizard-key="tc-type" data-wizard-value="Pre-Trip">Pre-Trip Check</div>
+<div class="choice-box" data-wizard-key="tc-type" data-wizard-value="Post-Trip">Post-Trip Check</div>
 </div>
 <input id="tc-type" required="" type="hidden" value="Pre-Trip"/>
 </div>
@@ -122,8 +122,8 @@
 <div class="wizard-step" data-step="3">
 <div class="wizard-step-title">Driver has all valid documents?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_documents', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_documents', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_documents" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_documents" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_documents" required="" type="hidden" value=""/>
 </div>
@@ -131,8 +131,8 @@
 <div class="wizard-step" data-step="4">
 <div class="wizard-step-title">Driver wearing the required uniform?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_uniform', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_uniform', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_uniform" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_uniform" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_uniform" required="" type="hidden" value=""/>
 </div>
@@ -140,8 +140,8 @@
 <div class="wizard-step" data-step="5">
 <div class="wizard-step-title">All doors working properly (front / rear)?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_doors', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_doors', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_doors" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_doors" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_doors" required="" type="hidden" value=""/>
 </div>
@@ -149,8 +149,8 @@
 <div class="wizard-step" data-step="6">
 <div class="wizard-step-title">Trunk opens and is in working condition?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_trunk', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_trunk', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_trunk" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_trunk" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_trunk" required="" type="hidden" value=""/>
 </div>
@@ -158,8 +158,8 @@
 <div class="wizard-step" data-step="7">
 <div class="wizard-step-title">Car bonnet is in working condition?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_bonnet', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_bonnet', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_bonnet" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_bonnet" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_bonnet" required="" type="hidden" value=""/>
 </div>
@@ -167,8 +167,8 @@
 <div class="wizard-step" data-step="8">
 <div class="wizard-step-title">Dashboard is undamaged and buttons are functioning?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_dashboard', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_dashboard', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_dashboard" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_dashboard" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_dashboard" required="" type="hidden" value=""/>
 </div>
@@ -176,8 +176,8 @@
 <div class="wizard-step" data-step="9">
 <div class="wizard-step-title">Mirrors are okay and correctly adjusted?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_mirrors', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_mirrors', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_mirrors" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_mirrors" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_mirrors" required="" type="hidden" value=""/>
 </div>
@@ -185,8 +185,8 @@
 <div class="wizard-step" data-step="10">
 <div class="wizard-step-title">Horn is working properly?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_horn', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_horn', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_horn" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_horn" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_horn" required="" type="hidden" value=""/>
 </div>
@@ -194,8 +194,8 @@
 <div class="wizard-step" data-step="11">
 <div class="wizard-step-title">Seats, including seat belts and accessories, are okay?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_seats', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_seats', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_seats" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_seats" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_seats" required="" type="hidden" value=""/>
 </div>
@@ -203,8 +203,8 @@
 <div class="wizard-step" data-step="12">
 <div class="wizard-step-title">A/C is working properly?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_ac', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_ac', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_ac" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_ac" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_ac" required="" type="hidden" value=""/>
 </div>
@@ -212,8 +212,8 @@
 <div class="wizard-step" data-step="13">
 <div class="wizard-step-title">Steering (including ESC) and odometer are okay?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_steering', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_steering', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_steering" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_steering" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_steering" required="" type="hidden" value=""/>
 </div>
@@ -221,8 +221,8 @@
 <div class="wizard-step" data-step="14">
 <div class="wizard-step-title">MDT and screen are working properly?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_mdt', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_mdt', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_mdt" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_mdt" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_mdt" required="" type="hidden" value=""/>
 </div>
@@ -230,8 +230,8 @@
 <div class="wizard-step" data-step="15">
 <div class="wizard-step-title">Charging port is present and functional?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_charging', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_charging', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_charging" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_charging" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_charging" required="" type="hidden" value=""/>
 </div>
@@ -239,8 +239,8 @@
 <div class="wizard-step" data-step="16">
 <div class="wizard-step-title">CCTV cameras are okay and direction is correct?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_cctv', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_cctv', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_cctv" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_cctv" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_cctv" required="" type="hidden" value=""/>
 </div>
@@ -248,8 +248,8 @@
 <div class="wizard-step" data-step="17">
 <div class="wizard-step-title">All internal / external lights are available and working?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_lights', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_lights', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_lights" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_lights" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_lights" required="" type="hidden" value=""/>
 </div>
@@ -257,8 +257,8 @@
 <div class="wizard-step" data-step="18">
 <div class="wizard-step-title">Vehicle housekeeping is good internally and externally?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_housekeeping', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_housekeeping', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_housekeeping" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_housekeeping" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_housekeeping" required="" type="hidden" value=""/>
 </div>
@@ -266,8 +266,8 @@
 <div class="wizard-step" data-step="19">
 <div class="wizard-step-title">Wipers are working properly?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_wipers', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_wipers', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_wipers" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_wipers" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_wipers" required="" type="hidden" value=""/>
 </div>
@@ -275,8 +275,8 @@
 <div class="wizard-step" data-step="20">
 <div class="wizard-step-title">No oil leakage in the engine section?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_oil_leak', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_oil_leak', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_oil_leak" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_oil_leak" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_oil_leak" required="" type="hidden" value=""/>
 </div>
@@ -284,8 +284,8 @@
 <div class="wizard-step" data-step="21">
 <div class="wizard-step-title">No other visible leakage in the engine section?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_other_leak', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_other_leak', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_other_leak" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_other_leak" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_other_leak" required="" type="hidden" value=""/>
 </div>
@@ -293,8 +293,8 @@
 <div class="wizard-step" data-step="22">
 <div class="wizard-step-title">Tyres are in good condition and spare tyre is available?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_tyres', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_tyres', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_tyres" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_tyres" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_tyres" required="" type="hidden" value=""/>
 </div>
@@ -302,8 +302,8 @@
 <div class="wizard-step" data-step="23">
 <div class="wizard-step-title">All brakes, including ABS, are working properly?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_brakes', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_brakes', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_brakes" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_brakes" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_brakes" required="" type="hidden" value=""/>
 </div>
@@ -311,8 +311,8 @@
 <div class="wizard-step" data-step="24">
 <div class="wizard-step-title">Fire extinguisher, safety triangle and first-aid kit are available?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_safety', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_safety', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_safety" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_safety" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_safety" required="" type="hidden" value=""/>
 </div>
@@ -320,8 +320,8 @@
 <div class="wizard-step" data-step="25">
 <div class="wizard-step-title">Front and rear number plates are available and secure?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_plates', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_plates', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_plates" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_plates" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_plates" required="" type="hidden" value=""/>
 </div>
@@ -329,8 +329,8 @@
 <div class="wizard-step" data-step="26">
 <div class="wizard-step-title">Toolkit bag, ancillary equipment and air pump are available?</div>
 <div class="choice-boxes-container">
-<div class="choice-box" onclick="selectWizardChoice('tc_toolkit', 'OK', this)">OK</div>
-<div class="choice-box" onclick="selectWizardChoice('tc_toolkit', 'Defect', this)">Defect</div>
+<div class="choice-box" data-wizard-key="tc_toolkit" data-wizard-value="OK">OK</div>
+<div class="choice-box" data-wizard-key="tc_toolkit" data-wizard-value="Defect">Defect</div>
 </div>
 <input id="tc_toolkit" required="" type="hidden" value=""/>
 </div>

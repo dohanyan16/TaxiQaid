@@ -13,7 +13,7 @@
  }
  function user(){return {id:uid,email:'local-fixture@example.invalid',role:'authenticated',aud:'authenticated',email_confirmed_at:'2026-01-01T00:00:00Z',factors:[]};}
  function fill(){for(const [id,value]of [['username',username],['password',password],['portal-iqama','1000000001'],['portal-password',password]]){const input=document.getElementById(id);if(input){input.readOnly=true;input.value=value;input.autocomplete='off';}}}
- window.TaxiQaidLocalPilot=Object.freeze({snapshot:()=>({mode,counts:{...counts},liveAuthenticationVerified:false}),setMode:value=>{if(!['success','logout-error','access-denied','refresh-error','wrong-user','broker-denied','broker-unavailable','broker-network','permission-deny'].includes(value))throw new Error('Unknown local fixture mode.');mode=value;},setLease:ms=>{if(!Number.isInteger(ms)||ms<50||ms>60000)throw new Error('Invalid local fixture lease.');leaseMs=ms;},fill,holdBroker:()=>{holdBroker=true;},releaseBroker:()=>{holdBroker=false;heldBroker?.();heldBroker=null;},holdRefresh:()=>{holdRefresh=true;},releaseRefresh:()=>{holdRefresh=false;heldRefresh?.();heldRefresh=null;},allRefreshRevoked:()=>[...refreshes.values()].every(row=>row.revoked)});
+ window.TaxiQaidLocalPilot=Object.freeze({snapshot:()=>({mode,counts:{...counts},liveAuthenticationVerified:false}),setMode:value=>{if(!['success','logout-error','access-denied','refresh-error','wrong-user','broker-denied','broker-unavailable','broker-network','permission-deny','driver-account'].includes(value))throw new Error('Unknown local fixture mode.');mode=value;},setLease:ms=>{if(!Number.isInteger(ms)||ms<50||ms>60000)throw new Error('Invalid local fixture lease.');leaseMs=ms;},fill,holdBroker:()=>{holdBroker=true;},releaseBroker:()=>{holdBroker=false;heldBroker?.();heldBroker=null;},holdRefresh:()=>{holdRefresh=true;},releaseRefresh:()=>{holdRefresh=false;heldRefresh?.();heldRefresh=null;},allRefreshRevoked:()=>[...refreshes.values()].every(row=>row.revoked)});
  window.fetch=async(input,init={})=>{
   const request=input instanceof Request?new Request(input,init):new Request(new URL(input instanceof URL?input.href:input,location.href),init),target=new URL(request.url);
   if(target.origin===location.origin)return nativeFetch(input,init);
@@ -53,7 +53,7 @@
   }
   if(target.pathname==='/functions/v1/get-my-access'&&request.method==='GET'){
    counts.access++;if(mode==='access-denied')return json({error:'Synthetic access rejected.'},403);
-   return json({version:1,uid,account:{uid,type:'management',status:'active',role:'super_admin',username,fullName:'Local Synthetic Master'},departments:['it'],permissions:{roleDefaults:catalog.filter(p=>p.audience!=='Driver').map(p=>p.key),overrides:mode==='permission-deny'?{'fuel.view':'deny','fuel.create':'allow'}:{}},scope:{departments:[],driverRecordRefs:[],documentIds:[]},validUntil:Date.now()+leaseMs});
+   return json({version:1,uid,account:{uid,type:mode==='driver-account'?'driver':'management',status:'active',role:'super_admin',username,fullName:'Local Synthetic Master'},departments:['it'],permissions:{roleDefaults:catalog.filter(p=>p.audience!=='Driver').map(p=>p.key),overrides:mode==='permission-deny'?{'fuel.view':'deny','fuel.create':'allow'}:{}},scope:{departments:[],driverRecordRefs:[],documentIds:[]},validUntil:Date.now()+leaseMs});
   }
   counts.blocked++;throw new Error('Local preview blocks that request.');
  };

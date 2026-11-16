@@ -334,9 +334,11 @@ const TaxiQaidRoster = (() => {
     status('Private roster cleared from this session.');
   }
   $('logout-button').addEventListener('click',clearPrivateData);window.addEventListener('pagehide',clearPrivateData);
-  const ready=fetch('modules/people/roster/locations.json').then(response=>{if(!response.ok)throw new Error('Approved location catalog unavailable.');return response.json();}).then(value=>{
+  const ready=fetch(TaxiQaidModules.asset('modules/people/roster/locations.json')).then(response=>{if(!response.ok)throw new Error('Approved location catalog unavailable.');return response.json();}).then(value=>{
     reference=model.validateLocations(value);catalog=reference;catalogLoaded=true;renderLocations();renderMappings();updateButtons();
   }).catch(error=>{status(error.message+' Roster generation is unavailable until the approved catalog loads.');updateButtons();});
   renderDaily();renderWeekly();renderPersonal();updateButtons();
   return Object.freeze({ready,clearPrivateData});
 })();
+
+TaxiQaidModules.register('roster',{onReset:()=>{TaxiQaidRoster.clearPrivateData();}});

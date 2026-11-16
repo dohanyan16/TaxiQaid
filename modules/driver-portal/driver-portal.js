@@ -10,8 +10,8 @@ const TaxiQaidDriverPortal = (() => {
   const countries=policy.countries();let selectedCountry=null;
   const countrySearch=TaxiQaidSearch.create({input:'portal-phone-country',fields:['country','prefix','code'],getData:()=>countries,getIdentifier:country=>country.code,label:country=>country.country+' ('+country.prefix+')',onSelect:country=>{selectedCountry=country.code;$('portal-phone-country').value=country.country+' ('+country.prefix+')';}});
   $('portal-phone-country').addEventListener('input',()=>{selectedCountry=null;});
-  const previewSearch=TaxiQaidSearch.create({input:'portal-preview-driver',fields:['iqama','name'],getData:()=>previewDrivers,getIdentifier:driver=>driver.driverRecordRef,onSelect:driver=>{selectedPreview=driver;$('portal-preview-open').disabled=!TaxiQaidAccess.can('driver-portal.preview',{driverRecordRef:driver.driverRecordRef});}});
-  $('portal-preview-driver').addEventListener('input',()=>{selectedPreview=null;$('portal-preview-open').disabled=true;});
+  const previewSearch=$('portal-preview-driver')?TaxiQaidSearch.create({input:'portal-preview-driver',fields:['iqama','name'],getData:()=>previewDrivers,getIdentifier:driver=>driver.driverRecordRef,onSelect:driver=>{selectedPreview=driver;$('portal-preview-open').disabled=!TaxiQaidAccess.can('driver-portal.preview',{driverRecordRef:driver.driverRecordRef});}}):{clear(){}};
+  $('portal-preview-driver')?.addEventListener('input',()=>{selectedPreview=null;$('portal-preview-open').disabled=true;});
   TaxiQaidPeopleUI.tabs($('portal-content'));
   function revoke() {objectUrls.forEach(url=>URL.revokeObjectURL(url));objectUrls=[];worker?.terminate();worker=null;documentState=null;}
   function clear() {
@@ -26,7 +26,7 @@ const TaxiQaidDriverPortal = (() => {
     $('portal-content').hidden=true;$('driver-portal').hidden=true;
   }
   function shell(preview,loggedIn) {
-    mode=preview?'management-preview':'driver';$('driver-portal').hidden=false;$('erp-app').style.display='none';$('login-screen').style.display='none';
+    mode=preview?'management-preview':'driver';$('driver-portal').hidden=false;if($('erp-app'))$('erp-app').style.display='none';if($('login-screen'))$('login-screen').style.display='none';
     $('portal-login').hidden=loggedIn;$('portal-content').hidden=!loggedIn;$('portal-preview-banner').hidden=!preview;$('portal-return').hidden=!preview;
     $('portal-signout').hidden=preview;
     ['portal-proposed-name','portal-phone-country','portal-proposed-phone','portal-request-changes','portal-appeal-description','portal-submit-appeal'].forEach(id=>$(id).disabled=preview);
@@ -79,17 +79,17 @@ const TaxiQaidDriverPortal = (() => {
     });
   }
   function openLogin(){clear();shell(false,false);$('portal-iqama').focus();}
-  $('driver-signin-entry').addEventListener('click',openLogin);
-  $('portal-management-login').addEventListener('click',()=>{clear();$('login-screen').style.display='flex';});
+  $('driver-signin-entry')?.addEventListener('click',openLogin);
+  $('portal-management-login')?.addEventListener('click',()=>{clear();if($('login-screen'))$('login-screen').style.display='flex';});
   if(window.TAXIQAID_DEDICATED_AUTH?.enabled !== true)$('portal-login-form').addEventListener('submit',event=>{event.preventDefault();$('portal-password').value='';show('portal-login-status','Driver account authentication is not configured yet.');});
   $('portal-recovery').addEventListener('click',()=>show('portal-login-status','Secure account recovery integration pending. Contact your administrator.'));
-  $('portal-signout').addEventListener('click',async()=>{if(window.TAXIQAID_DEDICATED_AUTH?.enabled === true)await TaxiQaidDedicatedLogin.auth.logout();else await supabaseClient.auth.signOut();TaxiQaidAccess.reset();clear();$('erp-app').style.display='none';$('login-screen').style.display='flex';});
-  $('portal-return').addEventListener('click',()=>{clear();$('erp-app').hidden=false;$('erp-app').style.display='flex';});
-  $('portal-preview-empty').addEventListener('click',()=>{
+  $('portal-signout').addEventListener('click',async()=>{if(window.TAXIQAID_DEDICATED_AUTH?.enabled === true)await (window.TaxiQaidDriverEntry?.auth||TaxiQaidDedicatedLogin.auth).logout();else await supabaseClient.auth.signOut();TaxiQaidAccess.reset();clear();if($('erp-app'))$('erp-app').style.display='none';if($('login-screen'))$('login-screen').style.display='flex';});
+  $('portal-return').addEventListener('click',()=>{clear();if($('erp-app'))$('erp-app').hidden=false;if($('erp-app'))$('erp-app').style.display='flex';});
+  $('portal-preview-empty')?.addEventListener('click',()=>{
     if(!TaxiQaidAccess.hasLegacyManagementSession()&&TaxiQaidAccess.getContext()?.accountType!=='Management')return;
     clear();shell(true,true);render();
   });
-  $('portal-preview-open').addEventListener('click',()=>{if(!selectedPreview||!TaxiQaidAccess.can('driver-portal.preview',{driverRecordRef:selectedPreview.driverRecordRef}))return;show('portal-preview-status','Authorized personal preview source integration pending.');});
+  $('portal-preview-open')?.addEventListener('click',()=>{if(!selectedPreview||!TaxiQaidAccess.can('driver-portal.preview',{driverRecordRef:selectedPreview.driverRecordRef}))return;show('portal-preview-status','Authorized personal preview source integration pending.');});
   $('portal-settings-form').addEventListener('submit',event=>{
     event.preventDefault();if(!permitted('request-changes'))return;
     try {policy.changes(packet.profile||{},$('portal-proposed-name').value,selectedCountry,$('portal-proposed-phone').value);show('portal-settings-status','Approval workflow pending — your changes have not been submitted.');}
@@ -121,7 +121,7 @@ const TaxiQaidDriverPortal = (() => {
   $('portal-confirm-sign').addEventListener('click',()=>{if(signable())show('portal-sign-status','Signature integration pending — document not signed.');});
   $('portal-download-schedule').addEventListener('click',()=>{
     if(!packet?.schedule||!(mode==='driver'?permitted('schedule.download'):previewCan('preview-download')))return;
-    const schedule=structuredClone(packet.schedule),currentEpoch=epoch;worker?.terminate();worker=new Worker('modules/people/roster/roster-worker.js');
+    const schedule=structuredClone(packet.schedule),currentEpoch=epoch;worker?.terminate();worker=new Worker(TaxiQaidModules.worker('modules/people/roster/roster-worker.js'));
     show('portal-schedule-status','Preparing your personal published schedule…');$('portal-download-schedule').disabled=true;
     worker.onmessage=event=>{
       if(currentEpoch!==epoch)return;
@@ -133,8 +133,8 @@ const TaxiQaidDriverPortal = (() => {
     worker.onerror=()=>{show('portal-schedule-status','The personal PDF could not be prepared.');worker?.terminate();worker=null;renderSchedule();};
     worker.postMessage({id:'personal-published',type:'pdf',driver:schedule.driver,week:schedule.week,catalog:schedule.catalog||[],publication:{version:schedule.version}});
   });
-  TaxiQaidAccess.subscribe(()=>{const wasPreview=mode==='management-preview'&&!$('driver-portal').hidden;clear();if(wasPreview&&TaxiQaidAccess.getContext()?.accountType==='Management')$('erp-app').style.display='flex';if(TaxiQaidAccess.getContext()?.accountType==='Driver'){$('erp-app').style.display='none';const hasAccess=TaxiQaidAccess.can('driver-portal.view');shell(false,hasAccess);if(hasAccess)render();else show('portal-login-status','Driver Portal access is unavailable for this account.');}});
-  if(location.hash==='#driver-portal')openLogin();
+  TaxiQaidAccess.subscribe(()=>{const wasPreview=mode==='management-preview'&&!$('driver-portal').hidden;clear();if(wasPreview&&TaxiQaidAccess.getContext()?.accountType==='Management')if($('erp-app'))$('erp-app').style.display='flex';if(TaxiQaidAccess.getContext()?.accountType==='Driver'){if($('erp-app'))$('erp-app').style.display='none';const hasAccess=TaxiQaidAccess.can('driver-portal.view');shell(false,hasAccess);if(hasAccess)render();else show('portal-login-status','Driver Portal access is unavailable for this account.');}});
+
   return Object.freeze({openLogin,viewDocument,
     setAuthorizedSnapshot(source,{loadDocument}={}) {
       const context=TaxiQaidAccess.getContext(),preview=context?.accountType==='Management';

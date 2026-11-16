@@ -1,5 +1,9 @@
 # TaxiQaid workflow specification
 
+## Current frontend runtime
+
+Management and Driver entries are separate. The frontend uses permission-bound lazy modules, closed authorized navigation groups, current-lease authorization and refresh-on-entry. See [the frontend runtime](FRONTEND_RUNTIME.md). Google Sheets remains disconnected; [the future operational adapter design](OPERATIONAL_SHEETS_ARCHITECTURE.md) prepares one private DATA/CHANGE_LOG workbook per approved domain without creating or connecting any source. The following historical phase descriptions do not override the current runtime or authorize backend changes.
+
 ## Current phase and boundaries
 
 This phase is **frontend-only**. Operational collections start empty. All legacy spreadsheet URLs are disconnected; legacy transport helpers reject without network access. Login and navigation do not synchronize data. Refresh displays the unconnected state. Save, Delete, Export and Send controls in the previously disconnected business modules never persist, download operational data or report success. **Roster Management is an explicitly authorized exception for local administrator-selected Excel processing and PDF/ZIP/location-JSON downloads only; it does not persist or publish operational records.** Unsaved fields, dropdowns, dialogs, inspection scoring and Maintenance tabs are interface previews only. There are no replacement localStorage or IndexedDB databases.

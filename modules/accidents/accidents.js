@@ -103,32 +103,7 @@
 
       items.forEach(acc => {
         const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${acc["Accident ID"] || acc["accident id"] || "-"}</td>
-          <td>${formatDateForDisplay(acc["Date"] || acc["date"])}</td>
-          <td>${formatTimeForDisplay(acc["Time"] || acc["time"])}</td>
-          <td>${formatDateForDisplay(acc["Reporting Date"] || acc["reporting date"])}</td>
-          <td>${formatTimeForDisplay(acc["Reporting Time"] || acc["reporting time"])}</td>
-          <td>${acc["Reported By"] || acc["reported by"] || "-"}</td>
-          <td><strong>${acc["Car Plate"] || acc["car plate"] || "-"}</strong></td>
-          <td>${acc["Car Model"] || acc["car model"] || "-"}</td>
-          <td>${acc["Driver Iqama"] || acc["driver iqama"] || "-"}</td>
-          <td>${acc["Driver Name"] || acc["driver name"] || "-"}</td>
-          <td>${acc["Accident Location"] || acc["accident location"] || "-"}</td>
-          <td>${acc["Severity"] || acc["severity"] || "-"}</td>
-          <td>${String(acc["Send to Maintenance"] || acc["send to maintenance"] || "").trim() === "Yes" ? "Yes" : String(acc["Send to Maintenance"] || acc["send to maintenance"] || "").trim() === "No" ? "No" : "-"}</td>
-          <td>${acc["Maintenance Status"] || "Not Requested"}</td>
-          <td>${acc["Injured"] || acc["injured"] || "-"}</td>
-          <td>${acc["Najm"] || acc["najm"] || "-"}</td>
-          <td>${acc["Najm Report Status"] || acc["najm report status"] || "-"}</td>
-          <td>${acc["Mistake Percentage"] !== undefined ? acc["Mistake Percentage"] + "%" : "-"}</td>
-          <td>${acc["Investigation Conducted"] || acc["investigation conducted"] || "-"}</td>
-          <td>${acc["Investigation Status"] || acc["investigation status"] || "-"}</td>
-          <td>${acc["Accident Type"] || acc["accident type"] || "-"}</td>
-          <td>${acc["Accident Description"] || acc["accident description"] || "-"}</td>
-          <td>${acc["Root Causes"] || acc["root causes"] || "-"}</td>
-          <td>${acc["Damage Description"] || acc["damage description"] || "-"}</td>
-        `;
+        [acc["Accident ID"] || acc["accident id"] || "-",formatDateForDisplay(acc["Date"] || acc["date"]),formatTimeForDisplay(acc["Time"] || acc["time"]),formatDateForDisplay(acc["Reporting Date"] || acc["reporting date"]),formatTimeForDisplay(acc["Reporting Time"] || acc["reporting time"]),acc["Reported By"] || acc["reported by"] || "-",acc["Car Plate"] || acc["car plate"] || "-",acc["Car Model"] || acc["car model"] || "-",acc["Driver Iqama"] || acc["driver iqama"] || "-",acc["Driver Name"] || acc["driver name"] || "-",acc["Accident Location"] || acc["accident location"] || "-",acc["Severity"] || acc["severity"] || "-",String(acc["Send to Maintenance"] || acc["send to maintenance"] || "").trim() === "Yes" ? "Yes" : String(acc["Send to Maintenance"] || acc["send to maintenance"] || "").trim() === "No" ? "No" : "-",acc["Maintenance Status"] || "Not Requested",acc["Injured"] || acc["injured"] || "-",acc["Najm"] || acc["najm"] || "-",acc["Najm Report Status"] || acc["najm report status"] || "-",acc["Mistake Percentage"] !== undefined ? acc["Mistake Percentage"] + "%" : "-",acc["Investigation Conducted"] || acc["investigation conducted"] || "-",acc["Investigation Status"] || acc["investigation status"] || "-",acc["Accident Type"] || acc["accident type"] || "-",acc["Accident Description"] || acc["accident description"] || "-",acc["Root Causes"] || acc["root causes"] || "-",acc["Damage Description"] || acc["damage description"] || "-"].forEach((value,index)=>{const cell=document.createElement('td');const content=index===6?document.createElement('strong'):cell;content.textContent=String(value??'');if(content!==cell)cell.append(content);tr.append(cell);});
 
         tr.addEventListener("click", async () => {
           await Promise.all([fetchFleet(), fetchDrivers()]);
@@ -238,3 +213,5 @@
 
 
 applyAccidentFilters();
+
+TaxiQaidModules.register('accidents',{onEnter:async()=>{await fetchAccidents();return {connected:false,message:'Database integration pending — no operational source is connected.'};},onReset:()=>{accidentsDatabase=[];applyAccidentFilters();}});

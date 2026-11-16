@@ -118,6 +118,7 @@ document.querySelectorAll("#add-tripcheck-modal .choice-box").forEach(box => {
   if (box.closest('.wizard-step')?.dataset.step >= 3 && box.closest('.wizard-step')?.dataset.step <= 26) {
     box.dataset.choice = box.textContent.trim();
   }
+  box.addEventListener("click",()=>selectWizardChoice(box.dataset.wizardKey,box.dataset.wizardValue,box));
   box.addEventListener("keydown", event => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
@@ -530,7 +531,7 @@ function renderTripChecksTable(items) {
 
 /** Frontend inspection preview. Database integration pending. */
 let tripCheckRefreshSequence = 0;
-async function fetchTripChecks() {
+async function refreshTripCheckPreview() {
   tripChecksDatabase = [];
   document.getElementById("tripcheck-sync-status").textContent = "No records available — database not connected";
   applyTripCheckFilters();
@@ -672,8 +673,8 @@ for (const id of ["tc-plate-search", "tc-iqama-search", "tc-odometer", "tc-remar
 
 /** Load third-party PDF/ZIP libraries only when the export button is used. */
 const TRIPCHECK_EXPORT_LIBRARIES = Object.freeze([
-  ["jspdf", "https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"],
-  ["JSZip", "https://cdn.jsdelivr.net/npm/jszip@3.10.2/dist/jszip.min.js"]
+  ["jspdf", "assets/vendor/roster/jspdf.umd.min.js"],
+  ["JSZip", "assets/vendor/roster/jszip.min.js"]
 ]);
 const tripCheckLibraryLoads = new Map();
 function loadTripCheckExportLibrary(name, url) {
@@ -682,7 +683,7 @@ function loadTripCheckExportLibrary(name, url) {
   if (tripCheckLibraryLoads.has(name)) return tripCheckLibraryLoads.get(name);
   const promise = new Promise((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = url;
+    script.src = TaxiQaidModules.asset(url);const digest=window.TAXIQAID_ASSET_VERSIONS?.[url];if(digest)script.integrity='sha256-'+btoa(String.fromCharCode(...digest.match(/../g).map(n=>parseInt(n,16))));
     script.onload = () => resolve();
     script.onerror = () => reject(new Error(`Unable to load ${name}. Check your internet connection.`));
     document.head.appendChild(script);
@@ -875,3 +876,5 @@ updateTripCheckSignatureStatus();
   form.addEventListener("submit", event => { event.preventDefault(); event.stopImmediatePropagation(); showIntegrationPending(); }, true);
   form.querySelectorAll("button[type=submit]").forEach(button => { button.type = "button"; button.addEventListener("click", showIntegrationPending); });
 });
+
+TaxiQaidModules.register('tripcheck',{onEnter:async()=>{await fetchTripChecks();return {connected:false,message:'Database integration pending — no operational source is connected.'};},onReset:()=>{tripChecksDatabase=[];applyTripCheckFilters();}});

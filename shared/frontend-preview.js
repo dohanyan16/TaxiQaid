@@ -42,8 +42,11 @@ function closePreviewModal(modal) {
   previewReturnFocus.get(modal)?.focus();
 }
 // Applied after all feature scripts initialize, including existing dialogs.
+const previewInitializedModals=new WeakSet();
+let selectDescriptionsStarted=false;
 function initializeFrontendPreview() {
   document.querySelectorAll('.modal-overlay').forEach(modal => {
+    if(previewInitializedModals.has(modal))return;previewInitializedModals.add(modal);
     const panel = modal.querySelector('.modal-content');
     if (!panel) return;
     panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-modal', 'true');
@@ -63,12 +66,14 @@ function initializeFrontendPreview() {
     const control = label.parentElement.querySelector('input, select, textarea');
     if (control?.id) label.htmlFor = control.id;
   });
+  if(window.TAXIQAID_DEDICATED_AUTH?.enabled===true){const label=document.querySelector('label[for=um-create-login]');if(label)label.textContent='Username / Login Identifier';document.querySelectorAll('select option[value="Quality"]').forEach(option=>option.textContent='QHSE');}
   initializeSelectDescriptions();
-  fetchFleet(); fetchDrivers(); fetchTripChecks();
+
 }
 
 /** Keep full native-select values readable without replacing specialized controls. */
 function initializeSelectDescriptions() {
+  if(selectDescriptionsStarted)return;selectDescriptionsStarted=true;
   const selects=[...document.querySelectorAll('select')];
   const canvas=document.createElement('canvas');
   const context=canvas.getContext('2d');
@@ -92,3 +97,6 @@ function initializeSelectDescriptions() {
   selects.forEach(watch);
   new MutationObserver(mutations=>mutations.forEach(mutation=>mutation.addedNodes.forEach(node=>{if(node.nodeType!==1)return;if(node.matches('select'))watch(node);node.querySelectorAll('select').forEach(watch);}))).observe(document.getElementById('workspace'),{childList:true,subtree:true});
 }
+
+// Delegation supports lazily inserted modules without duplicate per-button handlers.
+document.addEventListener('click',event=>{const button=event.target.closest('[data-open],[data-close],[data-pending],[data-people-open],[data-people-close],[data-people-pending]');if(!button)return;if(button.hasAttribute('data-open')||button.hasAttribute('data-people-open')){const modal=document.getElementById(button.dataset.open||button.dataset.peopleOpen);if(modal)openPreviewModal(modal);}else if(button.hasAttribute('data-close')||button.hasAttribute('data-people-close')){const modal=document.getElementById(button.dataset.peopleClose)||button.closest('.modal-overlay');if(modal)closePreviewModal(modal);}else showIntegrationPending();});

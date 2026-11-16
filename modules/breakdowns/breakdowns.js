@@ -3,3 +3,5 @@ TAXIQAID_LOCATIONS.forEach(location => document.getElementById('bdw-breakdown-lo
 document.getElementById('bdw-maintenance-status').value = 'Not Requested';
 
 setupSearchDropdown({input:'breakdown-filter-search-breakdown',config:'breakdowns'});
+
+document.querySelector('#breakdown-modal form')?.addEventListener('submit',event=>{event.preventDefault();showIntegrationPending();});

@@ -1,36 +1,8 @@
-/**
- * TaxiQaid | Shared sidebar navigation.
- * One shared sidebar is used across all modules, including planned pages.
- */
-const menuItems = document.querySelectorAll(".sidebar-menu li[data-view]");
-const viewSections = document.querySelectorAll(".view-section");
-const pageTitle = document.getElementById("page-title");
-
-function activateModule(item) {
-  const targetView = item.dataset.view;
-  const section = document.getElementById(`view-${targetView}`);
-  if (!section) {
-    console.warn(`View not found: ${targetView}`);
-    return;
-  }
-  menuItems.forEach(li => {
-    li.classList.toggle("active", li === item);
-    const link = li.querySelector("a");
-    if (link) {
-      if (li === item) link.setAttribute("aria-current", "page");
-      else link.removeAttribute("aria-current");
-    }
-  });
-  viewSections.forEach(view => view.classList.toggle("active", view === section));
-  pageTitle.textContent = item.querySelector(".nav-text").textContent.trim();
-  const group = item.closest("details.sidebar-group");
-  if (group) group.open = true;
-
-}
-
-menuItems.forEach(item => item.querySelector("a")?.addEventListener("click", event => {
-  event.preventDefault();
-  activateModule(item);
-}));
-const firstActive = document.querySelector(".sidebar-menu li.active[data-view]");
-if (firstActive) firstActive.querySelector("a")?.setAttribute("aria-current", "page");
+/** URL and sidebar navigation share the same verified permission/lifecycle boundary. */
+const menuItems=document.querySelectorAll('.sidebar-menu li[data-view]');
+const pageTitle=document.getElementById('page-title');
+async function activateModule(item){if(!item||!TaxiQaidModules.allowed(item.dataset.view))return false;const result=await TaxiQaidModules.enter(item.dataset.view);if(!result)return false;menuItems.forEach(li=>{li.classList.toggle('active',li===item);const link=li.querySelector('a');if(li===item)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');});pageTitle.textContent=item.querySelector('.nav-text').textContent.trim();performance.mark('taxiqaid:page-'+item.dataset.view);return true;}
+menuItems.forEach(item=>item.querySelector('a')?.addEventListener('click',event=>{event.preventDefault();void activateModule(item);}));
+let previousUid=null;
+TaxiQaidAccess.subscribe(()=>{const uid=TaxiQaidAccess.getUid(),current=TaxiQaidModules.current();TaxiQaidModules.reset();TaxiQaidPermissionBindings.reconcile();if(uid!==previousUid)document.querySelectorAll('details.sidebar-group').forEach(group=>group.open=false);previousUid=uid;if(!uid)return;const hash=location.hash.slice(1);const first=[...menuItems].find(item=>TaxiQaidModules.allowed(item.dataset.view)&&item.dataset.view===(hash||current))||[...menuItems].find(item=>TaxiQaidModules.allowed(item.dataset.view));if(first)void activateModule(first);});
+window.addEventListener('hashchange',()=>{const item=[...menuItems].find(e=>e.dataset.view===location.hash.slice(1));if(item)void activateModule(item);});

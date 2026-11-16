@@ -135,40 +135,28 @@
       const plateStr = String(vehicle["Plate"] || vehicle["plate"] || "");
       const assignedDrivers = getAssignedDrivers(plateStr);
 
-      let driversHtml = "";
-      if (assignedDrivers.length === 0) {
-        driversHtml = `<span style="color: var(--text-muted); font-weight: normal;">No drivers assigned</span>`;
-      } else {
-        driversHtml = `<div class="driver-tag-box">`;
-        assignedDrivers.forEach((d, idx) => {
-          const shiftText = d["Shift"] || d["shift"] ? ` (${d["Shift"] || d["shift"]})` : '';
-          driversHtml += `
-            <div class="driver-tag">
-              <strong>Driver ${idx + 1}:</strong> ${d["Full Name"] || d["name"]} | <strong>Iqama:</strong> ${d["Iqama Number"] || d["iqama"]}${shiftText}
-            </div>`;
-        });
-        driversHtml += `</div>`;
-      }
-
+      const driverTags=document.createElement('div');driverTags.className='driver-tag-box';
+      if(!assignedDrivers.length){const empty=document.createElement('span');empty.className='no-assigned-drivers';empty.textContent='No drivers assigned';driverTags.append(empty);}
+      assignedDrivers.forEach((d,index)=>{const tag=document.createElement('div');tag.className='driver-tag';const label=document.createElement('strong');label.textContent='Driver '+(index+1)+': ';tag.append(label,document.createTextNode(String(d['Full Name']||d.name||'')+' | Iqama: '+String(d['Iqama Number']||d.iqama||'')+(d.Shift||d.shift?' ('+(d.Shift||d.shift)+')':'')));driverTags.append(tag);});
       let currentAvailability = vehicle["Availability"] || vehicle["availability"] || "Unassigned";
       if (assignedDrivers.length > 0) currentAvailability = "Assigned";
 
       document.getElementById("profile-vehicle-name").textContent = plateStr + " - Profile";
-      document.getElementById("f-val-plate").innerHTML = plateStr || "-";
-      document.getElementById("f-val-brand").innerHTML = vehicle["Brand"] || vehicle["brand"] || "-";
-      document.getElementById("f-val-model").innerHTML = vehicle["Model"] || vehicle["model"] || "-";
-      document.getElementById("f-val-vin").innerHTML = vehicle["VIN"] || vehicle["vin"] || "-";
-      document.getElementById("f-val-fuel").innerHTML = vehicle["Fuel Type"] || vehicle["fuel type"] || "-";
-      document.getElementById("f-val-assigned-drivers").innerHTML = driversHtml;
+      document.getElementById("f-val-plate").textContent = plateStr || "-";
+      document.getElementById("f-val-brand").textContent = vehicle["Brand"] || vehicle["brand"] || "-";
+      document.getElementById("f-val-model").textContent = vehicle["Model"] || vehicle["model"] || "-";
+      document.getElementById("f-val-vin").textContent = vehicle["VIN"] || vehicle["vin"] || "-";
+      document.getElementById("f-val-fuel").textContent = vehicle["Fuel Type"] || vehicle["fuel type"] || "-";
+      document.getElementById("f-val-assigned-drivers").replaceChildren(driverTags);
       showFleetOdometer(vehicle);
-      document.getElementById("f-val-availability").innerHTML = currentAvailability;
-      document.getElementById("f-val-accidents").innerHTML = vehicle["Accidents"] || "0";
-      document.getElementById("f-val-mantenimiento").innerHTML = formatDateForDisplay(vehicle["Last Maintenance"] || vehicle["last maintenance"]);
-      document.getElementById("f-val-oil").innerHTML = formatDateForDisplay(vehicle["Last Oil Change"] || vehicle["last oil change"]);
-      document.getElementById("f-val-ins-start").innerHTML = formatDateForDisplay(vehicle["Insurance Start Date"] || vehicle["insurance start date"]);
-      document.getElementById("f-val-ins-exp").innerHTML = formatDateForDisplay(vehicle["Insurance Expiry Date"] || vehicle["insurance expiry date"]);
-      document.getElementById("f-val-op-start").innerHTML = formatDateForDisplay(vehicle["Operation Card Start Date"] || vehicle["operation card start date"]);
-      document.getElementById("f-val-op-exp").innerHTML = formatDateForDisplay(vehicle["Operation Card Expiry Date"] || vehicle["operation card expiry date"]);
+      document.getElementById("f-val-availability").textContent = currentAvailability;
+      document.getElementById("f-val-accidents").textContent = vehicle["Accidents"] || "0";
+      document.getElementById("f-val-mantenimiento").textContent = formatDateForDisplay(vehicle["Last Maintenance"] || vehicle["last maintenance"]);
+      document.getElementById("f-val-oil").textContent = formatDateForDisplay(vehicle["Last Oil Change"] || vehicle["last oil change"]);
+      document.getElementById("f-val-ins-start").textContent = formatDateForDisplay(vehicle["Insurance Start Date"] || vehicle["insurance start date"]);
+      document.getElementById("f-val-ins-exp").textContent = formatDateForDisplay(vehicle["Insurance Expiry Date"] || vehicle["insurance expiry date"]);
+      document.getElementById("f-val-op-start").textContent = formatDateForDisplay(vehicle["Operation Card Start Date"] || vehicle["operation card start date"]);
+      document.getElementById("f-val-op-exp").textContent = formatDateForDisplay(vehicle["Operation Card Expiry Date"] || vehicle["operation card expiry date"]);
 
       fleetProfileContainer.style.display = "block";
     }
@@ -188,41 +176,11 @@
       const disabledAttr = 'disabled style="background: var(--readonly-bg); cursor: not-allowed;"';
 
       // 1. Lock all fields that must not be modified here.
-      document.getElementById("f-val-brand").innerHTML = `<input type="text" id="edit-fleet-brand" value="${v["Brand"] || v["brand"] || ''}" ${disabledAttr}>`;
-      document.getElementById("f-val-model").innerHTML = `<input type="text" id="edit-fleet-model" value="${v["Model"] || v["model"] || ''}" ${disabledAttr}>`;
-      document.getElementById("f-val-vin").innerHTML = `<input type="text" id="edit-fleet-vin" value="${v["VIN"] || v["vin"] || ''}" ${disabledAttr}>`;
-
-      const fuelVal = v["Fuel Type"] || v["fuel type"] || "";
-      document.getElementById("f-val-fuel").innerHTML = `<select id="edit-fleet-fuel" ${disabledAttr}><option value="${fuelVal}">${fuelVal}</option></select>`;
-
-      document.getElementById("f-val-km").innerHTML = `<input type="number" id="edit-fleet-km" value="${getFleetOdometer(v).value}" ${disabledAttr}>`;
-
-      // 2. Availability is the only editable vehicle field in this workflow.
-      const availVal = v["Availability"] || v["availability"] || "Unassigned";
-
-      if (hasDriver) {
-        // Vehicles with assigned drivers must remain in the Assigned status.
-        document.getElementById("f-val-availability").innerHTML = `
-          <select id="edit-fleet-availability" ${disabledAttr}>
-            <option value="Assigned" selected>Assigned</option>
-          </select>`;
-      } else {
-        // Vehicles without drivers may be Unassigned or Under Maintenance.
-        const isMaint = availVal === "Under Maintenance" || availVal === "Maintenance";
-        document.getElementById("f-val-availability").innerHTML = `
-          <select id="edit-fleet-availability">
-            <option value="Unassigned" ${!isMaint ? "selected" : ""}>Unassigned</option>
-            <option value="Under Maintenance" ${isMaint ? "selected" : ""}>Under Maintenance</option>
-          </select>`;
-      }
-
-      // 3. Display-only date inputs use the normalized HTML date format.
-      document.getElementById("f-val-mantenimiento").innerHTML = `<input type="date" id="edit-fleet-maint" value="${toDateInput(v["Last Maintenance"] || v["last maintenance"])}" ${disabledAttr}>`;
-      document.getElementById("f-val-oil").innerHTML = `<input type="date" id="edit-fleet-oil" value="${toDateInput(v["Last Oil Change"] || v["last oil change"])}" ${disabledAttr}>`;
-      document.getElementById("f-val-ins-start").innerHTML = `<input type="date" id="edit-fleet-ins-start" value="${toDateInput(v["Insurance Start Date"] || v["insurance start date"])}" ${disabledAttr}>`;
-      document.getElementById("f-val-ins-exp").innerHTML = `<input type="date" id="edit-fleet-ins-exp" value="${toDateInput(v["Insurance Expiry Date"] || v["insurance expiry date"])}" ${disabledAttr}>`;
-      document.getElementById("f-val-op-start").innerHTML = `<input type="date" id="edit-fleet-op-start" value="${toDateInput(v["Operation Card Start Date"] || v["operation card start date"])}" ${disabledAttr}>`;
-      document.getElementById("f-val-op-exp").innerHTML = `<input type="date" id="edit-fleet-op-exp" value="${toDateInput(v["Operation Card Expiry Date"] || v["operation card expiry date"])}" ${disabledAttr}>`;
+      for(const [host,id,value,type] of [['f-val-brand','edit-fleet-brand',v.Brand||v.brand],['f-val-model','edit-fleet-model',v.Model||v.model],['f-val-vin','edit-fleet-vin',v.VIN||v.vin],['f-val-km','edit-fleet-km',getFleetOdometer(v).value,'number']])TaxiQaidDOM.field(host,{id,value,type,disabled:true});
+      const fuel=v['Fuel Type']||v['fuel type']||'';TaxiQaidDOM.field('f-val-fuel',{id:'edit-fleet-fuel',value:fuel,disabled:true,options:[{value:fuel}]});
+      const availability=v.Availability||v.availability||'Unassigned';
+      TaxiQaidDOM.field('f-val-availability',{id:'edit-fleet-availability',value:hasDriver?'Assigned':availability==='Maintenance'?'Under Maintenance':availability,disabled:hasDriver,options:(hasDriver?['Assigned']:['Unassigned','Under Maintenance']).map(value=>({value}))});
+      for(const [host,id,key] of [['f-val-mantenimiento','edit-fleet-maint','Last Maintenance'],['f-val-oil','edit-fleet-oil','Last Oil Change'],['f-val-ins-start','edit-fleet-ins-start','Insurance Start Date'],['f-val-ins-exp','edit-fleet-ins-exp','Insurance Expiry Date'],['f-val-op-start','edit-fleet-op-start','Operation Card Start Date'],['f-val-op-exp','edit-fleet-op-exp','Operation Card Expiry Date']])TaxiQaidDOM.field(host,{id,type:'date',value:toDateInput(v[key]||v[key.toLowerCase()]),disabled:true});
     }
 
     async function saveEditedVehicle() {
@@ -239,8 +197,9 @@
     });
 
 // Load records and update the synchronization badge for this module.
-    async function fetchFleet() {
+    async function refreshFleetPreview() {
   fleetDatabase = [];
+  fleetSearch.clear();
   document.getElementById("fleet-sync-status").textContent = "No records available — database not connected";
 
   return false;
@@ -278,3 +237,5 @@
       XLSX.utils.book_append_sheet(workbook, worksheet, "Fleet Database");
       XLSX.writeFile(workbook, "Fleet_Database.xlsx");
     }));
+
+TaxiQaidModules.register('fleet',{onEnter:async()=>{await fetchFleet();return {connected:false,message:'Database integration pending — no operational source is connected.'};},onReset:()=>{fleetDatabase=[];fleetSearch.clear();currentActiveVehicle=null;fleetPostTripReadings.clear();fleetProfileContainer.style.display='none';document.querySelectorAll('#fleet-profile-container [id^=f-val-]').forEach(e=>e.replaceChildren());}});

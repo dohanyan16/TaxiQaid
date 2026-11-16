@@ -31,7 +31,7 @@ function setup({ drivers = false } = {}) {
   const requests = [];
   const responses = { fleet: [], post: [] };
   let exported;
-  const context = vm.createContext({
+  const context = vm.createContext({TaxiQaidModules:{register(){}},
     setupSearchDropdown: () => ({}),
     document, console: { warn() {}, error() {} }, alert() {},
     fetchDrivers: async () => true, fetchAccidents: async () => true,

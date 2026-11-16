@@ -1,10 +1,13 @@
 /** Private file parsing and PDF batches run off the interface thread. Nothing is uploaded. */
-importScripts('roster-model.js');
+const releaseKey=new URL(self.location.href).searchParams.get('v');
+if(releaseKey&&/^[a-f0-9]{64}$/.test(releaseKey))importScripts('../../../shared/asset-versions.js?v='+releaseKey);
+function cacheVersion(path){const pathname=new URL(path,self.location.href).pathname,versions=self.TAXIQAID_ASSET_VERSIONS;if(!versions)return path;const key=Object.keys(versions).find(key=>pathname.endsWith('/'+key));if(!key)throw new Error('Resource absent from the reviewed release.');return path+'?v='+versions[key];}
+importScripts(cacheVersion('roster-model.js'));
 const cancelled=new Set();
 let pdfResources=null,pdfLoading=null;
 const vendor='../../../assets/vendor/roster/';
 function workbook(buffer,shift) {
-  if(!self.XLSX)importScripts(vendor+'xlsx.full.min.js');
+  if(!self.XLSX)importScripts(cacheVersion(vendor+'xlsx.full.min.js'));
   const book=XLSX.read(buffer,{type:'array',cellDates:false,sheetRows:20004,sheets:['Roster'],cellHTML:false,bookVBA:false});
   const sheet=book.Sheets.Roster;
   if(!sheet)throw new Error(shift+': worksheet Roster was not found.');
@@ -20,7 +23,7 @@ function workbook(buffer,shift) {
   return TaxiQaidRosterModel.parseRows(rows,shift,{date1904:book.Workbook?.WBProps?.date1904===true});
 }
 async function resource(path) {
-  const response=await fetch(path);if(!response.ok)throw new Error('A local PDF resource could not be loaded.');
+  const response=await fetch(cacheVersion(path));if(!response.ok)throw new Error('A local PDF resource could not be loaded.');
   return new Uint8Array(await response.arrayBuffer());
 }
 function binary(bytes) {let result='';for(let i=0;i<bytes.length;i+=16384)result+=String.fromCharCode(...bytes.subarray(i,i+16384));return result;}
@@ -28,7 +31,7 @@ async function preparePdf() {
   if(pdfResources)return pdfResources;
   if(pdfLoading)return pdfLoading;
   pdfLoading=(async()=>{
-    importScripts(vendor+'jspdf.umd.min.js',vendor+'jszip.min.js','roster-pdf.js');
+    importScripts(cacheVersion(vendor+'jspdf.umd.min.js'),cacheVersion(vendor+'jszip.min.js'),cacheVersion('roster-pdf.js'));
     const [regular,bold,logo]=await Promise.all([resource(vendor+'DejaVuSansCondensed.ttf'),resource(vendor+'DejaVuSansCondensed-Bold.ttf'),resource('../../../assets/TaxiQaidLogo.jpg')]);
     pdfResources={jsPDF:self.jspdf.jsPDF,regular:binary(regular),bold:binary(bold),logo};return pdfResources;
   })().catch(error=>{pdfLoading=null;throw error;});return pdfLoading;

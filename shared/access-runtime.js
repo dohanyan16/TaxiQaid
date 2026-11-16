@@ -6,6 +6,7 @@ const TaxiQaidAccess = (() => {
   function reset(){uid=null;legacyManagement=false;context=null;notify();}
   document.addEventListener('taxiqaid:management-session',event=>{uid=event.detail.uid;legacyManagement=true;context=null;notify();});
   function applyAuthorizedContext(packet) {
+    const realm=document.documentElement?.dataset?.authRealm;if(realm==='management'&&packet.accountType!=='Management'||realm==='driver'&&packet.accountType!=='Driver')throw new Error('Account type is not authorized for this entry.');
     if(!uid||packet.uid!==uid||packet.verified!==true||packet.source!=='authorized-backend'||!['Driver','Management'].includes(packet.accountType))throw new Error('An authorized permission response for the current authenticated account is required.');
     context=structuredClone(packet);notify();
   }

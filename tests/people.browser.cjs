@@ -16,7 +16,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
   });
   await page.route('https://*.supabase.co/**',r=>r.abort());
   // Legacy compatibility fixture: release defaults to dedicated Auth, but this suite tests the disabled legacy path.
-   await page.route('**/shared/auth-dedicated-config.js',route=>route.fulfill({contentType:'text/javascript',body:"window.TAXIQAID_DEDICATED_AUTH=Object.freeze({enabled:false});"}));
+   await page.route('**/shared/auth-dedicated-config.js*',route=>route.fulfill({contentType:'text/javascript',body:"window.TAXIQAID_DEDICATED_AUTH=Object.freeze({enabled:false});"}));
    await page.goto(process.env.TAXIQAID_URL||'http://127.0.0.1:8001/');await page.waitForFunction(()=>!document.getElementById('boot-status'));
   // The existing Supabase SDK probes storage availability once, then removes its probe.
   assert.equal(await page.evaluate(()=>operationalStorageWrites.every(key=>/^storage:lswt-/.test(key))),true);
@@ -25,8 +25,8 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
    supabaseClient.auth.signInWithPassword=async()=>({data:{user:{id:'test-only'}},error:null});supabaseClient.auth.signOut=async()=>({error:null});
    supabaseClient.from=()=>({select:()=>({eq:()=>({maybeSingle:async()=>({data:{role:'admin'},error:null})})})});
   });
-  await page.locator('#username').fill('preview');await page.locator('#password').fill('test-only');await page.locator('#login-button').click();await page.waitForFunction(()=>document.getElementById('erp-app').style.display==='flex');
-  async function nav(view){const link=page.locator(`[data-view="${view}"] a`);await link.evaluate(el=>{const group=el.closest('details');if(group)group.open=true;});await link.click();}
+  await page.locator('#username').fill('preview');await page.locator('#password').fill('test-only');await page.locator('#login-button').click();await page.waitForFunction(()=>TaxiQaidAccess.hasLegacyManagementSession());await require('./lazy-fixtures.cjs').initializeAuthorized(page);await page.waitForFunction(()=>document.getElementById('erp-app').style.display==='flex');
+  async function nav(view){const link=page.locator(`[data-view="${view}"] a`);await link.evaluate(el=>{const group=el.closest('details');if(group)group.open=true;});await link.click();await page.locator('#view-'+view+'.active[data-ready=true]').waitFor();}
   async function options(id){return page.locator('#'+id+' option').allTextContents();}
   async function columns(id){return page.locator('#'+id+' th').allTextContents();}
   async function dismissNotice(){const button=page.locator('#integration-notice button');if(await button.count())await button.click();}

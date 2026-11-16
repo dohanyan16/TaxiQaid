@@ -26,7 +26,7 @@
   entry.hidden = false;
   entry.addEventListener('click', () => {
     login.hidden = true;
-    driver.hidden = true;
+    if(driver)driver.hidden = true;
     entry.hidden = true;
     panel.hidden = false;
     email.focus();
@@ -35,7 +35,7 @@
     if (busy) return;
     panel.hidden = true;
     login.hidden = false;
-    driver.hidden = false;
+    if(driver)driver.hidden = false;
     entry.hidden = false;
     form.reset();
     status.hidden = true;

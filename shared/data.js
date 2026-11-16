@@ -27,3 +27,8 @@
     async function exportLatestSheetData(button, refresh, writeExport) {
       showIntegrationPending();
 }
+
+// Shared lookup calls never force another page or a retired data transport to load.
+async function fetchDrivers(){return typeof refreshDriverPreview==='function'?refreshDriverPreview():false;}
+async function fetchFleet(){return typeof refreshFleetPreview==='function'?refreshFleetPreview():false;}
+async function fetchTripChecks(){return typeof refreshTripCheckPreview==='function'?refreshTripCheckPreview():false;}

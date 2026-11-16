@@ -1,0 +1,5 @@
+// Compatibility suites may initialize all AUTHORIZED pages. Production and lazy/security tests never use this helper.
+const fs=require('node:fs'),crypto=require('node:crypto');
+async function initializeAuthorized(page){await page.evaluate(async()=>{for(const item of document.querySelectorAll('.sidebar-menu li[data-view]'))if(TaxiQaidModules.allowed(item.dataset.view))await TaxiQaidModules.ensure(item.dataset.view);});}
+async function instrument(page,file,install){const body='('+install.toString()+')();\n'+fs.readFileSync(file,'utf8'),digest=crypto.createHash('sha256').update(body).digest('hex');await page.route('**/'+file+'*',r=>r.fulfill({contentType:'text/javascript',body}));await page.route('**/shared/asset-versions.js*',r=>{const source=fs.readFileSync('shared/asset-versions.js','utf8'),escaped=file.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');return r.fulfill({contentType:'text/javascript',body:source.replace(new RegExp('("'+escaped+'":\\s*")[a-f0-9]+'),'$1'+digest)});});}
+module.exports={initializeAuthorized,instrument};
