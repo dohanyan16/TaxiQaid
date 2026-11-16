@@ -7,7 +7,7 @@ DO $preflight$
 BEGIN
  IF current_user<>'postgres' OR session_user<>'postgres' OR (SELECT rolsuper FROM pg_roles WHERE rolname=current_user) THEN RAISE EXCEPTION 'Dashboard postgres required';END IF;
  IF has_schema_privilege('taxiqaid_user_admin_owner','taxiqaid_auth_api','CREATE') THEN RAISE EXCEPTION 'Unexpected existing CREATE grant';END IF;
- IF NOT EXISTS(SELECT FROM pg_proc WHERE oid='taxiqaid_auth_api.admin_validate_account(jsonb)'::regprocedure AND proowner='taxiqaid_user_admin_owner'::regrole AND NOT prosecdef AND replace(prosrc,E'\r\n',E'\n')=replace($reference_validate$ BEGIN
+ IF NOT EXISTS(SELECT FROM pg_proc WHERE oid='taxiqaid_auth_api.admin_validate_account(jsonb)'::regprocedure AND proowner='taxiqaid_user_admin_owner'::regrole AND NOT prosecdef AND cardinality(proconfig)=1 AND (proconfig @> ARRAY['search_path=pg_catalog,pg_temp'] OR proconfig @> ARRAY['search_path=pg_catalog, pg_temp']) AND replace(prosrc,E'\r\n',E'\n')=replace($reference_validate$ BEGIN
  IF jsonb_typeof(p_item) IS DISTINCT FROM 'object' OR (SELECT array_agg(key ORDER BY key) FROM jsonb_object_keys(p_item) k(key)) IS DISTINCT FROM ARRAY['contactEmail','departments','fullName','role','status','username'] OR coalesce(p_item->>'role' IN ('manager','supervisor') AND p_item->>'status' IN ('active','disabled') AND p_item->>'username' ~ '^[a-z][a-z0-9]{1,47}$' AND length(btrim(p_item->>'fullName')) BETWEEN 1 AND 150 AND jsonb_typeof(p_item->'departments')='array',false) IS DISTINCT FROM true THEN RAISE EXCEPTION 'INVALID_ACCOUNT'; END IF;
  IF jsonb_array_length(p_item->'departments') NOT BETWEEN 1 AND 7 OR (SELECT count(DISTINCT value) FROM jsonb_array_elements_text(p_item->'departments'))<>jsonb_array_length(p_item->'departments') THEN RAISE EXCEPTION 'INVALID_DEPARTMENT'; END IF;
  IF p_item->>'contactEmail' IS NOT NULL AND (jsonb_typeof(p_item->'contactEmail')<>'string' OR length(p_item->>'contactEmail')>254 OR p_item->>'contactEmail' !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$') THEN RAISE EXCEPTION 'INVALID_CONTACT_EMAIL'; END IF;
@@ -138,6 +138,8 @@ CREATE TEMP TABLE email_saved_security ON COMMIT DROP AS SELECT oid,proowner,pro
 CREATE TEMP TABLE email_saved_memberships ON COMMIT DROP AS SELECT * FROM pg_auth_members WHERE roleid='taxiqaid_user_admin_owner'::regrole;
 GRANT taxiqaid_user_admin_owner TO postgres WITH INHERIT FALSE,SET TRUE;
 GRANT CREATE ON SCHEMA taxiqaid_auth_api TO taxiqaid_user_admin_owner;
+-- Transaction-local function metadata only; revoked before COMMIT and the snapshot is dropped.
+GRANT SELECT ON pg_temp.email_saved_security TO taxiqaid_user_admin_owner;
 SET LOCAL ROLE taxiqaid_user_admin_owner;
 CREATE OR REPLACE FUNCTION taxiqaid_auth_api.admin_validate_account(p_item jsonb) RETURNS void LANGUAGE plpgsql SET search_path=pg_catalog,pg_temp AS $$ BEGIN
  IF jsonb_typeof(p_item) IS DISTINCT FROM 'object' OR (SELECT array_agg(key ORDER BY key) FROM jsonb_object_keys(p_item) k(key)) IS DISTINCT FROM ARRAY['contactEmail','departments','fullName','role','status','username'] OR coalesce(p_item->>'role' IN ('manager','supervisor') AND p_item->>'status' IN ('active','disabled') AND p_item->>'username' ~ '^[a-z][a-z0-9]{1,47}$' AND length(btrim(p_item->>'fullName')) BETWEEN 1 AND 150 AND jsonb_typeof(p_item->'departments')='array',false) IS DISTINCT FROM true THEN RAISE EXCEPTION 'INVALID_ACCOUNT'; END IF;
@@ -268,7 +270,20 @@ BEGIN
  RETURN result;
 END $$;
 
+-- Preserve the exact reviewed GUC string; a quoted comma-list in ALTER FUNCTION is one schema,
+-- so restore it via set_config and FROM CURRENT rather than re-quoting it as an identifier list.
+DO $restore_search_path$
+DECLARE definition record; reviewed_path text; original_path text:=current_setting('search_path');
+BEGIN
+ FOR definition IN SELECT oid,proconfig FROM pg_temp.email_saved_security LOOP
+  SELECT substr(setting,length('search_path=')+1) INTO STRICT reviewed_path FROM unnest(definition.proconfig) setting WHERE left(setting,length('search_path='))='search_path=';
+  PERFORM set_config('search_path',reviewed_path,true);
+  EXECUTE format('ALTER FUNCTION %s SET search_path FROM CURRENT',definition.oid::regprocedure);
+ END LOOP;
+ PERFORM set_config('search_path',original_path,true);
+END $restore_search_path$;
 SET LOCAL ROLE postgres;
+REVOKE SELECT ON pg_temp.email_saved_security FROM taxiqaid_user_admin_owner;
 REVOKE CREATE ON SCHEMA taxiqaid_auth_api FROM taxiqaid_user_admin_owner;
 DO $verify$
 DECLARE previous record;

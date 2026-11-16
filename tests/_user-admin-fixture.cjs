@@ -30,8 +30,20 @@ module.exports=({sql,runtime,root,uid,lit})=>{
  sql(proposal);assert.equal(admin(constraintQuery),expectedConstraint);console.error('PASS: exact reviewed role CHECK permits complete SQL 01 migration and is preserved unchanged.');
  // Validate source-fingerprinted email compatibility in the disposable database only.
  const emailUpgrade=fs.readFileSync(path.join(root,'supabase/review/user-management/05_employee_email_compatibility.sql'),'utf8');
- sql(emailUpgrade);
+ const emailSecurity=()=>admin("SELECT jsonb_agg(jsonb_build_object('signature',oid::regprocedure::text,'owner',proowner,'acl',proacl,'configuration',proconfig,'definer',prosecdef,'volatility',provolatile) ORDER BY oid) FROM pg_proc WHERE oid IN ('taxiqaid_auth_api.admin_validate_account(jsonb)'::regprocedure,'taxiqaid_auth_api.admin_dispatch(uuid,text,jsonb)'::regprocedure);");
+ const beforeEmailSecurity=emailSecurity(),validateBody=JSON.parse(admin("SELECT to_json(prosrc) FROM pg_proc WHERE oid='taxiqaid_auth_api.admin_validate_account(jsonb)'::regprocedure;"));
+ // Unknown function source must stop the transaction before any permanent privilege or account change.
+ admin("UPDATE pg_proc SET prosrc=prosrc||E'\\n-- unreviewed fixture change' WHERE oid='taxiqaid_auth_api.admin_validate_account(jsonb)'::regprocedure;");
+ sql(emailUpgrade,{failure:/ADMIN_EMAIL_SOURCE_REVIEW_REQUIRED/});assert.equal(emailSecurity(),beforeEmailSecurity);assert.equal(snapshot(),before);
+ admin("UPDATE pg_proc SET prosrc="+lit(validateBody)+" WHERE oid='taxiqaid_auth_api.admin_validate_account(jsonb)'::regprocedure;");
+ admin("ALTER FUNCTION taxiqaid_auth_api.admin_validate_account(jsonb) SET search_path TO public;");sql(emailUpgrade,{failure:/ADMIN_EMAIL_SOURCE_REVIEW_REQUIRED/});
+ admin("ALTER FUNCTION taxiqaid_auth_api.admin_validate_account(jsonb) SET search_path TO pg_catalog,pg_temp;");assert.equal(emailSecurity(),beforeEmailSecurity);
+ sql(emailUpgrade.replace(/COMMIT;\s*$/,'ROLLBACK;'));assert.equal(emailSecurity(),beforeEmailSecurity);assert.equal(snapshot(),before);
+ // Both reviewed PostgreSQL search_path spellings must remain byte-for-byte unchanged after the upgrade.
+ admin("BEGIN;SELECT set_config('search_path','pg_catalog,pg_temp',true);ALTER FUNCTION taxiqaid_auth_api.admin_dispatch(uuid,text,jsonb) SET search_path FROM CURRENT;ALTER FUNCTION taxiqaid_auth_api.admin_validate_account(jsonb) SET search_path FROM CURRENT;COMMIT;");
+ const compactEmailSecurity=emailSecurity();sql(emailUpgrade);assert.equal(emailSecurity(),compactEmailSecurity);
  assert.equal(admin("SELECT has_schema_privilege('taxiqaid_user_admin_owner','taxiqaid_auth_api','CREATE');"),'f');
+ console.error('PASS: SQL 05 accepts both secure search_path spellings, rejects unknown source, rolls back cleanly and preserves function security.');
  const accessUpgrade=fs.readFileSync(path.join(root,'supabase/review/user-management/03_access_compatibility.sql'),'utf8');
  admin("CREATE TEMP TABLE saved_access AS SELECT oid,prosrc FROM pg_proc WHERE oid='taxiqaid_auth_api.get_management_access(uuid,bigint)'::regprocedure;UPDATE pg_proc SET prosrc=prosrc||E'\\n-- genuinely changed body' WHERE oid='taxiqaid_auth_api.get_management_access(uuid,bigint)'::regprocedure;");
  sql(accessUpgrade,{failure:true});
@@ -67,8 +79,9 @@ module.exports=({sql,runtime,root,uid,lit})=>{
  assert.equal(rpc('create-finish',{operation:recovering,lease:recoveryLease,authUid:recovering,technicalEmail:'recoverfixture@example.invalid'}).user.status,'disabled');
  assert.equal(admin("SELECT is_enabled FROM taxiqaid_private.auth_login_identities WHERE user_id='"+recovering+"';"),'f');
 
- rpc('create-reserve',{operation:op(),lease,account:{...account,contactEmail:null}},uid,{failure:true});
- rpc('create-reserve',{operation:op(),lease,account:{...account,username:'duplicateemail'}},uid,{failure:true});
+ rpc('create-reserve',{operation:op(),lease,account:{...account,contactEmail:null}},uid,{failure:/EMPLOYEE_EMAIL_REQUIRED/});
+ rpc('create-reserve',{operation:op(),lease,account:{...account,username:'invalidemail',contactEmail:'invalid-address'}},uid,{failure:/INVALID_CONTACT_EMAIL/});
+ rpc('create-reserve',{operation:op(),lease,account:{...account,username:'duplicateemail',contactEmail:account.contactEmail.toUpperCase()}},uid,{failure:/EMPLOYEE_EMAIL_ALREADY_USED/});
  rpc('create-reserve',{operation:op(),lease,account},uid,{failure:true});
  rpc('create-reserve',{operation:op(),lease,account:{...account,username:'invalidmaster',role:'super_admin'}},uid,{failure:true});
  rpc('create-reserve',{operation:uid,lease,account:{...account,username:'masterreplacement'}},uid,{failure:true});
@@ -77,6 +90,7 @@ module.exports=({sql,runtime,root,uid,lit})=>{
  user=change('permissions',{patch:{'dashboard.view':true,'user-management.view':true,'fuel.view':true,'fuel.create':true}}).user;
  assert.equal(typeof user.overrides['fuel.view'],'boolean');assert.ok(rpc('list',{},target).users.some(u=>u.uid===target));
  rpc('edit',{operation:op(),uid:target,version:user.version,etag:user.etag,account},target,{failure:true});
+ change('edit',{account:{...account,contactEmail:'changed@example.invalid'}},uid,{failure:/CONTACT_EMAIL_IMMUTABLE/});
  const stale={version:user.version,etag:user.etag};user=change('permissions',{patch:{'fuel.view':false}}).user;
  rpc('permissions',{operation:op(),uid:target,...stale,patch:{'fuel.view':true}},uid,{failure:true});
  const effective=admin("SELECT taxiqaid_auth_api.admin_effective('"+target+"','fuel.create');");assert.equal(effective,'f');
@@ -101,5 +115,5 @@ module.exports=({sql,runtime,root,uid,lit})=>{
  const retirement=fs.readFileSync(path.join(root,'supabase/review/user-management/02_departments.sql'),'utf8'),ambiguous=admin('SELECT jsonb_agg(to_jsonb(m) ORDER BY user_id,department_key) FROM taxiqaid_private.user_departments m;');sql(retirement,{failure:true});assert.equal(admin('SELECT jsonb_agg(to_jsonb(m) ORDER BY user_id,department_key) FROM taxiqaid_private.user_departments m;'),ambiguous);
  sql(retirement.replace('-- Owner must insert reviewed mappings here.',"INSERT INTO approved_department_resolution VALUES('financial','finance',true);\n-- Owner must insert reviewed mappings here."));assert.equal(admin('SELECT jsonb_agg(to_jsonb(m) ORDER BY user_id,department_key) FROM taxiqaid_private.user_departments m;'),departmentsBefore);
  assert.equal(snapshot(),before,'Master and every existing permission/grant unchanged');
- console.error('PASS: persistent administrative CRUD, optional email, role checks, Master protection, 101/6, CAS/dependencies, Driver queue/history/idempotency, mirror privacy/backoff and explicit department migration.');
+ console.error('PASS: persistent administrative CRUD, required/duplicate/immutable employee email, role checks, Master protection, 101/6, CAS/dependencies, Driver queue/history/idempotency, mirror privacy/backoff and explicit department migration.');
 };
