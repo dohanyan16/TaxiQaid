@@ -11,7 +11,7 @@ const TaxiQaidHelpdesk = (() => {
     $('helpdesk-count').textContent=filtered.length+' tickets found';const body=$('helpdesk-table').tBodies[0];body.replaceChildren();
     if(!filtered.length){const cell=body.insertRow().insertCell();cell.colSpan=policy.TICKET_COLUMNS.length;const message=document.createElement('span');message.className='table-empty';message.textContent='No helpdesk tickets available — database integration pending.';cell.appendChild(message);return;}
     filtered.forEach(ticket=>{const row=body.insertRow();policy.TICKET_COLUMNS.forEach((column,index)=>{
-      const cell=row.insertCell(),text=String(ticket[column]??'');
+      const cell=row.insertCell(),text=String(TaxiQaidTime.field(column,ticket[column])??'');
       if(index===0){const button=document.createElement('button');button.type='button';button.className='btn-secondary';button.textContent=text||'View Ticket Details';button.addEventListener('click',()=>openDetails(ticket));cell.appendChild(button);}
       else {const span=document.createElement('span');span.className=column==='Status'?'status-badge':'helpdesk-cell-text';span.textContent=text;span.title=text;cell.appendChild(span);}
     });});
@@ -32,7 +32,7 @@ const TaxiQaidHelpdesk = (() => {
   function openDetails(ticket=null) {
     detailForm.reset();$('helpdesk-save-status').hidden=true;
     const fields={'Ticket ID':'id','Created By':'created-by','Creator User ID':'creator-id','Creator Email':'creator-email',"Requester's Department":'requester-department','Assigned Department':'assigned-department','Description':'description','Created Date':'created-date','Created Time':'created-time','Status':'status','Last Updated By':'updated-by','Last Updated At':'updated-at','Resolved At':'resolved-at'};
-    Object.entries(fields).forEach(([key,id])=>{$('helpdesk-detail-'+id).value=String(ticket?.[key]??(key==='Status'?'Pending':''));});
+    Object.entries(fields).forEach(([key,id])=>{$('helpdesk-detail-'+id).value=String(TaxiQaidTime.field(key,ticket?.[key]??(key==='Status'?'Pending':'')));});
     modal.querySelector('h2').textContent=ticket?'Helpdesk Ticket Details':'Helpdesk Ticket Details — Empty Preview';openPreviewModal(modal);
   }
   function savePreview() {

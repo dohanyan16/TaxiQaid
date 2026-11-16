@@ -6,14 +6,14 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
   const page=await browser.newPage({ignoreHTTPSErrors:true,viewport:{width:1440,height:1000}}),errors=[],old=[],privateTables=[],legacy=[];let mode='management',loginCalls=0,accessCalls=0;
   page.on('pageerror',error=>errors.push(error.message));page.on('request',request=>{if(/gycijhgmmaznvcoxphlh/.test(request.url()))old.push(request.url());if(/\/rest\/v1/.test(request.url()))privateTables.push(request.url());if(/script\.google|sheets\.google/.test(request.url()))legacy.push(request.url());});
   await page.route('**/shared/auth-dedicated-config.js',route=>route.fulfill({contentType:'text/javascript',body:"window.TAXIQAID_DEDICATED_AUTH=Object.freeze({url:'https://mqkflwsvnzcaylxtvsje.supabase.co',publicKey:'sb_publishable_c6NqjXyYvryqdXpgTUS0jg_hnfxiTWd',enabled:true,brokerUrl:'https://taxiqaid-auth-gateway.dohanyan.workers.dev/login-with-identifier',sessionStorageMode:'memory'});"}));
-  await page.route('**/shared/auth-client.js',async route=>{await page.evaluate(()=>{
+  await page.route('**/shared/auth-client.js',async route=>{const install=()=>{
    window.migrationSession=null;window.migrationAuthListeners=[];window.fixtureActor='fixture-management';window.setSessions=0;
    supabaseClient.auth.getSession=async()=>({data:{session:migrationSession},error:null});supabaseClient.auth.getUser=async()=>({data:{user:{id:fixtureActor,email:'internal-fixture@example.test',email_confirmed_at:'2026-01-01T00:00:00Z'}},error:null});
    supabaseClient.auth.setSession=async()=>{setSessions++;migrationSession={access_token:'fixture-access',refresh_token:'fixture-refresh',expires_at:Date.now()/1000+3600};migrationAuthListeners.forEach(callback=>callback('SIGNED_IN',{user:{id:fixtureActor}}));return {data:{session:migrationSession},error:null};};
    supabaseClient.auth.signOut=async()=>{migrationSession=null;migrationAuthListeners.forEach(callback=>callback('SIGNED_OUT',null));return {error:null};};
    supabaseClient.auth.onAuthStateChange=callback=>{migrationAuthListeners.push(callback);return {data:{subscription:{unsubscribe(){}}}};};
    supabaseClient.from=()=>{throw new Error('Private table access is forbidden in dedicated mode.');};
-  });await route.continue();});
+  };const response=await route.fetch();await route.fulfill({response,body:'('+install.toString()+')();\n'+await response.text()});});
   const handleAccess=async route=>{
    const request=route.request();if(request.method()==='OPTIONS'){await route.fulfill({status:204,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'apikey,authorization,content-type','Access-Control-Allow-Methods':'GET,POST,OPTIONS'}});return;}
    const headers={'Access-Control-Allow-Origin':'*','Cache-Control':'no-store'};

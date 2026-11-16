@@ -7,7 +7,7 @@ test('Delete User is an explicit typed confirmation restricted to office account
  assert.match(html,/id="um-delete-username"/);
  assert.match(ui,/user\.role==='super_admin'/);
  assert.match(ui,/\$\('um-delete-username'\)\.value!==user\.username/);
- assert.match(ui,/api\('archive-user'/);
+ assert.match(ui,/api\('delete-user'/);assert.match(ui,/hardDeleteReady/);
  assert.match(ui,/closePreviewModal\(\$\('um-user-modal'\)\)/);
  assert.doesNotMatch(ui,/auth\.admin|deleteUserById|service_role/);
  new Function(ui);
@@ -24,7 +24,7 @@ test('archive SQL retains identities, audit and history with Master-only authori
  assert.match(sql,/role'\) NOT IN \('manager','supervisor'\)/);
  assert.match(sql,/ADMIN_ARCHIVE_SECURITY_METADATA_CHANGED/);
  assert.doesNotMatch(sql,/DELETE FROM taxiqaid_private\.user_accounts/);
- assert.doesNotMatch(runtime,/auth\.deleteUser\(/);
+ assert.match(runtime,/auth\.deleteUser\(data\.uid,false\)/);assert.match(runtime,/authUserAbsent/);
  assert.match(runtime,/ban_duration:'876000h'/);
  assert.match(runtime,/return \{archived:true,authSyncPending:true\}/);
 });

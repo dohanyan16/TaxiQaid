@@ -1,0 +1,8 @@
+// Real frontend and PDF formatter with synthetic records only; hosted transport is blocked.
+const {chromium}=require('playwright'),assert=require('node:assert/strict'),{start}=require('../scripts/auth-pilot-local.cjs');
+(async()=>{const server=await start(),browser=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
+ try{for(const timezoneId of ['America/Los_Angeles','Asia/Tokyo']){const page=await browser.newPage({timezoneId});const errors=[],external=[];page.on('pageerror',e=>errors.push(e.message));await page.route('**/*',route=>new URL(route.request().url()).origin===server.origin?route.continue():(external.push('UNEXPECTED_EXTERNAL'),route.abort()));await page.goto(server.origin);await page.locator('#local-pilot-banner').waitFor();await page.clock.install({time:new Date('2026-11-15T21:30:00Z')});
+ await page.addScriptTag({url:server.origin+'/assets/vendor/roster/jspdf.umd.min.js'});
+ const result=await page.evaluate(()=>{const record={'Check ID':'synthetic-timezone','Date':'2026-11-15T21:30:00Z','Time':'2026-11-15T21:30:00Z','Check Type':'Pre-Trip'};const pdf=createTripCheckPdf(record,'').output();return {now:getKSACurrentDateTime(),dob:formatDateForDisplay('1990-06-01T23:30:00Z',{calendar:true}),ksa:pdf.includes('16/11/2026  00:30 KSA')};});
+ assert.deepEqual(result,{now:{date:'2026-11-16',time:'00:30'},dob:'01/06/1990',ksa:true});assert.deepEqual(errors,[]);assert.deepEqual(external,[]);await page.close();}console.log('PASS: real shared clock, date-only birthday and Trip Check PDF use KSA across midnight from Los Angeles and Tokyo.');
+ }finally{await browser.close();await server.close();}})().catch(e=>{console.error(e.stack);process.exitCode=1;});

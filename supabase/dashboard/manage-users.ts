@@ -256,9 +256,9 @@ function adminStore(sql:ReturnType<typeof postgres>){return async(actor:string,a
  const rows=await tx`SELECT session_user AS login,current_user AS actor,NOT rolsuper AND NOT rolbypassrls AND NOT rolcreaterole AND NOT rolcreatedb AND NOT rolreplication AND NOT rolinherit AS restricted FROM pg_roles WHERE rolname=session_user`;
  if(rows.length!==1||rows[0].login!=='taxiqaid_user_admin_login'||rows[0].actor!=='taxiqaid_user_admin_login'||rows[0].restricted!==true)throw new Error('Restricted administration connection required.');
  await tx`SET LOCAL ROLE taxiqaid_user_admin_backend`;await tx`SELECT set_config('statement_timeout','5000',true),set_config('lock_timeout','1000',true)`;
- const result=await tx`SELECT taxiqaid_auth_api.admin_dispatch(${actor}::uuid,${action},${sql.json(data as never)}::jsonb) AS result`;return result[0].result;
+ const result=action.startsWith('hard-delete:')?await tx`SELECT taxiqaid_auth_api.admin_delete_user(${actor}::uuid,${action.slice(12)},${sql.json(data as never)}::jsonb) AS result`:await tx`SELECT taxiqaid_auth_api.admin_dispatch(${actor}::uuid,${action},${sql.json(data as never)}::jsonb) AS result`;return result[0].result;
  });}
-const publicActions=['list','create','edit','permissions','requests','request-enqueue','request-approve','request-reject','reset-password','archive-user','sync-auth','sync-sheets','recover-create','operations'];
+const publicActions=['list','create','edit','permissions','requests','request-enqueue','request-approve','request-reject','reset-password','archive-user','delete-user','pending-deletions','sync-auth','sync-sheets','recover-create','operations'];
 const capability=(action:string)=>({'list':'user-management.view',create:'user-management.create-user','recover-create':'user-management.create-user',permissions:'user-management.manage-permissions',requests:'user-management.profile-requests.view','request-enqueue':'user-management.profile-requests.view','request-approve':'driver-profile.approve','request-reject':'driver-profile.reject'} as Record<string,string>)[action]||'user-management.edit-user';
 async function readInput(request:Request){
  if(request.method!=='POST'||!/^application\/json(?:;|$)/i.test(request.headers.get('content-type')||''))throw new Error('INVALID_INPUT');
@@ -268,19 +268,40 @@ async function readInput(request:Request){
 }
 function input(raw:Record<string,unknown>){
  if(!raw||typeof raw!=='object'||Array.isArray(raw)||typeof raw.action!=='string'||!publicActions.includes(raw.action))throw new Error('INVALID_INPUT');
- const allowed:Record<string,string[]>={list:['search','after','limit'],requests:['search','after','status','field'],create:['operation','account'],edit:['operation','uid','version','etag','account'],permissions:['operation','uid','version','etag','patch'],'reset-password':['operation','uid','version','etag'],'archive-user':['operation','uid','version','etag'],'sync-auth':['operation','uid','version','etag'],'sync-sheets':[],operations:[],'recover-create':['operation'],'request-enqueue':['operation','driverRef','iqama','name','field','oldValue','proposedValue'],'request-approve':['operation','uid','version','note'],'request-reject':['operation','uid','version','note']};
+ const allowed:Record<string,string[]>={list:['search','after','limit'],requests:['search','after','status','field'],create:['operation','account'],edit:['operation','uid','version','etag','account'],permissions:['operation','uid','version','etag','patch'],'reset-password':['operation','uid','version','etag'],'archive-user':['operation','uid','version','etag'],'delete-user':['operation','uid','version','etag','confirmedUsername'],'pending-deletions':[],'sync-auth':['operation','uid','version','etag'],'sync-sheets':[],operations:[],'recover-create':['operation'],'request-enqueue':['operation','driverRef','iqama','name','field','oldValue','proposedValue'],'request-approve':['operation','uid','version','note'],'request-reject':['operation','uid','version','note']};
  if(Object.keys(raw).some(k=>k!=='action'&&!allowed[String(raw.action)].includes(k)))throw new Error('INVALID_INPUT');const {action,...data}=raw;
  if(data.operation!==undefined&&!model.uuid(data.operation)||data.uid!==undefined&&!model.uuid(data.uid)||data.after!==undefined&&data.after!==null&&!model.uuid(data.after)||data.version!==undefined&&(!Number.isSafeInteger(data.version)||Number(data.version)<1)||data.etag!==undefined&&!(typeof data.etag==='string'&&/^[0-9a-f]{64}$/.test(data.etag)))throw new Error('INVALID_INPUT');
- if(!['list','requests','sync-sheets','operations'].includes(String(action))&&!model.uuid(data.operation))throw new Error('INVALID_INPUT');
- if(['edit','permissions','reset-password','archive-user','sync-auth','request-approve','request-reject'].includes(String(action))&&(!model.uuid(data.uid)||!Number.isSafeInteger(data.version)))throw new Error('INVALID_INPUT');
- if(['edit','permissions','reset-password','archive-user','sync-auth'].includes(String(action))&&typeof data.etag!=='string')throw new Error('INVALID_INPUT');
+ if(!['list','requests','sync-sheets','operations','pending-deletions'].includes(String(action))&&!model.uuid(data.operation))throw new Error('INVALID_INPUT');
+ if(['edit','permissions','reset-password','archive-user','delete-user','sync-auth','request-approve','request-reject'].includes(String(action))&&(!model.uuid(data.uid)||!Number.isSafeInteger(data.version)))throw new Error('INVALID_INPUT');
+ if(['edit','permissions','reset-password','archive-user','delete-user','sync-auth'].includes(String(action))&&typeof data.etag!=='string')throw new Error('INVALID_INPUT');
  if(['create','edit'].includes(String(action)))data.account=model.account(data.account);
  for(const k of ['search','note','name','oldValue','proposedValue','driverRef','iqama'])if(data[k]!==undefined&&data[k]!==null&&(typeof data[k]!=='string'||String(data[k]).length>(k==='note'?2000:k==='search'||k==='driverRef'?100:150)))throw new Error('INVALID_INPUT');
+ if(action==='delete-user'&&(typeof data.confirmedUsername!=='string'||!/^[a-z][a-z0-9]{1,47}$/.test(data.confirmedUsername)))throw new Error('INVALID_INPUT');
  return {action:String(action),data};
 }
 type Rpc=(actor:string,action:string,data:Record<string,unknown>)=>Promise<any>;
+const authUserAbsent=(result:any)=>result?.error?.status===404&&result.error.code==='user_not_found';
+async function permanentlyDelete(actor:string,data:Record<string,any>,rpc:Rpc,auth:any){
+ const lease=crypto.randomUUID(),payload={...data,lease},known=await rpc(actor,'hard-delete:inspect',data);
+ if(known.uid!==data.uid)throw new Error('DELETE_IDENTITY_MISMATCH');
+ if(known.deleted===true)return {deleted:true,operation:data.operation};
+ if(typeof known.email!=='string'||!known.email.includes('@'))throw new Error('AUTH_IDENTITY_MISMATCH');
+ const found=await auth.getUserById(data.uid);let absent=authUserAbsent(found);
+ if(!absent&&(found.error||found.data?.user?.id!==data.uid||found.data.user.email?.toLowerCase()!==known.email?.toLowerCase()))throw new Error('AUTH_IDENTITY_MISMATCH');
+ if(found.data?.user?.app_metadata?.taxiqaid_protected===true)throw Object.assign(new Error('PROTECTED_ACCOUNT'),{code:'42501'});
+ await rpc(actor,'hard-delete:reserve',payload);let stage='auth-ban';
+ try{
+  if(!absent){const banned=await auth.updateUserById(data.uid,{ban_duration:'876000h'});absent=authUserAbsent(banned);if(!absent&&(banned.error||banned.data?.user?.id!==data.uid||banned.data.user.email?.toLowerCase()!==known.email.toLowerCase()))throw new Error('AUTH_BAN_UNCONFIRMED');}
+  stage='auth-deletion';const checked=await rpc(actor,'hard-delete:check',payload);if(checked.uid!==data.uid||checked.email!==known.email)throw new Error('DELETE_IDENTITY_MISMATCH');
+  if(!absent){const removed=await auth.deleteUser(data.uid,false);if(removed.error&&!authUserAbsent(removed))throw new Error('AUTH_DELETE_UNCONFIRMED');}
+  const confirmation=await auth.getUserById(data.uid);if(!authUserAbsent(confirmation))throw new Error('AUTH_ABSENCE_UNCONFIRMED');
+  stage='private-cleanup';const completed=await rpc(actor,'hard-delete:finalize',{...payload,authAbsent:true});if(completed.deleted!==true||completed.uid!==data.uid)throw new Error('PRIVATE_DELETE_UNCONFIRMED');
+  return {deleted:true,operation:data.operation};
+ }catch{try{await rpc(actor,'hard-delete:release',payload);}catch{/* The same receipt remains recoverable after its lease expires. */}return {deleted:false,pending:true,operation:data.operation,stage};}
+}
 async function administrativeAction(actor:string,action:string,data:Record<string,any>,rpc:Rpc,auth:any,env:(k:string)=>string|undefined,fetcher:typeof fetch=fetch,sendRecovery?:RecoverySender){
  await rpc(actor,'authorize',{capability:capability(action),read:['list','requests'].includes(action)});
+ if(action==='delete-user'||action==='pending-deletions'){if(env('TAXIQAID_HARD_DELETE_ENABLED')!=='true')throw new Error('HARD_DELETE_NOT_ENABLED');return action==='delete-user'?await permanentlyDelete(actor,data,rpc,auth):await rpc(actor,'hard-delete:pending',{});}
  if(action==='recover-create'){const pending=await rpc(actor,'create-pending',data);return await administrativeAction(actor,'create',pending,rpc,auth,env,fetcher);}
  const credential=()=>{const bytes=crypto.getRandomValues(new Uint8Array(24));return [...bytes].map(x=>x.toString(16).padStart(2,'0')).join('')+'aA9!';};
  if(action==='create'){
@@ -359,7 +380,7 @@ async function administrativeAction(actor:string,action:string,data:Record<strin
   try{receipts=await syncSheets(job.batch,job.leaseUntil,env,fetcher);return {sync:receipts.every((r:any)=>r.ok)?'COMPLETE':'PENDING_RETRY',sent:receipts.filter((r:any)=>r.ok).length};}
   finally{await rpc(actor,'mirror-ack',{lease,receipts});}
  }
- return await rpc(actor,action,data);
+ const result=await rpc(actor,action,data);if(action==='list'){let ready=false;if(env('TAXIQAID_HARD_DELETE_ENABLED')==='true')try{ready=(await rpc(actor,'hard-delete:ready',{})).version===1;}catch{/* Existing services stay usable while the reviewed upgrade is pending. */}return {...result,features:{hardDelete:ready}};}return result;
 }
 function createAdminHandler(env:(k:string)=>string|undefined,deps:{rpc?:Rpc;verify?:(jwt:string)=>Promise<any>;admin?:any;fetcher?:typeof fetch;sendRecovery?:RecoverySender;connect?:(options:ReturnType<typeof adminConnectionOptions>)=>ReturnType<typeof postgres>}={}){return async(request:Request)=>{
  const origin=originFor(request,configuredOrigins(env('TAXIQAID_AUTH_ORIGINS')));if(!origin)return response(403,{error:'Administration unavailable.'});
@@ -374,7 +395,7 @@ function createAdminHandler(env:(k:string)=>string|undefined,deps:{rpc?:Rpc;veri
   const rpc=deps.rpc||(sql=(deps.connect||postgres)(adminConnectionOptions(env('TAXIQAID_USER_ADMIN_DB_URL')||'',env('TAXIQAID_USER_ADMIN_DB_CA'))),adminStore(sql));
   // Construct Admin client lazily only after online identity and SQL authorization, never in the browser.
   await rpc(user.id,'authorize',{capability:capability(action),read:['list','requests'].includes(action)});
-  let privileged:any;const admin=deps.admin||{getUserById:(...args:any[])=>{privileged??=createClient(project,env('TAXIQAID_AUTH_ADMIN_KEY')||'',options).auth.admin;return privileged.getUserById(...args);},createUser:(...args:any[])=>{privileged??=createClient(project,env('TAXIQAID_AUTH_ADMIN_KEY')||'',options).auth.admin;return privileged.createUser(...args);},updateUserById:(...args:any[])=>{privileged??=createClient(project,env('TAXIQAID_AUTH_ADMIN_KEY')||'',options).auth.admin;return privileged.updateUserById(...args);}};
+  let privileged:any;const admin=deps.admin||{getUserById:(...args:any[])=>{privileged??=createClient(project,env('TAXIQAID_AUTH_ADMIN_KEY')||'',options).auth.admin;return privileged.getUserById(...args);},createUser:(...args:any[])=>{privileged??=createClient(project,env('TAXIQAID_AUTH_ADMIN_KEY')||'',options).auth.admin;return privileged.createUser(...args);},updateUserById:(...args:any[])=>{privileged??=createClient(project,env('TAXIQAID_AUTH_ADMIN_KEY')||'',options).auth.admin;return privileged.updateUserById(...args);},deleteUser:(...args:any[])=>{privileged??=createClient(project,env('TAXIQAID_AUTH_ADMIN_KEY')||'',options).auth.admin;return privileged.deleteUser(...args);}};
   return response(200,await administrativeAction(user.id,action,data,rpc,admin,env,fetcher,deps.sendRecovery),origin);
  }catch(error){const code=(error as {code?:string}).code,message=(error as Error).message,status=code==='40001'||code==='23505'?409:code==='42501'?403:message==='INVALID_INPUT'||/valid|Invalid|requires/.test(message)?400:503;return response(status,{error:status===409?'Conflict. Refresh before retrying.':status===400?'Invalid administrative request.':'Administration unavailable.',...(message==='PROVISIONING_RECOVERY_REQUIRED'?{recoveryRequired:true}:{})},origin);}
  finally{if(sql)try{await sql.end({timeout:1});}catch{}}

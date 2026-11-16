@@ -29,7 +29,7 @@ const TaxiQaidPeopleUI = (() => {
     records.forEach(record => {
       const row = body.insertRow();
       columns.forEach((column, index) => {
-        const value = typeof column === 'function' ? column(record) : TaxiQaidSearch.read(record,column);
+        const value = typeof column === 'function' ? column(record) : TaxiQaidTime.field(column,TaxiQaidSearch.read(record,column));
         const cell = row.insertCell();
         if (onOpen && index === 0) {
           const button = document.createElement('button'); button.type = 'button'; button.className = 'btn-secondary';

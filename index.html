@@ -30,9 +30,8 @@
   <link rel="stylesheet" href="modules/administration/user-management/user-management.css">
   <style>[hidden] { display: none !important; }</style>
 
-  <!-- Original third-party browser libraries. -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- Reuse the pinned local spreadsheet library; the unused HTML-to-PDF bundle is retired. -->
+  <script defer src="assets/vendor/roster/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0"></script>
   <script src="shared/auth-dedicated-config.js"></script>
   <script defer src="shared/bootstrap.js"></script>

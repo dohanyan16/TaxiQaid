@@ -26,7 +26,7 @@ const TaxiQaidCustomerCare = (() => {
   }
   function open(mode,record=null) {
     fleetSearch.clear();form.reset();$('care-refund-amount').setCustomValidity('');$('care-save-status').hidden=true;$('care-validation').hidden=true;
-    Object.entries(fields).forEach(([key,id])=>{$('care-'+id).value=String(record?.[key]??(key==='Status'?'New':''));});
+    Object.entries(fields).forEach(([key,id])=>{const input=$('care-'+id),value=record?.[key]??(key==='Status'?'New':'');input.value=String(input.type==='date'?toDateInput(value):TaxiQaidTime.field(key,value));});
     $('care-current-assignee').textContent=record?.['Assigned To']?'Current assignment: '+record['Assigned To']:'No current assignment available.';
     const refund=record?.Refund;
     $('care-refund-details').value=typeof refund==='object'&&refund!==null?String(refund.details||''):String(refund??'');
@@ -36,13 +36,13 @@ const TaxiQaidCustomerCare = (() => {
     const history=$('care-history');history.replaceChildren();
     const events=Array.isArray(record?.['Resolution History'])?record['Resolution History']:[];
     if(!events.length){const item=document.createElement('li');item.textContent='No history available — database integration pending.';history.appendChild(item);}
-    events.forEach(event=>{const item=document.createElement('li');item.textContent=[event.status,event.changedBy,event.changedAt,event.details].filter(Boolean).join(' · ');history.appendChild(item);});
+    events.forEach(event=>{const item=document.createElement('li');item.textContent=[event.status,event.changedBy,event.changedAt?formatTimestampForDisplay(event.changedAt):null,event.details].filter(Boolean).join(' · ');history.appendChild(item);});
     setMode(mode);openPreviewModal(modal);
   }
   function value(record,column) {
     if(column==='Refund')return policy.refund(record.Refund);
     if(column==='Customer Satisfaction'){const rating=policy.rating(record[column]);return rating===null?'Unrated':rating+' / 5';}
-    return String(record[column]??'');
+    return String(TaxiQaidTime.field(column,record[column])??'');
   }
   function render() {
     const filtered=records.filter(record=>caseSearch.matches(record)&&policy.matchesCase(record,{plate:$('care-car-filter').value,status:$('care-status-filter').value}));

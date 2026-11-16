@@ -48,7 +48,7 @@
       document.getElementById("val-tid").innerHTML = driver["TID"] || driver["tid"] || "-";
       document.getElementById("val-passport-exp").innerHTML = formatDateForDisplay(driver["Passport Expiry Date"] || driver["passport expiry date"]);
       document.getElementById("val-iqama-issue").innerHTML = formatDateForDisplay(driver["Iqama Issue Date"] || driver["iqama issue date"]);
-      document.getElementById("val-dob").innerHTML = formatDateForDisplay(driver["Date of Birth"] || driver["date of birth"]);
+      document.getElementById("val-dob").innerHTML = formatDateForDisplay(driver["Date of Birth"] || driver["date of birth"],{calendar:true});
       document.getElementById("val-iqama-exp").innerHTML = formatDateForDisplay(driver["Iqama Expiry Date"] || driver["iqama expiry date"]);
       document.getElementById("val-work-start").innerHTML = formatDateForDisplay(driver["Employment Start Date"] || driver["employment start date"]);
       document.getElementById("val-phone").innerHTML = driver["Phone Number"] || driver["phone number"] || "-";

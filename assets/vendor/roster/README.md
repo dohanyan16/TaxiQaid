@@ -1,6 +1,6 @@
 # Roster worker dependencies
 
-These pinned files run only in the Roster worker. They do not replace the existing application/Trip Check globals, require a build step, or upload selected files to a service.
+The pinned PDF, ZIP and font files run in the Roster worker. The existing application also reuses this local SheetJS 0.18.5 file for its XLSX global, replacing a duplicate CDN request without changing parser bytes or version. No build step or file upload service is required. Trip Check keeps its own deferred PDF implementation.
 
 | File | Version / origin | License |
 | --- | --- | --- |

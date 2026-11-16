@@ -90,6 +90,7 @@ async function getFragment(path) {
 function addScript(path) {
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
+    script.async = false;
     script.src = path;
     script.onload = resolve;
     script.onerror = () => reject(new Error(`Unable to load ${path}`));
@@ -120,8 +121,7 @@ async function initializeApplication() {
       }
     }
     // Shared app shell and login form are inserted before feature views.
-    const loginMarkup = await getFragment("modules/login/login.html");
-    const shellMarkup = await getFragment("shared/shell.html");
+    const [loginMarkup,shellMarkup] = await Promise.all([getFragment("modules/login/login.html"),getFragment("shared/shell.html")]);
     workspace.append(loginMarkup, shellMarkup);
 
     const views = document.getElementById("module-views");
@@ -147,12 +147,10 @@ async function initializeApplication() {
     for (const modal of Array.from(portalMarkup.querySelectorAll(".modal-overlay"))) overlays.appendChild(modal);
     workspace.appendChild(portalMarkup);
 
-    // Load classic scripts one by one to preserve cross-file global bindings.
-    for (const path of SCRIPT_ORDER) {
-      await addScript(path);
-      if (path === "modules/login/login-dedicated.js" && (typeof TaxiQaidDedicatedLogin === "undefined" || !TaxiQaidDedicatedLogin.auth)) {
-        throw new Error("The dedicated authentication controller is unavailable.");
-      }
+    // Fetch classic scripts concurrently; async=false preserves their declared execution order.
+    await Promise.all(SCRIPT_ORDER.map(addScript));
+    if (window.TAXIQAID_DEDICATED_AUTH?.enabled === true && (typeof TaxiQaidDedicatedLogin === "undefined" || !TaxiQaidDedicatedLogin.auth)) {
+      throw new Error("The dedicated authentication controller is unavailable.");
     }
     initializeFrontendPreview();
     document.dispatchEvent(new CustomEvent("taxiqaid:app-ready"));

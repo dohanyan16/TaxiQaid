@@ -6,7 +6,7 @@
 
 The application is pure HTML, CSS, and JavaScript. It uses a **feature-folder architecture** rather than a build tool or a frontend framework.
 
-`index.html` loads CSS and external browser libraries, then `shared/bootstrap.js`. Bootstrap retrieves the HTML fragments over HTTP(S), inserts all screen sections and their modals into the DOM, and only then loads the JavaScript files in order. This preserves the existing classic-script global functions and event listeners. Do not add independent `<script>` tags to feature HTML; put feature logic into its `.js` file.
+`index.html` loads CSS and external browser libraries, then `shared/bootstrap.js`. Bootstrap retrieves the HTML fragments over HTTP(S), inserts all screen sections and their modals into the DOM, and only then fetches the classic JavaScript files concurrently while executing them in their declared order (`async=false`). This preserves the existing classic-script global functions and event listeners. Do not add independent `<script>` tags to feature HTML; put feature logic into its `.js` file.
 
 ## 2. Feature folders
 

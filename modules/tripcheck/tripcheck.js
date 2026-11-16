@@ -741,7 +741,7 @@ function createTripCheckPdf(record, logo) {
   const info = [
     ["Check ID", getTripCheckField(record, "Check ID")],
     ["Type", reportType],
-    ["Date / Time", `${getTripCheckField(record, "Date")}  ${getTripCheckField(record, "Time")}`],
+    ["Date / Time", `${formatDateForDisplay(getTripCheckField(record, "Date"))}  ${formatTimeForDisplay(getTripCheckField(record, "Time"))} KSA`],
     ["Car Plate", getTripCheckField(record, "Car Plate")],
     ["Driver Name", getTripCheckField(record, "Driver Name")],
     ["Driver Iqama", getTripCheckField(record, "Driver Iqama")],

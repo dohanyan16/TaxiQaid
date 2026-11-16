@@ -1,31 +1,35 @@
-# TaxiQaid — Safe deletion of management accounts
+# TaxiQaid — Permanent office-account deletion
 
-## Meaning of Delete User
+The previous SQL 06 / `archive-user` implementation only archived private records and banned Auth identities. It did **not** delete Auth users or release their username/email. SQL 06 remains unchanged as a historical prerequisite and compatibility interface. The current frontend never calls it as Delete User.
 
-**Delete User is a protected archive/revocation action**, not a physical erase of Auth identities or audit history. The button appears only when Master opens **Edit User** for a Manager or Supervisor. The confirmation requires entering the exact username. Create User never offers Delete User; Master and Driver accounts are not valid targets.
+The replacement is implemented and tested locally, **not deployed or activated**. Until the reviewed backend upgrade is available, Delete User is disabled with an explanatory tooltip. Ordinary creation, editing, permissions and email recovery remain available. No existing archived account is automatically deleted.
 
-On a confirmed request, the server checks the authenticated Master, `user-management.edit-user` and `user-management.change-status` capabilities, the current database account, version, ETag and the exact Auth UID/email. Under a single database transaction the private SQL dispatcher:
+## Permanent deletion protocol
 
-- changes the account to `disabled`, sets an `archived_at` marker and increments its version;
-- disables the signed-username broker identity and increments the mapping revision **before** any subsequent provider network request;
-- saves the operation receipt and an audit record without removing history;
-- hides archived accounts from ordinary `list` responses and prevents subsequent edits/permission resets.
+1. Only the online-verified, active existing Master with edit and change-status capabilities may act. SQL independently enforces this. Self, Master, Driver, unknown roles and protected server Auth metadata are rejected. Exact username confirmation, current version and ETag are required for a new operation.
+2. The server verifies exact Auth UID/email through official Admin `getUserById`. Unknown application foreign-key dependencies block before any removal; the dedicated schema must be inspected before rollout. Managed Auth dependencies are handled by the official API. Storage-owned objects may prevent provider deletion; no objects are automatically erased.
+3. A private SQL transaction reserves the operation, disables the account and identity mapping, marks it archived, and preserves an audit receipt. Access is revoked **before** provider mutation. An operation UUID, actor/target binding and a two-minute lease protect retries and concurrency.
+4. The backend requests an Auth ban, rechecks its lease, calls official `auth.admin.deleteUser(uid, false)` (hard delete), and independently confirms `user_not_found` with HTTP 404. Other errors, including an unspecified 404, never prove deletion.
+5. A final SQL transaction removes active overrides, department membership, mapping, metadata, pending user mirror payload and the private account. It retains operation/audit history. Only then can the UI report complete deletion. Username/email may then be reused by a **new UID**, subject to the existing uniqueness rules. Never reuse a deleted UID.
 
-The administrative Edge Function then requests an official Supabase Auth ban for 100 years. On success it marks the Auth synchronization complete through the existing internal `auth-synced` action. If Supabase Auth cannot confirm the ban, the SQL account and mapping remain disabled, and the UI reports provider synchronization pending rather than claiming full confirmation. A future privileged reconciliation mechanism is required to clear that pending state; **no automatic retries, physical deletion or restoration UI are included**.
+Auth and SQL cannot share a transaction. On failure the account stays revoked and the UI reports the incomplete stage. **Pending Deletions** offers same-operation retry, including after a lost response/browser restart, or explicitly reviewing an account archived by the old implementation. The Master must confirm the exact username again. No automatic or bulk destructive reconciliation is included. Completed-operation replay does not touch a newly created replacement account.
 
-This design retains historical records, UUID, contact email and username for audit and integrity. Usernames/emails **cannot be assumed reusable** after archival. It does not delete unrelated Driver records, Storage objects, records from other systems, or existing audit/outbox history. Supabase JWTs can remain cryptographically valid until expiry, but the dedicated app continues to require an active private account and enabled broker mapping; a ban is an additional safeguard.
+Previously issued JWTs may remain cryptographically valid until expiry. The private account/mapping checks continue to deny ERP access; hard deletion is not a claim of instant JWT invalidation. Supabase Admin credentials remain server-only. Legacy Sheets remains disconnected; no external mirror deletion or rollback synchronization is claimed.
 
-## Deployment order
+## Required owner approval and browser-only upgrade
 
-1. Review and apply `supabase/review/user-management/06_safe_archive_users.sql` to the dedicated **TaxiQaid** project only. It has an exact installed-function baseline guard and preserves security metadata and privileges. The script creates a nullable archive timestamp and updates the restricted SQL dispatcher. Do not apply to the old DemandAnalysis project.
-2. Ensure the SQL deployment succeeded before replacing the single-file `manage-users` Edge Function using the deterministic `supabase/dashboard/manage-users.ts` artifact, with `verify_jwt:true`, and without modifying existing environment variables, Master credentials, or gateway configuration.
-3. Merge the frontend from the feature branch into `main` and wait for the matching GitHub Pages deployment. No alternate website is created.
-4. Verify that selecting Reset Password **only** reports the accepted email request on Users and never opens Edit User. Check that Delete User is visible only in Edit User for office staff, requires exact-username confirmation, and never allows Master/Driver deletion. Avoid destructive live account tests without an explicitly approved disposable employee account.
+No hosted SQL, Edge replacement or flag change was performed during this work. Automatic approval review rejected the attempted read-only schema inspection because hosted SQL/private metadata requires additional explicit approval. Do not bypass that decision.
 
-## Failure handling
+After separate owner approval:
 
-If SQL rollout is blocked, **do not publish the Delete User button**; the feature must remain on its branch rather than displaying a button backed by an unavailable action.
+1. In the dedicated TaxiQaid Supabase Dashboard (never DemandAnalysis), open **SQL Editor → New query** and run `supabase/review/user-management/07_hard_delete_inspect.sql`. It returns only dependency definitions, trigger names/functions (no source or arguments), column metadata, security attributes and source hashes. Keep the results owner-controlled. No account rows or credentials are needed. Review every dependency and any custom deletion trigger; unresolved side effects block rollout: unknown historical/business references must be intentionally detached or retained in a separately reviewed proposal; never enable a cascade to make deletion pass.
+2. Confirm SQL 06 is already installed; do not blindly rerun it. Confirm an owner-approved database recovery method (Dashboard backup if available on the plan) and the deployed `manage-users` source. Review/apply **only** `07_hard_delete_users.sql` after schema compatibility is established. It is transactional, refuses repeat installation, preserves permanent Supabase-managed memberships, removes temporary SET/CREATE grants before COMMIT and deletes no accounts on installation. A failed transaction must be rolled back; do not run selected fragments.
+3. Replace only `manage-users` with generated `supabase/dashboard/manage-users.ts`, retaining online JWT verification, existing administrative connection, origin configuration and existing secrets. No authentication broker, access function, permission catalog, role grants, Cron or Cloudflare changes are needed.
+4. After SQL/security postflight review, set server-only `TAXIQAID_HARD_DELETE_ENABLED=true`. Until then the new endpoint fails closed. A Master directory refresh advertises `features.hardDelete:true` only if the new SQL function's dependency and authorization checks pass. Inspect the new function's owner, `SECURITY DEFINER`, fixed `pg_catalog,pg_temp` search path, `row_security=on`, backend-only EXECUTE and exact restored memberships. No browser role may receive private-table access.
+5. Test only an explicitly approved disposable synthetic office account. Do not delete or reset passwords for any existing employee. Compare Auth, private account, mapping, membership/overrides and retained audit results under owner control. Local tests do not replace this hosted validation.
 
-If a deletion returns a network error or 503, refresh and inspect authoritative records: SQL may have already revoked access. Do not retry a different operation against an uncertain account. A provider ban failure leaves the SQL-archived account disabled, but its Auth identity remains. Retain the audit receipt and reconcile from trusted administrative tools.
+## Rollback and recovery
 
-Rollback must preserve the archived marker and never silently re-enable any archived account. Reverting frontend and Edge changes does not remove an Auth ban or undo the SQL archival. Never drop the archival column or restore the original dispatcher after live archives without a separate data-safe reconciliation plan.
+Set `TAXIQAID_HARD_DELETE_ENABLED=false` first; this disables new requests and UI capability advertisement. Retain SQL 07, receipts, audit, archived markers and disabled mappings. Restore the saved Edge source only after recording incomplete operations; an old frontend must never label archive as permanent deletion. SQL application failures roll back all installation changes. Do not drop dependencies, reset counters, unban archived accounts or erase receipts to recover.
+
+A completed Auth hard delete is irreversible through frontend/SQL rollback. A replacement account requires explicit provisioning with a new UID. Pending operations must be reconciled using the upgraded protected service after the owner resolves the provider/dependency issue; retry only the original operation. No secret, private identity or token should be pasted into GitHub, browser logs or the public repository.

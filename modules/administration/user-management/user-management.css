@@ -10,3 +10,18 @@
 .um-departments input[type=checkbox] {width:22px;height:22px;min-height:22px;}
 #um-create-departments {margin-top:8px;}
 #um-permission-matrix .um-allow {color:#216b29;}#um-permission-matrix .um-deny {color:var(--muted,#666);}
+/* Compact administrative directory; scrolling stays inside the table on small screens. */
+#um-users-table {table-layout:fixed;width:100%;min-width:900px;font-size:.86rem;}
+#um-users-table th,#um-users-table td {white-space:normal;overflow-wrap:anywhere;vertical-align:middle;padding:8px 6px;}
+#um-users-table th:nth-child(1) {width:7%;}
+#um-users-table th:nth-child(2) {width:11%;}
+#um-users-table th:nth-child(3) {width:13%;}
+#um-users-table th:nth-child(4) {width:15%;}
+#um-users-table th:nth-child(5) {width:7%;}
+#um-users-table th:nth-child(6) {width:11%;}
+#um-users-table th:nth-child(7) {width:7%;}
+#um-users-table th:nth-child(8) {width:9%;}
+#um-users-table th:nth-child(9) {width:20%;}
+#um-users-table .um-actions {display:grid;grid-template-columns:1fr;gap:5px;width:100%;min-width:0;}
+#um-users-table .um-actions button {width:100%;min-width:0;margin:0;padding:7px 6px;white-space:normal;font-size:inherit;line-height:1.2;}
+@media(min-width:1600px){#um-users-table .um-actions {grid-template-columns:repeat(2,minmax(0,1fr));}#um-users-table .um-actions button:last-child:nth-child(odd){grid-column:1/-1;}}
