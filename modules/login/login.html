@@ -8,6 +8,18 @@
 <button class="btn-primary" id="login-button" type="submit">Sign In</button>
 <p hidden="" id="error-message" role="alert">Invalid username or password.</p>
 </form>
+<button id="password-reset-entry" class="login-reset-link" type="button" hidden>Reset Password</button>
+<section id="password-reset-panel" class="login-reset-panel" aria-labelledby="password-reset-heading" hidden>
+  <h2 id="password-reset-heading">Reset Password</h2>
+  <p>Enter the employee email address registered when your TaxiQaid account was created. Your username will stay the same.</p>
+  <form id="password-reset-request-form">
+    <label for="password-reset-email">Registered email address</label>
+    <input id="password-reset-email" type="email" autocomplete="email" maxlength="254" placeholder="name@company.com" required>
+    <button class="btn-primary" id="password-reset-submit" type="submit">Send Reset Link</button>
+  </form>
+  <p id="password-reset-status" role="status" aria-live="polite" hidden></p>
+  <button id="password-reset-back" class="login-reset-link" type="button">Back to Sign In</button>
+</section>
 <button id="driver-signin-entry" class="btn-secondary" type="button">Driver Sign In</button>
 </div>
 </div>
