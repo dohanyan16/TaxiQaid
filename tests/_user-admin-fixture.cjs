@@ -28,6 +28,13 @@ module.exports=({sql,runtime,root,uid,lit})=>{
  console.error('PASS: modified role CHECK rejected specifically by the role preflight; no administrative roles or record changes.');
  // The exact reviewed CHECK accepts manager/supervisor and survives the complete migration untouched.
  sql(proposal);assert.equal(admin(constraintQuery),expectedConstraint);console.error('PASS: exact reviewed role CHECK permits complete SQL 01 migration and is preserved unchanged.');
+ // Validate source-fingerprinted email compatibility in the disposable database only.
+ const emailUpgrade=fs.readFileSync(path.join(root,'supabase/review/user-management/05_employee_email_compatibility.sql'),'utf8');
+ admin("CREATE TEMP TABLE saved_employee_function AS SELECT oid,prosrc FROM pg_proc WHERE oid='taxiqaid_auth_api.admin_validate_account(jsonb)'::regprocedure;UPDATE pg_proc SET prosrc=prosrc||E'\\n-- tampered body' WHERE oid='taxiqaid_auth_api.admin_validate_account(jsonb)'::regprocedure;");
+ sql(emailUpgrade,{failure:/ADMIN_EMAIL_SOURCE_REVIEW_REQUIRED/});
+ admin("UPDATE pg_proc p SET prosrc=s.prosrc FROM saved_employee_function s WHERE p.oid=s.oid;");
+ sql(emailUpgrade);
+ assert.equal(admin("SELECT has_schema_privilege('taxiqaid_user_admin_owner','taxiqaid_auth_api','CREATE');"),'f');
  const accessUpgrade=fs.readFileSync(path.join(root,'supabase/review/user-management/03_access_compatibility.sql'),'utf8');
  admin("CREATE TEMP TABLE saved_access AS SELECT oid,prosrc FROM pg_proc WHERE oid='taxiqaid_auth_api.get_management_access(uuid,bigint)'::regprocedure;UPDATE pg_proc SET prosrc=prosrc||E'\\n-- genuinely changed body' WHERE oid='taxiqaid_auth_api.get_management_access(uuid,bigint)'::regprocedure;");
  sql(accessUpgrade,{failure:true});
@@ -48,21 +55,23 @@ module.exports=({sql,runtime,root,uid,lit})=>{
  const list=rpc('list',{});assert.equal(list.users.find(u=>u.role==='super_admin').roleDefaults.length,101);assert.equal(list.departments.length,7);
  const target='10000000-0000-4000-8000-000000000001',lease='10000000-0000-4000-8000-000000000002';let serial=20;
  const op=()=>('20000000-0000-4000-8000-'+String(serial++).padStart(12,'0'));
- const account={fullName:'Synthetic Manager',username:'adminfixture',contactEmail:null,role:'manager',status:'active',departments:['fleet']};
+ const account={fullName:'Synthetic Manager',username:'adminfixture',contactEmail:'adminfixture@example.invalid',role:'manager',status:'active',departments:['fleet']};
  assert.equal(rpc('create-reserve',{operation:target,lease,account}).target,target);
- admin("INSERT INTO auth.users(id,email) VALUES('"+target+"','synthetic-admin-identity@example.invalid');");
- let user=rpc('create-finish',{operation:target,lease,authUid:target,technicalEmail:'synthetic-admin-identity@example.invalid'}).user;
- assert.equal(user.contactEmail,null);assert.deepEqual(user.roleDefaults,[]);assert.equal(user.role,'manager');assert.deepEqual(user.departments,['fleet']);
+ admin("INSERT INTO auth.users(id,email) VALUES('"+target+"','adminfixture@example.invalid');");
+ let user=rpc('create-finish',{operation:target,lease,authUid:target,technicalEmail:'adminfixture@example.invalid'}).user;
+ assert.equal(user.contactEmail,'adminfixture@example.invalid');assert.deepEqual(user.roleDefaults,[]);assert.equal(user.role,'manager');assert.deepEqual(user.departments,['fleet']);
  assert.equal(rpc('create-reserve',{operation:target,lease,account}).completed,true);
- const recovering=op(),recoveryAccount={...account,username:'recoverfixture',role:'supervisor',status:'disabled'};
+ const recovering=op(),recoveryAccount={...account,username:'recoverfixture',contactEmail:'recoverfixture@example.invalid',role:'supervisor',status:'disabled'};
  rpc('create-reserve',{operation:recovering,lease,account:recoveryAccount});rpc('create-recover',{operation:recovering,lease});
  assert.ok(rpc('operations').operations.some(o=>o.operation===recovering&&o.state==='recovery_required'));assert.deepEqual(rpc('create-pending',{operation:recovering}).account,recoveryAccount);
  rpc('create-reserve',{operation:recovering,lease:op(),account:recoveryAccount},uid,{failure:true});
- admin("UPDATE taxiqaid_private.user_admin_operations SET lease_until=now()-interval '1 second' WHERE id='"+recovering+"';INSERT INTO auth.users(id,email) VALUES('"+recovering+"','synthetic-recovery@example.invalid');");
- const recoveryLease=op();rpc('create-reserve',{operation:recovering,lease:recoveryLease,account:recoveryAccount});rpc('create-finish',{operation:recovering,lease:recoveryLease,authUid:target,technicalEmail:'synthetic-recovery@example.invalid'},uid,{failure:true});
- assert.equal(rpc('create-finish',{operation:recovering,lease:recoveryLease,authUid:recovering,technicalEmail:'synthetic-recovery@example.invalid'}).user.status,'disabled');
+ admin("UPDATE taxiqaid_private.user_admin_operations SET lease_until=now()-interval '1 second' WHERE id='"+recovering+"';INSERT INTO auth.users(id,email) VALUES('"+recovering+"','recoverfixture@example.invalid');");
+ const recoveryLease=op();rpc('create-reserve',{operation:recovering,lease:recoveryLease,account:recoveryAccount});rpc('create-finish',{operation:recovering,lease:recoveryLease,authUid:target,technicalEmail:'recoverfixture@example.invalid'},uid,{failure:true});
+ assert.equal(rpc('create-finish',{operation:recovering,lease:recoveryLease,authUid:recovering,technicalEmail:'recoverfixture@example.invalid'}).user.status,'disabled');
  assert.equal(admin("SELECT is_enabled FROM taxiqaid_private.auth_login_identities WHERE user_id='"+recovering+"';"),'f');
 
+ rpc('create-reserve',{operation:op(),lease,account:{...account,contactEmail:null}},uid,{failure:true});
+ rpc('create-reserve',{operation:op(),lease,account:{...account,username:'duplicateemail'}},uid,{failure:true});
  rpc('create-reserve',{operation:op(),lease,account},uid,{failure:true});
  rpc('create-reserve',{operation:op(),lease,account:{...account,username:'invalidmaster',role:'super_admin'}},uid,{failure:true});
  rpc('create-reserve',{operation:uid,lease,account:{...account,username:'masterreplacement'}},uid,{failure:true});
@@ -75,7 +84,7 @@ module.exports=({sql,runtime,root,uid,lit})=>{
  rpc('permissions',{operation:op(),uid:target,...stale,patch:{'fuel.view':true}},uid,{failure:true});
  const effective=admin("SELECT taxiqaid_auth_api.admin_effective('"+target+"','fuel.create');");assert.equal(effective,'f');
  const master=list.users.find(u=>u.uid===uid);for(const action of ['edit','reset-reserve','auth-synced'])rpc(action,{operation:op(),uid,version:master.version,etag:master.etag,account},uid,{failure:true});rpc('permissions',{operation:op(),uid,version:master.version,etag:master.etag,patch:{'dashboard.view':false}},uid,{failure:true});
- user=change('edit',{account:{...account,username:'renamedfixture',contactEmail:'optional@example.invalid',status:'disabled',departments:['fleet','finance']}}).user;
+ user=change('edit',{account:{...account,username:'renamedfixture',contactEmail:'adminfixture@example.invalid',status:'disabled',departments:['fleet','finance']}}).user;
  assert.equal(user.status,'disabled');assert.equal(user.username,'renamedfixture');assert.equal(admin("SELECT is_enabled FROM taxiqaid_private.auth_login_identities WHERE user_id='"+target+"';"),'f');
  runtime("SELECT taxiqaid_auth_api.get_management_access('"+target+"',"+admin("SELECT revision FROM taxiqaid_private.auth_login_identities WHERE user_id='"+target+"'")+"::bigint);",{failure:true});
  user=change('edit',{account:{...account,username:'renamedfixture',role:'supervisor',departments:['fleet','finance']}}).user;assert.equal(user.role,'supervisor');
