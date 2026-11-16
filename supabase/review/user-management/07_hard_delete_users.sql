@@ -1,4 +1,4 @@
--- REVIEW-ONLY UPGRADE after SQL 06. Never deletes an account during installation.
+-- Controlled upgrade after SQL 06. Installation never deletes an account.
 -- Live schema inspection and owner approval are required before application.
 BEGIN;
 SET LOCAL lock_timeout='3s';
@@ -30,13 +30,15 @@ BEGIN
  SELECT c.oid INTO STRICT auth_users FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='auth' AND c.relname='users';
  -- Catalog OIDs avoid granting the restricted owner any auth schema/table access.
  -- Unknown application dependencies must never be cascaded or silently discarded.
- FOR dependency IN SELECT c.conrelid,c.confrelid,c.confdeltype,n.nspname,c.conname FROM pg_constraint c JOIN pg_class t ON t.oid=c.conrelid JOIN pg_namespace n ON n.oid=t.relnamespace WHERE c.contype='f' AND c.confrelid IN (auth_users,'taxiqaid_private.user_accounts'::regclass,'taxiqaid_private.auth_login_identities'::regclass,'taxiqaid_private.user_admin_metadata'::regclass) LOOP
+ FOR dependency IN SELECT c.conrelid,c.confrelid,c.confdeltype,c.conkey,c.confkey,n.nspname,c.conname FROM pg_constraint c JOIN pg_class t ON t.oid=c.conrelid JOIN pg_namespace n ON n.oid=t.relnamespace WHERE c.contype='f' AND c.confrelid IN (auth_users,'taxiqaid_private.user_accounts'::regclass,'taxiqaid_private.auth_login_identities'::regclass,'taxiqaid_private.user_admin_metadata'::regclass) LOOP
   IF dependency.confrelid=auth_users AND dependency.nspname='auth' THEN CONTINUE;END IF;
+  IF dependency.confrelid=auth_users AND dependency.conrelid='taxiqaid_private.user_accounts'::regclass AND dependency.confdeltype='r' AND dependency.conkey=ARRAY[(SELECT attnum FROM pg_attribute WHERE attrelid=dependency.conrelid AND attname='user_id')]::smallint[] AND dependency.confkey=ARRAY[(SELECT attnum FROM pg_attribute WHERE attrelid=auth_users AND attname='id')]::smallint[] THEN CONTINUE;END IF;
   IF dependency.confrelid=auth_users AND dependency.conrelid='taxiqaid_private.auth_login_identities'::regclass AND dependency.confdeltype='c' THEN CONTINUE;END IF;
   IF dependency.confrelid='taxiqaid_private.user_accounts'::regclass AND dependency.conrelid IN ('taxiqaid_private.user_admin_metadata'::regclass,'taxiqaid_private.user_departments'::regclass,'taxiqaid_private.user_permission_overrides'::regclass) THEN CONTINUE;END IF;
   RAISE EXCEPTION 'DELETE_DEPENDENCY_REVIEW_REQUIRED' USING ERRCODE='42501';
  END LOOP;
- IF p_action='ready' THEN RETURN jsonb_build_object('version',1);END IF;
+ IF EXISTS(SELECT FROM pg_trigger WHERE NOT tgisinternal AND tgenabled<>'D' AND (tgtype::integer & 8)<>0 AND tgrelid IN (auth_users,'taxiqaid_private.user_accounts'::regclass,'taxiqaid_private.auth_login_identities'::regclass,'taxiqaid_private.user_admin_metadata'::regclass)) THEN RAISE EXCEPTION 'DELETE_TRIGGER_REVIEW_REQUIRED' USING ERRCODE='42501';END IF;
+ IF p_action='ready' THEN RETURN jsonb_build_object('version',2);END IF;
  IF p_action='pending' THEN RETURN jsonb_build_object('operations',(SELECT coalesce(jsonb_agg(jsonb_build_object('operation',id,'uid',o.target,'username',username,'user',payload->'user','state',state) ORDER BY created_at),'[]') FROM taxiqaid_private.user_admin_operations o WHERE action='delete-user' AND state<>'completed' AND actor=p_actor),'archived',(SELECT coalesce(jsonb_agg(taxiqaid_auth_api.admin_snapshot(a.user_id)),'[]') FROM taxiqaid_private.user_accounts a JOIN taxiqaid_private.user_admin_metadata m USING(user_id) WHERE m.archived_at IS NOT NULL AND a.account_type='management' AND a.role_key IN ('manager','supervisor') AND NOT EXISTS(SELECT FROM taxiqaid_private.user_admin_operations o WHERE o.action='delete-user' AND o.target=a.user_id AND o.state<>'completed')));END IF;
  op:=(p_data->>'operation')::uuid;v_target:=(p_data->>'uid')::uuid;
  IF op IS NULL OR v_target IS NULL OR v_target=p_actor OR op='11111111-1111-4111-8111-111111111111'::uuid THEN RAISE EXCEPTION 'PROTECTED_ACCOUNT' USING ERRCODE='42501';END IF;
@@ -67,16 +69,26 @@ BEGIN
  END IF;
  IF job.lease IS DISTINCT FROM (p_data->>'lease')::uuid OR job.lease_until<clock_timestamp() THEN RAISE EXCEPTION 'DELETE_LEASE_CONFLICT' USING ERRCODE='40001';END IF;
  IF p_action='release' THEN UPDATE taxiqaid_private.user_admin_operations SET state='recovery_required',lease=NULL,lease_until=NULL WHERE id=op;RETURN jsonb_build_object('pending',true);END IF;
- IF p_action='check' THEN RETURN jsonb_build_object('uid',v_target,'email',job.payload->>'email');END IF;
- IF p_action<>'finalize' OR (p_data->>'authAbsent')::boolean IS DISTINCT FROM true THEN RAISE EXCEPTION 'AUTH_DELETION_NOT_CONFIRMED';END IF;
- -- Auth absence is confirmed by the protected server using official Admin getUserById, never client input.
- DELETE FROM taxiqaid_private.user_permission_overrides WHERE user_id=v_target;
- DELETE FROM taxiqaid_private.user_departments WHERE user_id=v_target;
+ IF p_action='detach' THEN
+  IF EXISTS(SELECT FROM taxiqaid_private.user_accounts WHERE user_id=v_target AND (account_type<>'management' OR role_key NOT IN ('manager','supervisor') OR status<>'disabled')) THEN RAISE EXCEPTION 'PROTECTED_ACCOUNT' USING ERRCODE='42501';END IF;
+  IF coalesce((job.payload->>'privateDetached')::boolean,false) THEN RETURN jsonb_build_object('uid',v_target,'email',job.payload->>'email');END IF;
+  PERFORM 1 FROM taxiqaid_private.user_accounts WHERE user_id=v_target FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'PRIVATE_ACCOUNT_MISSING';END IF;
+  -- Preserve the existing Auth FK RESTRICT. Remove its active child only after receipt + revocation + provider ban.
+  DELETE FROM taxiqaid_private.user_permission_overrides WHERE user_id=v_target;
+  DELETE FROM taxiqaid_private.user_departments WHERE user_id=v_target;
+  DELETE FROM taxiqaid_private.user_admin_outbox WHERE kind='user' AND entity=v_target;
+  DELETE FROM taxiqaid_private.user_admin_metadata WHERE user_id=v_target;
+  DELETE FROM taxiqaid_private.user_accounts WHERE user_id=v_target AND account_type='management' AND role_key IN ('manager','supervisor') AND status='disabled';
+  IF EXISTS(SELECT FROM taxiqaid_private.user_accounts WHERE user_id=v_target) THEN RAISE EXCEPTION 'PRIVATE_DELETION_UNCONFIRMED';END IF;
+  UPDATE taxiqaid_private.user_admin_operations SET payload=payload||jsonb_build_object('privateDetached',true) WHERE id=op;
+  PERFORM taxiqaid_auth_api.admin_event(op,p_actor,'delete-private-detached',v_target,jsonb_build_object('accessRevoked',true));
+  RETURN jsonb_build_object('uid',v_target,'email',job.payload->>'email');
+ END IF;
+ IF p_action<>'finalize' OR (p_data->>'authAbsent')::boolean IS DISTINCT FROM true OR (job.payload->>'privateDetached')::boolean IS DISTINCT FROM true THEN RAISE EXCEPTION 'AUTH_DELETION_NOT_CONFIRMED';END IF;
+ -- Auth absence is confirmed through official Admin API. Never delete Auth rows through SQL.
  DELETE FROM taxiqaid_private.auth_login_identities WHERE user_id=v_target;
- DELETE FROM taxiqaid_private.user_admin_outbox WHERE kind='user' AND entity=v_target;
- DELETE FROM taxiqaid_private.user_admin_metadata WHERE user_id=v_target;
- DELETE FROM taxiqaid_private.user_accounts WHERE user_id=v_target AND account_type='management' AND role_key IN ('manager','supervisor') AND status='disabled';
- IF EXISTS(SELECT FROM taxiqaid_private.user_accounts WHERE user_id=v_target) THEN RAISE EXCEPTION 'PRIVATE_DELETION_UNCONFIRMED';END IF;
+ IF EXISTS(SELECT FROM taxiqaid_private.user_accounts WHERE user_id=v_target) OR EXISTS(SELECT FROM taxiqaid_private.user_departments WHERE user_id=v_target) OR EXISTS(SELECT FROM taxiqaid_private.user_permission_overrides WHERE user_id=v_target) OR EXISTS(SELECT FROM taxiqaid_private.user_admin_metadata WHERE user_id=v_target) OR EXISTS(SELECT FROM taxiqaid_private.auth_login_identities WHERE user_id=v_target) OR EXISTS(SELECT FROM taxiqaid_private.user_admin_outbox WHERE kind='user' AND entity=v_target) THEN RAISE EXCEPTION 'PRIVATE_DELETION_UNCONFIRMED';END IF;
  UPDATE taxiqaid_private.user_admin_operations SET state='completed',lease=NULL,lease_until=NULL,result=jsonb_build_object('deleted',true,'uid',v_target) WHERE id=op;
  PERFORM taxiqaid_auth_api.admin_event(op,p_actor,'delete-completed',v_target,jsonb_build_object('authAbsenceConfirmed',true));
  RETURN jsonb_build_object('deleted',true,'uid',v_target);

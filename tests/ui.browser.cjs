@@ -29,7 +29,11 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
   assert.equal(views.length,18);assert.equal(views.includes('driver-weekly-schedule'),false);
   assert.equal(await page.locator('#view-driver-weekly-schedule').count(),0);
   const screenshotViews=['dashboard','fleet','drivers','accidents','breakdowns','maintenance','fuel','ncr','penalties','tripcheck','driver-appeals','training','driver-deductions','roster','customer-care','helpdesk','driver-portal-preview','user-management'];
-  const pdfHash=crypto.createHash('sha256').update(await page.evaluate(()=>createTripCheckPdf.toString())).digest('hex');
+  const pdfSource=await page.evaluate(()=>createTripCheckPdf.toString());
+  // The approved KSA display boundary is the only permitted change to the original PDF layout.
+  const ksaDate='`${formatDateForDisplay(getTripCheckField(record, "Date"))}  ${formatTimeForDisplay(getTripCheckField(record, "Time"))} KSA`';
+  assert.ok(pdfSource.includes(ksaDate),'PDF must use the shared KSA formatter');
+  const pdfHash=crypto.createHash('sha256').update(pdfSource.replace(ksaDate,'`${getTripCheckField(record, "Date")}  ${getTripCheckField(record, "Time")}`')).digest('hex');
   assert.equal(pdfHash,'f3ca12a764f62d34862e4a1893c0cf9511a27ebf162e56541370a9b68af9218a','Custom PDF source changed');
   assert.equal(await page.locator('#sidebar-toggle').innerText(),'‹');
   await page.locator('#sidebar-toggle').click();assert.equal(await page.locator('#sidebar').evaluate(el=>el.classList.contains('collapsed')),true);assert.equal(await page.locator('#sidebar-toggle').innerText(),'›');

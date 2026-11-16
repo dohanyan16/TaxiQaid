@@ -292,8 +292,8 @@ async function permanentlyDelete(actor:string,data:Record<string,any>,rpc:Rpc,au
  await rpc(actor,'hard-delete:reserve',payload);let stage='auth-ban';
  try{
   if(!absent){const banned=await auth.updateUserById(data.uid,{ban_duration:'876000h'});absent=authUserAbsent(banned);if(!absent&&(banned.error||banned.data?.user?.id!==data.uid||banned.data.user.email?.toLowerCase()!==known.email.toLowerCase()))throw new Error('AUTH_BAN_UNCONFIRMED');}
-  stage='auth-deletion';const checked=await rpc(actor,'hard-delete:check',payload);if(checked.uid!==data.uid||checked.email!==known.email)throw new Error('DELETE_IDENTITY_MISMATCH');
-  if(!absent){const removed=await auth.deleteUser(data.uid,false);if(removed.error&&!authUserAbsent(removed))throw new Error('AUTH_DELETE_UNCONFIRMED');}
+  stage='private-detachment';const checked=await rpc(actor,'hard-delete:detach',payload);if(checked.uid!==data.uid||checked.email!==known.email)throw new Error('DELETE_IDENTITY_MISMATCH');
+  stage='auth-deletion';if(!absent){const removed=await auth.deleteUser(data.uid,false);if(removed.error&&!authUserAbsent(removed))throw new Error('AUTH_DELETE_UNCONFIRMED');}
   const confirmation=await auth.getUserById(data.uid);if(!authUserAbsent(confirmation))throw new Error('AUTH_ABSENCE_UNCONFIRMED');
   stage='private-cleanup';const completed=await rpc(actor,'hard-delete:finalize',{...payload,authAbsent:true});if(completed.deleted!==true||completed.uid!==data.uid)throw new Error('PRIVATE_DELETE_UNCONFIRMED');
   return {deleted:true,operation:data.operation};
@@ -301,7 +301,7 @@ async function permanentlyDelete(actor:string,data:Record<string,any>,rpc:Rpc,au
 }
 async function administrativeAction(actor:string,action:string,data:Record<string,any>,rpc:Rpc,auth:any,env:(k:string)=>string|undefined,fetcher:typeof fetch=fetch,sendRecovery?:RecoverySender){
  await rpc(actor,'authorize',{capability:capability(action),read:['list','requests'].includes(action)});
- if(action==='delete-user'||action==='pending-deletions'){if(env('TAXIQAID_HARD_DELETE_ENABLED')!=='true')throw new Error('HARD_DELETE_NOT_ENABLED');return action==='delete-user'?await permanentlyDelete(actor,data,rpc,auth):await rpc(actor,'hard-delete:pending',{});}
+ if(action==='delete-user'||action==='pending-deletions'){if(![undefined,'true'].includes(env('TAXIQAID_HARD_DELETE_ENABLED'))||(await rpc(actor,'hard-delete:ready',{})).version!==2)throw new Error('HARD_DELETE_NOT_ENABLED');return action==='delete-user'?await permanentlyDelete(actor,data,rpc,auth):await rpc(actor,'hard-delete:pending',{});}
  if(action==='recover-create'){const pending=await rpc(actor,'create-pending',data);return await administrativeAction(actor,'create',pending,rpc,auth,env,fetcher);}
  const credential=()=>{const bytes=crypto.getRandomValues(new Uint8Array(24));return [...bytes].map(x=>x.toString(16).padStart(2,'0')).join('')+'aA9!';};
  if(action==='create'){
@@ -380,7 +380,7 @@ async function administrativeAction(actor:string,action:string,data:Record<strin
   try{receipts=await syncSheets(job.batch,job.leaseUntil,env,fetcher);return {sync:receipts.every((r:any)=>r.ok)?'COMPLETE':'PENDING_RETRY',sent:receipts.filter((r:any)=>r.ok).length};}
   finally{await rpc(actor,'mirror-ack',{lease,receipts});}
  }
- const result=await rpc(actor,action,data);if(action==='list'){let ready=false;if(env('TAXIQAID_HARD_DELETE_ENABLED')==='true')try{ready=(await rpc(actor,'hard-delete:ready',{})).version===1;}catch{/* Existing services stay usable while the reviewed upgrade is pending. */}return {...result,features:{hardDelete:ready}};}return result;
+ const result=await rpc(actor,action,data);if(action==='list'){let ready=false;if([undefined,'true'].includes(env('TAXIQAID_HARD_DELETE_ENABLED')))try{ready=(await rpc(actor,'hard-delete:ready',{})).version===2;}catch{/* Existing services stay usable while the reviewed upgrade is pending. */}return {...result,features:{hardDelete:ready}};}return result;
 }
 function createAdminHandler(env:(k:string)=>string|undefined,deps:{rpc?:Rpc;verify?:(jwt:string)=>Promise<any>;admin?:any;fetcher?:typeof fetch;sendRecovery?:RecoverySender;connect?:(options:ReturnType<typeof adminConnectionOptions>)=>ReturnType<typeof postgres>}={}){return async(request:Request)=>{
  const origin=originFor(request,configuredOrigins(env('TAXIQAID_AUTH_ORIGINS')));if(!origin)return response(403,{error:'Administration unavailable.'});

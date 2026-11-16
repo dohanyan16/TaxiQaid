@@ -45,6 +45,7 @@ module.exports=({sql,runtime,root,uid,lit})=>{
  assert.equal(admin("SELECT has_schema_privilege('taxiqaid_user_admin_owner','taxiqaid_auth_api','CREATE');"),'f');
  console.error('PASS: SQL 05 accepts both secure search_path spellings, rejects unknown source, rolls back cleanly and preserves function security.');
  sql(fs.readFileSync(path.join(root,'supabase/review/user-management/06_safe_archive_users.sql'),'utf8'));
+ admin("ALTER TABLE taxiqaid_private.user_accounts ADD CONSTRAINT synthetic_auth_uid_restrict FOREIGN KEY(user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;");
  const deletionUpgrade=fs.readFileSync(path.join(root,'supabase/review/user-management/07_hard_delete_users.sql'),'utf8');
  sql(deletionUpgrade.replace(/COMMIT;\s*$/,'ROLLBACK;'));assert.equal(admin("SELECT to_regprocedure('taxiqaid_auth_api.admin_delete_user(uuid,text,jsonb)') IS NULL;"),'t');assert.equal(snapshot(),before);
  sql(deletionUpgrade);sql(deletionUpgrade,{failure:/Already installed/});
@@ -120,17 +121,18 @@ module.exports=({sql,runtime,root,uid,lit})=>{
  sql(retirement.replace('-- Owner must insert reviewed mappings here.',"INSERT INTO approved_department_resolution VALUES('financial','finance',true);\n-- Owner must insert reviewed mappings here."));assert.equal(admin('SELECT jsonb_agg(to_jsonb(m) ORDER BY user_id,department_key) FROM taxiqaid_private.user_departments m;'),departmentsBefore);
  assert.equal(snapshot(),before,'Master and every existing permission/grant unchanged');
  const hard=(action,data={},options={})=>JSON.parse(sql('BEGIN;SET LOCAL ROLE taxiqaid_user_admin_backend;SELECT taxiqaid_auth_api.admin_delete_user('+lit(uid)+'::uuid,'+lit(action)+','+lit(JSON.stringify(data))+'::jsonb);COMMIT;',{user:'taxiqaid_user_admin_login',...options})||'null');
- assert.equal(hard('ready').version,1);assert.equal(admin("SELECT has_schema_privilege('taxiqaid_user_admin_owner','auth','USAGE');"),'f');
+ assert.equal(hard('ready').version,2);assert.equal(admin("SELECT has_schema_privilege('taxiqaid_user_admin_owner','auth','USAGE');"),'f');
  const doomed=op(),deletion=op(),deletionLease=op(),doomedAccount={...account,username:'deletefixture',contactEmail:'deletefixture@example.invalid'};
  rpc('create-reserve',{operation:doomed,lease,account:doomedAccount});admin("INSERT INTO auth.users(id,email) VALUES('"+doomed+"','deletefixture@example.invalid');");const doomedUser=rpc('create-finish',{operation:doomed,lease,authUid:doomed,technicalEmail:'deletefixture@example.invalid'}).user;
  const input={operation:deletion,uid:doomed,version:doomedUser.version,etag:doomedUser.etag,confirmedUsername:doomedUser.username,lease:deletionLease};
  hard('reserve',{...input,uid},{failure:/PROTECTED_ACCOUNT/});hard('reserve',{...input,uid:'00000000-0000-4000-8000-000000000002'},{failure:/PROTECTED_ACCOUNT/});
  assert.equal(hard('inspect',input).uid,doomed);hard('reserve',input);assert.equal(admin("SELECT status FROM taxiqaid_private.user_accounts WHERE user_id='"+doomed+"';"),'disabled');assert.equal(hard('pending').operations[0].uid,doomed);
  hard('finalize',{...input,authAbsent:false},{failure:/AUTH_DELETION_NOT_CONFIRMED/});hard('release',input);hard('reserve',input);
+ admin("DELETE FROM auth.users WHERE id='"+doomed+"';",{failure:/violates foreign key constraint/});hard('detach',input);assert.equal(admin("SELECT count(*) FROM taxiqaid_private.user_accounts WHERE user_id='"+doomed+"';"),'0');hard('release',input);hard('reserve',input);hard('detach',input);
  // Disposable provider simulation only. Production code must use official Auth Admin hard-delete.
  admin("DELETE FROM auth.users WHERE id='"+doomed+"';");assert.equal(hard('finalize',{...input,authAbsent:true}).deleted,true);assert.equal(hard('inspect',input).deleted,true);
  for(const table of ['user_accounts','user_departments','user_permission_overrides','auth_login_identities','user_admin_metadata'])assert.equal(admin('SELECT count(*) FROM taxiqaid_private.'+table+" WHERE user_id='"+doomed+"';"),'0');
- assert.equal(admin("SELECT count(*) FROM taxiqaid_private.user_admin_audit WHERE target='"+doomed+"' AND action IN ('delete-started','delete-completed');"),'2');
+ assert.equal(admin("SELECT count(*) FROM taxiqaid_private.user_admin_audit WHERE target='"+doomed+"' AND action IN ('delete-started','delete-private-detached','delete-completed');"),'3');
  rpc('create-reserve',{operation:op(),lease,account:doomedAccount});
  admin('CREATE TABLE taxiqaid_private.synthetic_unreviewed_dependency(user_id uuid REFERENCES taxiqaid_private.user_accounts(user_id));');hard('ready',{}, {failure:/DELETE_DEPENDENCY_REVIEW_REQUIRED/});admin('DROP TABLE taxiqaid_private.synthetic_unreviewed_dependency;');
  assert.equal(snapshot(),before,'Hard deletion preserves Master identity, memberships and every existing grant');
