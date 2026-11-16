@@ -12,6 +12,12 @@ The employee clicks the email's single-use recovery link. The standalone `reset-
 
 Disabled accounts, Driver accounts and Master are never valid targets. User creation continues to generate a one-time initial credential until a separately approved change to the creation/onboarding policy.
 
+## Employee self-service from the login screen
+
+In dedicated Auth mode the regular sign-in screen also has **Reset Password**. Selecting it opens a request form for the **same real employee email registered at account creation**, not the username and not a technical/placeholder address. Its public, memory-only Supabase client calls `resetPasswordForEmail(email, {redirectTo: exactCallback})` with the same callback as the Master flow. No new endpoint, email lookup by username, privileged service key, old password, or driver login is used. The UI never indicates whether an address belongs to an account, and a mail-provider error is not presented as delivery success. Supabase Auth enforces provider rate limits.
+
+After clicking the one-use email link, employees choose and confirm the new password and still sign in with their **original username**. Legacy-mode login intentionally keeps the self-service entry hidden. Only the configured dedicated Supabase Auth accounts can use this flow: a stored contact address that differs from the official Auth email cannot receive the reset. This feature neither provisions accounts nor changes user records.
+
 ## Mandatory hosted configuration — operator approval required
 
 **This feature cannot deliver to normal employees using the default SMTP of a new Supabase Free project.** Supabase's standard sender is limited to project team email addresses. An approved SMTP sender/provider must be configured for production email delivery; **each employee uses their existing email** and needs no new Gmail or domain. SMTP sender verification may require a verified domain or a provider-approved From identity.
