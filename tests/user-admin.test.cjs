@@ -64,3 +64,15 @@ test('recovery email never sets passwords for existing employees or exposes a te
  assert.equal(runtime.includes("https://dohanyan16.github.io/TaxiQaid/reset-password.html"),true);
  new Function(recovery);
 });
+
+
+test('recovery form and client enforce six-character minimum consistently',()=>{
+ const html=fs.readFileSync('reset-password.html','utf8');
+ const script=fs.readFileSync('modules/login/reset-password.js','utf8');
+ assert.equal((html.match(/minlength="6"/g)||[]).length,2);
+ assert.match(html,/Use at least 6 characters/);
+ assert.match(script,/value\.length < 6 \|\| value\.length > 256/);
+ assert.match(script,/at least 6 characters/);
+ assert.doesNotMatch(html,/minlength="12"|at least 12 characters/);
+ assert.doesNotMatch(script,/value\.length < 12|at least 12 characters/);
+});
