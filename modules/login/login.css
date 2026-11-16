@@ -29,3 +29,16 @@
 #error-message { color: var(--danger); font-size: var(--font-body); margin: 15px 0 0; }
 
 #driver-signin-entry {margin-top:var(--layout-gap);width:100%;}
+
+/* Dedicated Auth recovery request; hidden in legacy login mode. */
+.login-reset-link { display:inline-block; margin-top:var(--layout-gap); padding:.3rem .5rem; border:0; background:transparent; color:var(--text-main); font-weight:var(--weight-bold); text-decoration:underline; text-underline-offset:.2rem; }
+.login-reset-link:hover { color:var(--primary-hover); }
+.login-reset-panel { text-align:left; }
+.login-reset-panel h2 { text-align:center; margin-bottom:.75rem; }
+.login-reset-panel > p { color:var(--text-muted); font-size:var(--font-small); margin-bottom:var(--layout-gap); }
+#password-reset-request-form label { margin-bottom:var(--field-gap); }
+#password-reset-submit { width:100%; margin-top:var(--layout-gap); }
+#password-reset-status { margin:var(--layout-gap) 0 0; color:var(--text-muted); }
+#password-reset-status[data-state="error"] { color:var(--danger); }
+#password-reset-status[data-state="success"] { color:var(--success); }
+#password-reset-back { display:block; margin:var(--layout-gap) auto 0; }
