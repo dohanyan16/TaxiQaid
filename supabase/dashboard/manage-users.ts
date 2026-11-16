@@ -258,7 +258,7 @@ function adminStore(sql:ReturnType<typeof postgres>){return async(actor:string,a
  await tx`SET LOCAL ROLE taxiqaid_user_admin_backend`;await tx`SELECT set_config('statement_timeout','5000',true),set_config('lock_timeout','1000',true)`;
  const result=await tx`SELECT taxiqaid_auth_api.admin_dispatch(${actor}::uuid,${action},${sql.json(data as never)}::jsonb) AS result`;return result[0].result;
  });}
-const publicActions=['list','create','edit','permissions','requests','request-enqueue','request-approve','request-reject','reset-password','sync-auth','sync-sheets','recover-create','operations'];
+const publicActions=['list','create','edit','permissions','requests','request-enqueue','request-approve','request-reject','reset-password','archive-user','sync-auth','sync-sheets','recover-create','operations'];
 const capability=(action:string)=>({'list':'user-management.view',create:'user-management.create-user','recover-create':'user-management.create-user',permissions:'user-management.manage-permissions',requests:'user-management.profile-requests.view','request-enqueue':'user-management.profile-requests.view','request-approve':'driver-profile.approve','request-reject':'driver-profile.reject'} as Record<string,string>)[action]||'user-management.edit-user';
 async function readInput(request:Request){
  if(request.method!=='POST'||!/^application\/json(?:;|$)/i.test(request.headers.get('content-type')||''))throw new Error('INVALID_INPUT');
@@ -268,12 +268,12 @@ async function readInput(request:Request){
 }
 function input(raw:Record<string,unknown>){
  if(!raw||typeof raw!=='object'||Array.isArray(raw)||typeof raw.action!=='string'||!publicActions.includes(raw.action))throw new Error('INVALID_INPUT');
- const allowed:Record<string,string[]>={list:['search','after','limit'],requests:['search','after','status','field'],create:['operation','account'],edit:['operation','uid','version','etag','account'],permissions:['operation','uid','version','etag','patch'],'reset-password':['operation','uid','version','etag'],'sync-auth':['operation','uid','version','etag'],'sync-sheets':[],operations:[],'recover-create':['operation'],'request-enqueue':['operation','driverRef','iqama','name','field','oldValue','proposedValue'],'request-approve':['operation','uid','version','note'],'request-reject':['operation','uid','version','note']};
+ const allowed:Record<string,string[]>={list:['search','after','limit'],requests:['search','after','status','field'],create:['operation','account'],edit:['operation','uid','version','etag','account'],permissions:['operation','uid','version','etag','patch'],'reset-password':['operation','uid','version','etag'],'archive-user':['operation','uid','version','etag'],'sync-auth':['operation','uid','version','etag'],'sync-sheets':[],operations:[],'recover-create':['operation'],'request-enqueue':['operation','driverRef','iqama','name','field','oldValue','proposedValue'],'request-approve':['operation','uid','version','note'],'request-reject':['operation','uid','version','note']};
  if(Object.keys(raw).some(k=>k!=='action'&&!allowed[String(raw.action)].includes(k)))throw new Error('INVALID_INPUT');const {action,...data}=raw;
  if(data.operation!==undefined&&!model.uuid(data.operation)||data.uid!==undefined&&!model.uuid(data.uid)||data.after!==undefined&&data.after!==null&&!model.uuid(data.after)||data.version!==undefined&&(!Number.isSafeInteger(data.version)||Number(data.version)<1)||data.etag!==undefined&&!(typeof data.etag==='string'&&/^[0-9a-f]{64}$/.test(data.etag)))throw new Error('INVALID_INPUT');
  if(!['list','requests','sync-sheets','operations'].includes(String(action))&&!model.uuid(data.operation))throw new Error('INVALID_INPUT');
- if(['edit','permissions','reset-password','sync-auth','request-approve','request-reject'].includes(String(action))&&(!model.uuid(data.uid)||!Number.isSafeInteger(data.version)))throw new Error('INVALID_INPUT');
- if(['edit','permissions','reset-password','sync-auth'].includes(String(action))&&typeof data.etag!=='string')throw new Error('INVALID_INPUT');
+ if(['edit','permissions','reset-password','archive-user','sync-auth','request-approve','request-reject'].includes(String(action))&&(!model.uuid(data.uid)||!Number.isSafeInteger(data.version)))throw new Error('INVALID_INPUT');
+ if(['edit','permissions','reset-password','archive-user','sync-auth'].includes(String(action))&&typeof data.etag!=='string')throw new Error('INVALID_INPUT');
  if(['create','edit'].includes(String(action)))data.account=model.account(data.account);
  for(const k of ['search','note','name','oldValue','proposedValue','driverRef','iqama'])if(data[k]!==undefined&&data[k]!==null&&(typeof data[k]!=='string'||String(data[k]).length>(k==='note'?2000:k==='search'||k==='driverRef'?100:150)))throw new Error('INVALID_INPUT');
  return {action:String(action),data};
@@ -317,6 +317,26 @@ async function administrativeAction(actor:string,action:string,data:Record<strin
   try{const existing=await auth.getUserById(data.uid);if(existing.error||existing.data?.user?.id!==data.uid||existing.data?.user?.email!==identity?.email)throw new Error('AUTH_IDENTITY_MISMATCH');const updated=await auth.updateUserById(data.uid,{ban_duration:user.status==='active'?'none':'876000h'});if(updated.error||updated.data?.user?.id!==data.uid||updated.data?.user?.email!==identity.email)throw new Error('AUTH_UNAVAILABLE');
    return await rpc(actor,'auth-synced',{operation:crypto.randomUUID(),uid:user.uid,etag:user.etag,version:user.version});
   }catch{return {...result,authSyncPending:true};}
+ }
+ if(action==='archive-user'){
+  // Archive only an exact version-matched office account; never delete Auth or audit records.
+  const listed=await rpc(actor,'list',{search:data.uid,limit:1});
+  const target=listed?.users?.find((entry:any)=>entry.uid===data.uid);
+  if(!target||!['manager','supervisor'].includes(target.role)||target.version!==data.version||target.etag!==data.etag)throw Object.assign(new Error('STALE_ACCOUNT'),{code:'40001'});
+  const identity=await rpc(actor,'identity',{uid:data.uid});
+  if(identity?.uid!==data.uid||typeof identity.email!=='string')throw new Error('AUTH_IDENTITY_MISMATCH');
+  const found=await auth.getUserById(data.uid);
+  if(found.error||found.data?.user?.id!==data.uid||found.data?.user?.email?.toLowerCase()!==identity.email.toLowerCase())throw new Error('AUTH_IDENTITY_MISMATCH');
+  const result=await rpc(actor,'archive-user',data);
+  if(result?.archived!==true||result.user?.uid!==data.uid||result.user?.status!=='disabled')throw new Error('ARCHIVE_UNCONFIRMED');
+  // SQL has revoked app access before attempting the additional provider-side ban.
+  try{
+   const updated=await auth.updateUserById(data.uid,{ban_duration:'876000h'});
+   if(updated.error||updated.data?.user?.id!==data.uid||updated.data?.user?.email?.toLowerCase()!==identity.email.toLowerCase())throw new Error('AUTH_UNAVAILABLE');
+   const synced=await rpc(actor,'auth-synced',{operation:crypto.randomUUID(),uid:data.uid,version:result.user.version,etag:result.user.etag});
+   if(synced?.user?.status!=='disabled'||synced.user.uid!==data.uid)throw new Error('AUTH_SYNC_UNCONFIRMED');
+   return {archived:true,authSyncPending:false};
+  }catch{return {archived:true,authSyncPending:true};}
  }
  if(action==='reset-password'){
   // Master requests an Auth recovery message; never replace or reveal employee credentials.

@@ -96,3 +96,35 @@ Deno.test('frontend cutover cannot activate the administrative backend: closed g
   assert.equal(calls,0);assert.equal(keyReads,0);
  }
 });
+
+Deno.test('safe archive revokes login before Auth ban, preserves records and rejects protected or stale accounts',async()=>{
+ const etag='a'.repeat(64),nextEtag='b'.repeat(64),email='manager@example.invalid',actions:string[]=[],updates:any[]=[];
+ const snapshot={uid:target,role:'manager',status:'active',version:4,etag};
+ const rpc=async(_actor:string,action:string,_data:any)=>{
+  assert.equal(_actor,actor);actions.push(action);
+  if(action==='authorize')return {authorized:true};
+  if(action==='list')return {users:[snapshot]};
+  if(action==='identity')return {uid:target,email};
+  if(action==='archive-user')return {archived:true,user:{uid:target,status:'disabled',version:5,etag:nextEtag}};
+  if(action==='auth-synced')return {user:{uid:target,status:'disabled',version:6,etag:'c'.repeat(64)}};
+  throw new Error('Unexpected SQL action');
+ };
+ const auth={getUserById:async(id:string)=>({data:{user:{id,email}}}),updateUserById:async(id:string,patch:any)=>{updates.push({id,...patch});return {data:{user:{id,email}}};},deleteUser:async()=>{throw new Error('Auth deletion forbidden');}};
+ const input={operation:crypto.randomUUID(),uid:target,version:4,etag};
+ const ok=await administrativeAction(actor,'archive-user',input,rpc,auth,env);
+ assert.deepEqual(ok,{archived:true,authSyncPending:false});
+ assert.deepEqual(actions,['authorize','list','identity','archive-user','auth-synced']);
+ assert.deepEqual(updates,[{id:target,ban_duration:'876000h'}]);
+ snapshot.role='super_admin';
+ await assert.rejects(administrativeAction(actor,'archive-user',{...input,operation:crypto.randomUUID()},rpc,auth,env),/STALE_ACCOUNT/);
+ assert.equal(updates.length,1);
+ snapshot.role='manager';snapshot.version=5;
+ await assert.rejects(administrativeAction(actor,'archive-user',{...input,operation:crypto.randomUUID()},rpc,auth,env),/STALE_ACCOUNT/);
+ snapshot.version=4;
+ const badAuth={getUserById:async()=>({data:{user:{id:target,email:'wrong@example.invalid'}}})};
+ await assert.rejects(administrativeAction(actor,'archive-user',{...input,operation:crypto.randomUUID()},rpc,badAuth,env),/AUTH_IDENTITY_MISMATCH/);
+ const syncFail={...auth,updateUserById:async()=>({error:{status:503}})};
+ const pending=await administrativeAction(actor,'archive-user',{...input,operation:crypto.randomUUID()},rpc,syncFail,env);
+ assert.deepEqual(pending,{archived:true,authSyncPending:true});
+ assert.equal(actions.at(-1),'archive-user');
+});
