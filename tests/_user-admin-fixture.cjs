@@ -6,10 +6,13 @@ module.exports=({sql,runtime,root,uid,lit})=>{
  admin("UPDATE taxiqaid_private.user_accounts SET status='active' WHERE role_key='super_admin';UPDATE taxiqaid_private.departments SET is_active=true;GRANT taxiqaid_auth_access_owner TO postgres WITH ADMIN TRUE,INHERIT FALSE,SET FALSE;");
  const snapshot=()=>admin("SELECT jsonb_build_object('master',(SELECT to_jsonb(a) FROM taxiqaid_private.user_accounts a WHERE role_key='super_admin'),'master_memberships',(SELECT jsonb_agg(to_jsonb(m) ORDER BY department_key) FROM taxiqaid_private.user_departments m WHERE user_id='"+uid+"'),'master_overrides',(SELECT jsonb_agg(to_jsonb(o) ORDER BY permission_key) FROM taxiqaid_private.user_permission_overrides o WHERE user_id='"+uid+"'),'master_identity',(SELECT to_jsonb(i) FROM taxiqaid_private.auth_login_identities i WHERE user_id='"+uid+"'),'grants',(SELECT jsonb_agg(to_jsonb(r) ORDER BY role_key,permission_key) FROM taxiqaid_private.role_permissions r),'permissions',(SELECT jsonb_agg(to_jsonb(p) ORDER BY permission_key) FROM taxiqaid_private.permissions p));");const before=snapshot();
  // Reproduce the exact owner-reviewed live account-type/role CHECK (not just an allowed-role list).
+ // Missing reviewed role CHECK is never treated as an implicit approval.
+ const proposal=fs.readFileSync(path.join(root,'supabase/review/user-management/01_admin.sql'),'utf8');
+ sql(proposal,{failure:true});assert.equal(admin("SELECT count(*) FROM pg_roles WHERE rolname LIKE 'taxiqaid_user_admin_%';"),'0');
  const approvedRoleCheck="CHECK ((((account_type = 'management'::text) AND (role_key = ANY (ARRAY['super_admin'::text,'admin'::text,'manager'::text,'supervisor'::text,'staff'::text]))) OR ((account_type = 'driver'::text) AND (role_key = 'driver'::text))))";
  admin("ALTER TABLE taxiqaid_private.user_accounts ADD CONSTRAINT user_accounts_check "+approvedRoleCheck+";");
  const constraintQuery="SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conrelid='taxiqaid_private.user_accounts'::regclass AND conname='user_accounts_check';";
- const expectedConstraint=admin(constraintQuery),proposal=fs.readFileSync(path.join(root,'supabase/review/user-management/01_admin.sql'),'utf8');
+ const expectedConstraint=admin(constraintQuery);
  // Extra CHECK affecting role_key must abort without creating any administrative roles.
  admin("ALTER TABLE taxiqaid_private.user_accounts ADD CONSTRAINT synthetic_role_check CHECK(role_key IN ('super_admin','staff','driver'));");
  sql(proposal,{failure:true});assert.equal(admin("SELECT count(*) FROM pg_roles WHERE rolname LIKE 'taxiqaid_user_admin_%';"),'0');
