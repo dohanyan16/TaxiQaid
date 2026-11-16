@@ -12,7 +12,7 @@ CREATE TEMP TABLE taxiqaid_admin_expected_role_check (
    OR ((account_type = 'driver'::text) AND (role_key = 'driver'::text))
  )
 ) ON COMMIT DROP;
-DO $ BEGIN
+DO $$ BEGIN
  IF current_user<>'postgres' OR session_user<>'postgres' OR (SELECT rolsuper FROM pg_roles WHERE rolname=current_user) THEN RAISE EXCEPTION 'Ordinary Dashboard postgres required'; END IF;
  IF current_setting('server_version_num')::integer<160000 THEN RAISE EXCEPTION 'PostgreSQL 16 required'; END IF;
  IF EXISTS(SELECT FROM pg_proc WHERE pronamespace='taxiqaid_auth_api'::regnamespace AND left(proname,6)='admin_') THEN RAISE EXCEPTION 'Administrative function collision';END IF;

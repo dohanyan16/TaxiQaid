@@ -8,21 +8,26 @@ module.exports=({sql,runtime,root,uid,lit})=>{
  // Reproduce the exact owner-reviewed live account-type/role CHECK (not just an allowed-role list).
  // Missing reviewed role CHECK is never treated as an implicit approval.
  const proposal=fs.readFileSync(path.join(root,'supabase/review/user-management/01_admin.sql'),'utf8');
- sql(proposal,{failure:true});assert.equal(admin("SELECT count(*) FROM pg_roles WHERE rolname LIKE 'taxiqaid_user_admin_%';"),'0');
+ // A malformed SQL block must not masquerade as an expected security rejection.
+ const malformed=proposal.replace('DO $$ BEGIN','DO $ BEGIN');assert.notEqual(malformed,proposal);assert.throws(()=>sql(malformed,{failure:/ROLE_CONSTRAINT_REVIEW_REQUIRED/}),/SQL must fail for the expected security reason/);
+ sql(proposal,{failure:/ROLE_CONSTRAINT_REVIEW_REQUIRED/});assert.equal(admin("SELECT count(*) FROM pg_roles WHERE rolname LIKE 'taxiqaid_user_admin_%';"),'0');assert.equal(snapshot(),before,'Rejected migration preserves Master, identities, grants and definitions');
+ console.error('PASS: absent role CHECK rejected specifically by the role preflight; no administrative roles or record changes.');
  const approvedRoleCheck="CHECK ((((account_type = 'management'::text) AND (role_key = ANY (ARRAY['super_admin'::text,'admin'::text,'manager'::text,'supervisor'::text,'staff'::text]))) OR ((account_type = 'driver'::text) AND (role_key = 'driver'::text))))";
  admin("ALTER TABLE taxiqaid_private.user_accounts ADD CONSTRAINT user_accounts_check "+approvedRoleCheck+";");
  const constraintQuery="SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conrelid='taxiqaid_private.user_accounts'::regclass AND conname='user_accounts_check';";
  const expectedConstraint=admin(constraintQuery);
  // Extra CHECK affecting role_key must abort without creating any administrative roles.
  admin("ALTER TABLE taxiqaid_private.user_accounts ADD CONSTRAINT synthetic_role_check CHECK(role_key IN ('super_admin','staff','driver'));");
- sql(proposal,{failure:true});assert.equal(admin("SELECT count(*) FROM pg_roles WHERE rolname LIKE 'taxiqaid_user_admin_%';"),'0');
+ sql(proposal,{failure:/ROLE_CONSTRAINT_REVIEW_REQUIRED/});assert.equal(admin("SELECT count(*) FROM pg_roles WHERE rolname LIKE 'taxiqaid_user_admin_%';"),'0');assert.equal(snapshot(),before,'Rejected migration preserves Master, identities, grants and definitions');
+ console.error('PASS: additional role CHECK rejected specifically by the role preflight; no administrative roles or record changes.');
  admin('ALTER TABLE taxiqaid_private.user_accounts DROP CONSTRAINT synthetic_role_check;');
  // The correct name is insufficient if its expression is broader or regrouped.
  admin("ALTER TABLE taxiqaid_private.user_accounts DROP CONSTRAINT user_accounts_check;ALTER TABLE taxiqaid_private.user_accounts ADD CONSTRAINT user_accounts_check CHECK(role_key IN ('super_admin','admin','manager','supervisor','staff','driver','unexpected_role'));");
- sql(proposal,{failure:true});assert.equal(admin("SELECT count(*) FROM pg_roles WHERE rolname LIKE 'taxiqaid_user_admin_%';"),'0');
+ sql(proposal,{failure:/ROLE_CONSTRAINT_REVIEW_REQUIRED/});assert.equal(admin("SELECT count(*) FROM pg_roles WHERE rolname LIKE 'taxiqaid_user_admin_%';"),'0');assert.equal(snapshot(),before,'Rejected migration preserves Master, identities, grants and definitions');
  admin("ALTER TABLE taxiqaid_private.user_accounts DROP CONSTRAINT user_accounts_check;ALTER TABLE taxiqaid_private.user_accounts ADD CONSTRAINT user_accounts_check "+approvedRoleCheck+";");
+ console.error('PASS: modified role CHECK rejected specifically by the role preflight; no administrative roles or record changes.');
  // The exact reviewed CHECK accepts manager/supervisor and survives the complete migration untouched.
- sql(proposal);assert.equal(admin(constraintQuery),expectedConstraint);
+ sql(proposal);assert.equal(admin(constraintQuery),expectedConstraint);console.error('PASS: exact reviewed role CHECK permits complete SQL 01 migration and is preserved unchanged.');
  const accessUpgrade=fs.readFileSync(path.join(root,'supabase/review/user-management/03_access_compatibility.sql'),'utf8');
  admin("CREATE TEMP TABLE saved_access AS SELECT oid,prosrc FROM pg_proc WHERE oid='taxiqaid_auth_api.get_management_access(uuid,bigint)'::regprocedure;UPDATE pg_proc SET prosrc=prosrc||E'\\n-- genuinely changed body' WHERE oid='taxiqaid_auth_api.get_management_access(uuid,bigint)'::regprocedure;");
  sql(accessUpgrade,{failure:true});
@@ -39,6 +44,7 @@ module.exports=({sql,runtime,root,uid,lit})=>{
   const raw=sql(query,{user:'taxiqaid_user_admin_login',failure});return failure?null:JSON.parse(raw);
  };
  assert.equal(admin("SELECT count(*) FROM jsonb_object_keys(taxiqaid_auth_api.admin_catalog()) capabilities(key) WHERE taxiqaid_auth_api.admin_effective('"+uid+"',key);"),'101');
+ const driverOnly=require(path.join(root,'shared/permission-catalog.js')).ALL.filter(p=>p.audience==='Driver');assert.equal(driverOnly.length,6);for(const permission of driverOnly)assert.equal(admin("SELECT taxiqaid_auth_api.admin_effective('"+uid+"',"+lit(permission.key)+");"),'f');console.error('PASS: Master retains exactly 101 effective management permissions; all six Driver-only capabilities are denied.');
  const list=rpc('list',{});assert.equal(list.users.find(u=>u.role==='super_admin').roleDefaults.length,101);assert.equal(list.departments.length,7);
  const target='10000000-0000-4000-8000-000000000001',lease='10000000-0000-4000-8000-000000000002';let serial=20;
  const op=()=>('20000000-0000-4000-8000-'+String(serial++).padStart(12,'0'));

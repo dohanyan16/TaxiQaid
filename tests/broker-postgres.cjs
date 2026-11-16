@@ -4,7 +4,7 @@ const root=path.resolve(__dirname,'..'),name='taxiqaid-broker-test-'+process.pid
 for(const key of ['DOCKER_HOST','DOCKER_CONTEXT','DOCKER_TLS','DOCKER_TLS_VERIFY','DOCKER_CERT_PATH'])delete dockerEnv[key];
 const run=(args,options={})=>execFileSync('docker',[...docker,...args],{env:dockerEnv,encoding:'utf8',stdio:['pipe','pipe','pipe'],...options});
 const sql=(input,{user='postgres',failure=false}={})=>{
- let output;try{output=run(['exec','-i',name,'psql','-X','-qAt','-v','ON_ERROR_STOP=1','-U',user,'-d','postgres'],{input});}catch(error){if(failure)return '';throw new Error('Disposable SQL verification failed: '+String(error.stderr||error.message));}
+ let output;try{output=run(['exec','-i',name,'psql','-X','-qAt','-v','ON_ERROR_STOP=1','-U',user,'-d','postgres'],{input});}catch(error){const diagnostic=String(error.stderr||error.message);if(failure){if(failure instanceof RegExp)assert.match(diagnostic,failure,'SQL must fail for the expected security reason');return '';}throw new Error('Disposable SQL verification failed: '+diagnostic);}
  assert.equal(failure,false,'Expected SQL failure did not occur');return output.trim();
 };
 const lit=value=>"'"+String(value).replaceAll("'","''")+"'",hash=value=>crypto.createHash('sha256').update(value).digest('hex');
