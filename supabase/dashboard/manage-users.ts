@@ -246,6 +246,8 @@ async function syncSheets(batch,leaseUntil,env,fetcher=fetch,now=Date.now){
 /** Administrative service, inert by default. Official online Auth + SQL Master/capability checks before Admin API use. */
 const model=TaxiQaidUserAdminModel;
 const project='https://mqkflwsvnzcaylxtvsje.supabase.co',key='sb_publishable_c6NqjXyYvryqdXpgTUS0jg_hnfxiTWd';
+const recoveryRedirect='https://dohanyan16.github.io/TaxiQaid/reset-password.html';
+type RecoverySender=(email:string,redirectTo:string)=>Promise<{error?:unknown}>;
 function adminConnectionOptions(connection:string,ca?:string){
  const target=new URL(connection),pooler=target.hostname.endsWith('.pooler.supabase.com'),username=decodeURIComponent(target.username),expected='taxiqaid_user_admin_login'+(pooler?'.mqkflwsvnzcaylxtvsje':'');
  if(username!==expected)throw new Error('Restricted administration connection required.');target.username='taxiqaid_auth_login'+(pooler?'.mqkflwsvnzcaylxtvsje':'');return {...brokerConnectionOptions(target.toString(),ca),username,max:2,fetch_types:false};
@@ -277,7 +279,7 @@ function input(raw:Record<string,unknown>){
  return {action:String(action),data};
 }
 type Rpc=(actor:string,action:string,data:Record<string,unknown>)=>Promise<any>;
-async function administrativeAction(actor:string,action:string,data:Record<string,any>,rpc:Rpc,auth:any,env:(k:string)=>string|undefined,fetcher:typeof fetch=fetch){
+async function administrativeAction(actor:string,action:string,data:Record<string,any>,rpc:Rpc,auth:any,env:(k:string)=>string|undefined,fetcher:typeof fetch=fetch,sendRecovery?:RecoverySender){
  await rpc(actor,'authorize',{capability:capability(action),read:['list','requests'].includes(action)});
  if(action==='recover-create'){const pending=await rpc(actor,'create-pending',data);return await administrativeAction(actor,'create',pending,rpc,auth,env,fetcher);}
  const credential=()=>{const bytes=crypto.getRandomValues(new Uint8Array(24));return [...bytes].map(x=>x.toString(16).padStart(2,'0')).join('')+'aA9!';};
@@ -317,8 +319,20 @@ async function administrativeAction(actor:string,action:string,data:Record<strin
   }catch{return {...result,authSyncPending:true};}
  }
  if(action==='reset-password'){
-  const result=await rpc(actor,'reset-reserve',data);if(result.replayed)return {...result,credentialDelivery:'unavailable-on-replay'};const identity=await rpc(actor,'identity',{uid:data.uid});let password=credential();
-  try{const found=await auth.getUserById(data.uid);if(found.error||found.data?.user?.id!==data.uid||found.data?.user?.email!==identity?.email)throw new Error('AUTH_IDENTITY_MISMATCH');const updated=await auth.updateUserById(data.uid,{password,ban_duration:result.user.status==='active'?'none':'876000h'});if(updated.error||updated.data?.user?.id!==data.uid||updated.data?.user?.email!==identity.email)throw new Error('AUTH_UNAVAILABLE');return {...result,temporaryPassword:password,credentialDelivery:'one-time'};}finally{password='';}
+  // Master requests an Auth recovery message; never replace or reveal employee credentials.
+  // Recheck authoritative private status/CAS and the exact Auth identity before any mail request.
+  const listed=await rpc(actor,'list',{search:data.uid,limit:1});
+  const target=listed?.users?.find((entry:any)=>entry.uid===data.uid);
+  if(!target||!['manager','supervisor'].includes(target.role)||target.status!=='active')throw new Error('INVALID_INPUT');
+  if(target.version!==data.version||target.etag!==data.etag)throw Object.assign(new Error('STALE_ACCOUNT'),{code:'40001'});
+  const identity=await rpc(actor,'identity',{uid:data.uid});
+  if(identity?.uid!==data.uid||typeof identity.email!=='string'||!identity.email.includes('@'))throw new Error('AUTH_IDENTITY_MISMATCH');
+  const found=await auth.getUserById(data.uid);
+  if(found.error||found.data?.user?.id!==data.uid||found.data?.user?.email?.toLowerCase()!==identity.email.toLowerCase())throw new Error('AUTH_IDENTITY_MISMATCH');
+  const send=sendRecovery||((email:string,redirectTo:string)=>createClient(project,key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},global:{fetch:(url:RequestInfo|URL,init?:RequestInit)=>fetcher(url,{...init,redirect:'error',cache:'no-store',signal:AbortSignal.timeout(10000)})}}).auth.resetPasswordForEmail(email,{redirectTo}));
+  const delivery=await send(identity.email,recoveryRedirect);
+  if(delivery.error)throw new Error('RECOVERY_EMAIL_UNAVAILABLE');
+  return {delivery:'requested'};
  }
  if(action==='sync-sheets'){
   if(env('TAXIQAID_SHEETS_SYNC_ENABLED')!=='true')return {sync:'DISABLED',sent:0};const lease=crypto.randomUUID(),job=await rpc(actor,'mirror-claim',{lease});let receipts:{kind:string;entity:string;version:number;ok:boolean}[]=[];
@@ -327,7 +341,7 @@ async function administrativeAction(actor:string,action:string,data:Record<strin
  }
  return await rpc(actor,action,data);
 }
-function createAdminHandler(env:(k:string)=>string|undefined,deps:{rpc?:Rpc;verify?:(jwt:string)=>Promise<any>;admin?:any;fetcher?:typeof fetch;connect?:(options:ReturnType<typeof adminConnectionOptions>)=>ReturnType<typeof postgres>}={}){return async(request:Request)=>{
+function createAdminHandler(env:(k:string)=>string|undefined,deps:{rpc?:Rpc;verify?:(jwt:string)=>Promise<any>;admin?:any;fetcher?:typeof fetch;sendRecovery?:RecoverySender;connect?:(options:ReturnType<typeof adminConnectionOptions>)=>ReturnType<typeof postgres>}={}){return async(request:Request)=>{
  const origin=originFor(request,configuredOrigins(env('TAXIQAID_AUTH_ORIGINS')));if(!origin)return response(403,{error:'Administration unavailable.'});
  if(request.method==='OPTIONS')return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Headers':'authorization,apikey,content-type','Access-Control-Allow-Methods':'POST,OPTIONS','Cache-Control':'no-store',Vary:'Origin'}});
  let sql:ReturnType<typeof postgres>|null=null;
@@ -341,7 +355,7 @@ function createAdminHandler(env:(k:string)=>string|undefined,deps:{rpc?:Rpc;veri
   // Construct Admin client lazily only after online identity and SQL authorization, never in the browser.
   await rpc(user.id,'authorize',{capability:capability(action),read:['list','requests'].includes(action)});
   let privileged:any;const admin=deps.admin||{getUserById:(...args:any[])=>{privileged??=createClient(project,env('TAXIQAID_AUTH_ADMIN_KEY')||'',options).auth.admin;return privileged.getUserById(...args);},createUser:(...args:any[])=>{privileged??=createClient(project,env('TAXIQAID_AUTH_ADMIN_KEY')||'',options).auth.admin;return privileged.createUser(...args);},updateUserById:(...args:any[])=>{privileged??=createClient(project,env('TAXIQAID_AUTH_ADMIN_KEY')||'',options).auth.admin;return privileged.updateUserById(...args);}};
-  return response(200,await administrativeAction(user.id,action,data,rpc,admin,env,fetcher),origin);
+  return response(200,await administrativeAction(user.id,action,data,rpc,admin,env,fetcher,deps.sendRecovery),origin);
  }catch(error){const code=(error as {code?:string}).code,message=(error as Error).message,status=code==='40001'||code==='23505'?409:code==='42501'?403:message==='INVALID_INPUT'||/valid|Invalid|requires/.test(message)?400:503;return response(status,{error:status===409?'Conflict. Refresh before retrying.':status===400?'Invalid administrative request.':'Administration unavailable.',...(message==='PROVISIONING_RECOVERY_REQUIRED'?{recoveryRequired:true}:{})},origin);}
  finally{if(sql)try{await sql.end({timeout:1});}catch{}}
 };}

@@ -33,10 +33,40 @@ Deno.test('mismatched identities, Auth failure and private commit failure fail c
  const f=fixture({ambiguous:true}),result=await administrativeAction(actor,'create',{operation:target,account},f.rpc,f.auth,env);assert.equal(result.completed,true);assert.equal(result.temporaryPassword,undefined);assert.equal(f.authCalls.at(-1).ban_duration,'none');
  const bad=fixture();await assert.rejects(administrativeAction(actor,'create',{operation:target,account:{...account,contactEmail:null}},bad.rpc,bad.auth,env),/INVALID_INPUT/);assert.equal(bad.authCalls.length,0);assert.equal(bad.calls.length,1);
 });
-Deno.test('replayed edits never reapply stale Auth status; reset replay cannot redeliver a password; sync failures remain pending',async()=>{
+Deno.test('replayed edits never reapply stale Auth status; sync failures remain pending',async()=>{
  let called=0;const auth={getUserById:async()=>{called++;throw new Error('offline');}};
- for(const action of ['edit','sync-auth','reset-password']){const result=await administrativeAction(actor,action,{uid:target},async(_a,a)=>a==='authorize'?{}:{replayed:true,user:{uid:target,status:'active'}},auth,env);assert.equal(result.temporaryPassword,undefined);assert.equal(called,0);}
+ for(const action of ['edit','sync-auth']){const result=await administrativeAction(actor,action,{uid:target},async(_a,a)=>a==='authorize'?{}:{replayed:true,user:{uid:target,status:'active'}},auth,env);assert.equal(result.temporaryPassword,undefined);assert.equal(called,0);}
  const result=await administrativeAction(actor,'edit',{uid:target},async(_a,a)=>a==='authorize'?{}:a==='identity'?{email:'private@example.invalid'}:{user:{uid:target,status:'disabled'}},auth,env);assert.equal(result.authSyncPending,true);
+});
+
+Deno.test('Master requests recovery mail only for an active, version-matched, exact Auth office identity',async()=>{
+ const email='manager@example.invalid',etag='a'.repeat(64),changes:any[]=[];
+ const snapshot:any={uid:target,role:'manager',status:'active',version:4,etag};
+ const calls:string[]=[],sent:any[]=[];
+ const rpc=async(_actor:string,action:string,data:any)=>{assert.equal(_actor,actor);calls.push(action);
+  if(action==='authorize')return {authorized:true};
+  if(action==='list'){assert.deepEqual(data,{search:target,limit:1});return {users:[snapshot]};}
+  if(action==='identity')return {uid:target,email};
+  throw new Error('SQL must not reserve, mutate or audit password data');
+ };
+ const admin={getUserById:async(id:string)=>({data:{user:{id,email}}}),updateUserById:async(...args:any[])=>{changes.push(args);throw new Error('Credential mutation forbidden');}};
+ const send=async(address:string,redirect:string)=>{sent.push({address,redirect});return {error:null};};
+ const input={operation:target,uid:target,version:4,etag};
+ const ok=await administrativeAction(actor,'reset-password',input,rpc,admin,env,fetch,send);
+ assert.deepEqual(ok,{delivery:'requested'});
+ assert.deepEqual(calls,['authorize','list','identity']);
+ assert.deepEqual(sent,[{address:email,redirect:'https://dohanyan16.github.io/TaxiQaid/reset-password.html'}]);
+ assert.equal(changes.length,0);assert.equal(JSON.stringify(ok).includes(email),false);
+ snapshot.status='disabled';
+ await assert.rejects(administrativeAction(actor,'reset-password',input,rpc,admin,env,fetch,send),/INVALID_INPUT/);
+ snapshot.status='active';snapshot.etag='b'.repeat(64);
+ await assert.rejects(administrativeAction(actor,'reset-password',input,rpc,admin,env,fetch,send),/STALE_ACCOUNT/);
+ assert.equal(sent.length,1);
+ snapshot.etag=etag;
+ const wrongAuth={getUserById:async()=>({data:{user:{id:target,email:'wrong@example.invalid'}}})};
+ await assert.rejects(administrativeAction(actor,'reset-password',input,rpc,wrongAuth,env,fetch,send),/AUTH_IDENTITY_MISMATCH/);
+ assert.equal(sent.length,1);
+ await assert.rejects(administrativeAction(actor,'reset-password',input,rpc,admin,env,fetch,async()=>({error:{status:429}})),/RECOVERY_EMAIL_UNAVAILABLE/);
 });
 
 Deno.test('office email is immutable: reject changes before private SQL write or Auth mutation',async()=>{

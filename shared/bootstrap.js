@@ -49,6 +49,7 @@ const SCRIPT_ORDER = [
   "assets/vendor/phone/libphonenumber-max.js",
   "modules/driver-portal/portal-policy.js",
   window.TAXIQAID_DEDICATED_AUTH?.enabled === true ? "modules/login/login-dedicated.js" : "modules/login/login.js",
+  "modules/login/request-password-reset.js",
   "shared/navigation.js",
   "modules/dashboard/dashboard.js",
   "modules/drivers/drivers.js",
