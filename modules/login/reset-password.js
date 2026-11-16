@@ -7,7 +7,7 @@
   const config = window.TAXIQAID_DEDICATED_AUTH;
   const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
   const isRecoveryLink = hash.get('type') === 'recovery' && hash.has('access_token') && hash.has('refresh_token');
-  let recoveryReady = false, busy = false;
+  let recoveryReady = false, busy = false, completed = false;
   function message(text, state = '') { status.textContent = text; status.dataset.state = state; }
   function rejectLink() {
     recoveryReady = false;
@@ -62,6 +62,7 @@
     try {
       const { error } = await client.auth.updateUser({ password: value });
       if (error) { message('Password not accepted. Choose a stronger password and try again.', 'error'); return; }
+      completed = true;
       recoveryReady = false;
       form.hidden = true;
       message('Password changed. Return to TaxiQaid and sign in with your usual username.', 'success');
@@ -76,5 +77,5 @@
     }
   });
   // Supabase may report invalid token redirects without a valid PASSWORD_RECOVERY event.
-  window.setTimeout(() => { if (!recoveryReady && !busy && !form.hidden) return; }, 0);
+  window.setTimeout(() => { if (!recoveryReady && !busy && !completed) rejectLink(); }, 12000);
 })();
