@@ -14,7 +14,9 @@ const policy=require('../modules/customer/support-policy.js');
   await page.route('**/modules/customer/customer-care/customer-care.js',async route=>{
    await page.evaluate(()=>{window.supportAuthListeners=[];supabaseClient.auth.onAuthStateChange=callback=>{supportAuthListeners.push(callback);return {data:{subscription:{unsubscribe(){}}}};};});await route.continue();
   });
-  await page.goto(process.env.TAXIQAID_URL||'http://127.0.0.1:8003/');await page.waitForFunction(()=>!document.getElementById('boot-status'));
+  // Legacy compatibility fixture: release defaults to dedicated Auth, but this suite tests the disabled legacy path.
+   await page.route('**/shared/auth-dedicated-config.js',route=>route.fulfill({contentType:'text/javascript',body:"window.TAXIQAID_DEDICATED_AUTH=Object.freeze({enabled:false});"}));
+   await page.goto(process.env.TAXIQAID_URL||'http://127.0.0.1:8003/');await page.waitForFunction(()=>!document.getElementById('boot-status'));
   await page.evaluate(()=>{supportStorage=[];supabaseClient.auth.signInWithPassword=async()=>({data:{user:{id:'synthetic-user'}},error:null});supabaseClient.auth.signOut=async()=>({error:null});supabaseClient.from=()=>({select:()=>({eq:()=>({maybeSingle:async()=>({data:{role:'admin'},error:null})})})});});
   await page.locator('#username').fill('preview');await page.locator('#password').fill('test-only');await page.locator('#login-button').click();
   async function nav(view){const link=page.locator(`[data-view="${view}"] a`);await link.evaluate(el=>{const group=el.closest('details');if(group)group.open=true;});await link.click();}
