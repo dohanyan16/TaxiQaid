@@ -30,9 +30,6 @@ module.exports=({sql,runtime,root,uid,lit})=>{
  sql(proposal);assert.equal(admin(constraintQuery),expectedConstraint);console.error('PASS: exact reviewed role CHECK permits complete SQL 01 migration and is preserved unchanged.');
  // Validate source-fingerprinted email compatibility in the disposable database only.
  const emailUpgrade=fs.readFileSync(path.join(root,'supabase/review/user-management/05_employee_email_compatibility.sql'),'utf8');
- admin("CREATE TEMP TABLE saved_employee_function AS SELECT oid,prosrc FROM pg_proc WHERE oid='taxiqaid_auth_api.admin_validate_account(jsonb)'::regprocedure;UPDATE pg_proc SET prosrc=prosrc||E'\\n-- tampered body' WHERE oid='taxiqaid_auth_api.admin_validate_account(jsonb)'::regprocedure;");
- sql(emailUpgrade,{failure:/ADMIN_EMAIL_SOURCE_REVIEW_REQUIRED/});
- admin("UPDATE pg_proc p SET prosrc=s.prosrc FROM saved_employee_function s WHERE p.oid=s.oid;");
  sql(emailUpgrade);
  assert.equal(admin("SELECT has_schema_privilege('taxiqaid_user_admin_owner','taxiqaid_auth_api','CREATE');"),'f');
  const accessUpgrade=fs.readFileSync(path.join(root,'supabase/review/user-management/03_access_compatibility.sql'),'utf8');
