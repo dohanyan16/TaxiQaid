@@ -20,8 +20,8 @@ async function start({port=0,enabled=true}={}){
    send(200,html,'text/html');return;
   }
   if(name==='/shared/auth-dedicated-config.js'){
-   const source=fs.readFileSync(path.join(root,name.slice(1)),'utf8');if((source.match(/enabled:false/g)||[]).length!==1){send(503,'Disabled candidate configuration changed.');return;}
-   send(200,enabled?source.replace('enabled:false','enabled:true'):source,'text/javascript');return;
+   const source=fs.readFileSync(path.join(root,name.slice(1)),'utf8');if((source.match(/enabled:(?:false|true)/g)||[]).length!==1){send(503,'Authentication configuration changed unexpectedly.');return;}
+   send(200,source.replace(/enabled:(?:false|true)/,'enabled:'+enabled),'text/javascript');return;
   }
   if(!/^\/(?:shared|modules|assets)\/[a-zA-Z0-9_./-]+\.(?:js|mjs|html|css|json|svg|png|jpg|jpeg|webp|woff2?|ttf)$/.test(name)||name.split('/').some(part=>part.startsWith('.'))){send(404,'Not part of the local authentication context.');return;}
   const file=path.resolve(root,name.slice(1));if(!file.startsWith(root+path.sep)||!fs.existsSync(file)||!fs.statSync(file).isFile()){send(404,'Not found.');return;}
