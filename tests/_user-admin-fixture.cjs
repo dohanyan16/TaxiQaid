@@ -5,10 +5,21 @@ module.exports=({sql,runtime,root,uid,lit})=>{
  // Model the owner-reported active departments and Supabase-managed access-owner membership.
  admin("UPDATE taxiqaid_private.user_accounts SET status='active' WHERE role_key='super_admin';UPDATE taxiqaid_private.departments SET is_active=true;GRANT taxiqaid_auth_access_owner TO postgres WITH ADMIN TRUE,INHERIT FALSE,SET FALSE;");
  const snapshot=()=>admin("SELECT jsonb_build_object('master',(SELECT to_jsonb(a) FROM taxiqaid_private.user_accounts a WHERE role_key='super_admin'),'master_memberships',(SELECT jsonb_agg(to_jsonb(m) ORDER BY department_key) FROM taxiqaid_private.user_departments m WHERE user_id='"+uid+"'),'master_overrides',(SELECT jsonb_agg(to_jsonb(o) ORDER BY permission_key) FROM taxiqaid_private.user_permission_overrides o WHERE user_id='"+uid+"'),'master_identity',(SELECT to_jsonb(i) FROM taxiqaid_private.auth_login_identities i WHERE user_id='"+uid+"'),'grants',(SELECT jsonb_agg(to_jsonb(r) ORDER BY role_key,permission_key) FROM taxiqaid_private.role_permissions r),'permissions',(SELECT jsonb_agg(to_jsonb(p) ORDER BY permission_key) FROM taxiqaid_private.permissions p));");const before=snapshot();
+ // Reproduce the exact owner-reviewed live account-type/role CHECK (not just an allowed-role list).
+ const approvedRoleCheck="CHECK ((((account_type = 'management'::text) AND (role_key = ANY (ARRAY['super_admin'::text,'admin'::text,'manager'::text,'supervisor'::text,'staff'::text]))) OR ((account_type = 'driver'::text) AND (role_key = 'driver'::text))))";
+ admin("ALTER TABLE taxiqaid_private.user_accounts ADD CONSTRAINT user_accounts_check "+approvedRoleCheck+";");
+ const constraintQuery="SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conrelid='taxiqaid_private.user_accounts'::regclass AND conname='user_accounts_check';";
+ const expectedConstraint=admin(constraintQuery),proposal=fs.readFileSync(path.join(root,'supabase/review/user-management/01_admin.sql'),'utf8');
+ // Extra CHECK affecting role_key must abort without creating any administrative roles.
  admin("ALTER TABLE taxiqaid_private.user_accounts ADD CONSTRAINT synthetic_role_check CHECK(role_key IN ('super_admin','staff','driver'));");
- sql(fs.readFileSync(path.join(root,'supabase/review/user-management/01_admin.sql'),'utf8'),{failure:true});assert.equal(admin("SELECT count(*) FROM pg_roles WHERE rolname LIKE 'taxiqaid_user_admin_%';"),'0');
+ sql(proposal,{failure:true});assert.equal(admin("SELECT count(*) FROM pg_roles WHERE rolname LIKE 'taxiqaid_user_admin_%';"),'0');
  admin('ALTER TABLE taxiqaid_private.user_accounts DROP CONSTRAINT synthetic_role_check;');
- sql(fs.readFileSync(path.join(root,'supabase/review/user-management/01_admin.sql'),'utf8'));
+ // The correct name is insufficient if its expression is broader or regrouped.
+ admin("ALTER TABLE taxiqaid_private.user_accounts DROP CONSTRAINT user_accounts_check;ALTER TABLE taxiqaid_private.user_accounts ADD CONSTRAINT user_accounts_check CHECK(role_key IN ('super_admin','admin','manager','supervisor','staff','driver','unexpected_role'));");
+ sql(proposal,{failure:true});assert.equal(admin("SELECT count(*) FROM pg_roles WHERE rolname LIKE 'taxiqaid_user_admin_%';"),'0');
+ admin("ALTER TABLE taxiqaid_private.user_accounts DROP CONSTRAINT user_accounts_check;ALTER TABLE taxiqaid_private.user_accounts ADD CONSTRAINT user_accounts_check "+approvedRoleCheck+";");
+ // The exact reviewed CHECK accepts manager/supervisor and survives the complete migration untouched.
+ sql(proposal);assert.equal(admin(constraintQuery),expectedConstraint);
  const accessUpgrade=fs.readFileSync(path.join(root,'supabase/review/user-management/03_access_compatibility.sql'),'utf8');
  admin("CREATE TEMP TABLE saved_access AS SELECT oid,prosrc FROM pg_proc WHERE oid='taxiqaid_auth_api.get_management_access(uuid,bigint)'::regprocedure;UPDATE pg_proc SET prosrc=prosrc||E'\\n-- genuinely changed body' WHERE oid='taxiqaid_auth_api.get_management_access(uuid,bigint)'::regprocedure;");
  sql(accessUpgrade,{failure:true});
