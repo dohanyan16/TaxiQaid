@@ -42,3 +42,25 @@ test('employee email is mandatory for office provisioning and pinned across SQL/
  assert.match(html,/id="um-create-email"[^>]+required/);
  assert.doesNotMatch(upgrade,/CREATE ROLE|ALTER ROLE|DROP TABLE|DROP ROLE/);
 });
+
+test('recovery email never sets passwords for existing employees or exposes a temporary secret',()=>{
+ const runtime=fs.readFileSync('supabase/functions/manage-users/runtime.ts','utf8');
+ const ui=fs.readFileSync('modules/administration/user-management/user-management.js','utf8');
+ const html=fs.readFileSync('reset-password.html','utf8');
+ const recovery=fs.readFileSync('modules/login/reset-password.js','utf8');
+ const backend=runtime.split("if(action==='reset-password'){")[1].split("if(action==='sync-sheets')")[0];
+ assert.match(backend,/resetPasswordForEmail\(email,\{redirectTo\}\)/);
+ assert.match(backend,/found\.data\?\.user\?\.id!==data\.uid/);
+ assert.match(backend,/target\.status!=='active'/);
+ assert.match(backend,/return \{delivery:'requested'\}/);
+ assert.doesNotMatch(backend,/password=credential\(|updateUserById|temporaryPassword|reset-reserve/);
+ assert.match(ui,/Password reset email requested/);
+ assert.match(html,/autocomplete="new-password"/);
+ assert.match(html,/name="robots" content="noindex,nofollow"/);
+ assert.match(recovery,/PASSWORD_RECOVERY/);
+ assert.match(recovery,/updateUser\(\{ password: value \}\)/);
+ assert.match(recovery,/persistSession: false/);
+ assert.doesNotMatch(recovery,/localStorage|indexedDB|service_role|TAXIQAID_AUTH_ADMIN_KEY/);
+ assert.equal(runtime.includes("https://dohanyan16.github.io/TaxiQaid/reset-password.html"),true);
+ new Function(recovery);
+});
