@@ -13,7 +13,7 @@ test('restricted connection rejects unsafe host/role/port/query without disclosi
   [valid.replace('postgresql:','https:'),'OPDB_URL_FORMAT'],
   [valid.replace('strong%23password',''),'OPDB_PASSWORD_MISSING'],
   [valid.replace('taxiqaid_operational_login','postgres'),'OPDB_ROLE_MISMATCH'],
-  [valid.replace('aws-0-eu-central-1.pooler.supabase.com','127.0.0.1'),'OPDB_HOST_OR_PORT'],
+  [valid.replace('taxiqaid_operational_login.mqkflwsvnzcaylxtvsje','taxiqaid_operational_login').replace('aws-0-eu-central-1.pooler.supabase.com','127.0.0.1'),'OPDB_HOST_OR_PORT'],
   [valid.replace(':6543/postgres',':9999/postgres'),'OPDB_HOST_OR_PORT'],
   [valid.replace('sslmode=require','sslmode=disable'),'OPDB_QUERY_UNSUPPORTED']
  ];
