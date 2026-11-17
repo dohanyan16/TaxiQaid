@@ -321,6 +321,8 @@ const path = require('node:path');
   await page.locator('#open-fuel-modal').click();
   assert.ok(await page.locator('#fuel-modal .modal-content').evaluate(el=>el.getBoundingClientRect().right<=window.innerWidth),'Fuel mobile dialog overflow');
   await page.locator('#fuel-fueled-in').selectOption('Outside Depot');
+  // Escape is sent to the visible combobox instead of its hidden backing select.
+  await page.locator('#fuel-fueled-in-query').focus();
   await page.keyboard.press('Escape');
   await nav('maintenance');
   await page.locator('[data-open=request-modal]').click();
