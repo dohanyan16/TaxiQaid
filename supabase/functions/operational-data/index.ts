@@ -32,7 +32,8 @@ if(writesFlag&&controlledFlag&&connection){
  }catch(error){
   writerBoot='CONFIGURATION_REJECTED';
   const safe=['OPDB_URL_INVALID','OPDB_URL_FORMAT','OPDB_PASSWORD_MISSING','OPDB_ROLE_MISMATCH','OPDB_HOST_OR_PORT','OPDB_QUERY_UNSUPPORTED'];
-  writerReason=safe.includes(error?.message)?error.message:'OPDB_CLIENT_INIT';
+  const detail=error instanceof Error?error.message:'';
+  writerReason=safe.includes(detail)?detail:'OPDB_CLIENT_INIT';
  }
 }else if(writesFlag&&controlledFlag&&!connection)writerBoot='DB_URL_MISSING';
 console.log(JSON.stringify({event:'OPERATIONAL_WRITER_BOOT',status:writerBoot,reason:writerReason,writesFlag,controlledFlag,hasConnection:Boolean(connection)}));
