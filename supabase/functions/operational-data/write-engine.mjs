@@ -42,5 +42,19 @@ export function createDriverWriteEngine({google,receipts,schema,permissions,now=
   }catch{await receipts.finish({...owned,state:'uncertain'}).catch(()=>{});throw new Error('RECOVERY_REQUIRED');}
   return {confirmed:true,id:plan.id,version:plan.version,replayed:false};
  }
- return Object.freeze({update,available:async context=>{try{return permissions.can(context,'drivers.edit')&&(await receipts.ready({actor:context.uid})).version===2;}catch{return false;}}});
+ return Object.freeze({update,available:async context=>{
+  if(!permissions.can(context,'drivers.edit')){
+    console.log(JSON.stringify({event:'OPERATIONAL_WRITE_READINESS',status:'CAPABILITY_DENIED'}));
+    return false;
+  }
+  try{
+    const result=await receipts.ready({actor:context.uid});
+    const available=result?.version===2;
+    if(!available)console.log(JSON.stringify({event:'OPERATIONAL_WRITE_READINESS',status:'COORDINATOR_VERSION_REJECTED'}));
+    return available;
+  }catch{
+    console.log(JSON.stringify({event:'OPERATIONAL_WRITE_READINESS',status:'COORDINATOR_UNAVAILABLE'}));
+    return false;
+  }
+ }});
 }
