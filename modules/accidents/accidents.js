@@ -164,14 +164,17 @@
       });
     }
 
-    async function fetchAccidents() {
-      accidentsDatabase = [];
+    async function fetchAccidents(signal) {
+      const sequence=++accidentRefreshSequence;
+      const result=await TaxiQaidSources.read('accidents',{signal});
+      if(sequence!==accidentRefreshSequence)return result;
+      accidentsDatabase=result.records.map(row=>({...row.values,_recordId:row.id,_rowVersion:row.version}));
       applyAccidentFilters();
-      return false;
+      return result;
     }
 
 // Refresh the records when the user clicks this module's refresh button.
-    document.getElementById("refresh-accidents-btn").addEventListener("click", fetchAccidents);
+    document.getElementById("refresh-accidents-btn").addEventListener("click", () => {void fetchAccidents().catch(error=>{document.getElementById('module-status').textContent=error.message;document.getElementById('module-status').hidden=false;});});
 
 // Accident search, date filtering, and filtered export.
     const ACC_KEYS = ["Accident ID", "Car Plate", "Driver Iqama", "Driver Name"];
@@ -216,4 +219,4 @@
 
 applyAccidentFilters();
 
-TaxiQaidModules.register('accidents',{onEnter:async()=>{await fetchAccidents();return {connected:false,message:'Database integration pending — no operational source is connected.'};},onReset:()=>{accidentsDatabase=[];applyAccidentFilters();}});
+TaxiQaidModules.register('accidents',{onEnter:({signal})=>fetchAccidents(signal),onReset:()=>{accidentRefreshSequence++;accidentsDatabase=[];applyAccidentFilters();}});

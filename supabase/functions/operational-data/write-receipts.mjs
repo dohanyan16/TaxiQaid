@@ -18,7 +18,17 @@ export function createDriverReceipts(sql){
    const result=await tx`SELECT taxiqaid_auth_api.operational_dispatch(${payload.actor}::uuid,${action},${JSON.stringify(payload)}::jsonb) AS result`;
    if(result.length!==1||!result[0].result||typeof result[0].result!=='object')throw new Error('Coordinator response invalid');
    return result[0].result;
-  });}catch{throw new Error('WRITE_COORDINATOR_UNAVAILABLE');}
+  });}catch(error){
+   // The database adapter hides private connection details from HTTP responses.
+   // Only predefined status classes may reach server logs; never log exception text.
+   const pgCode=typeof error?.code==='string'?error.code:'';
+   const category=pgCode==='28P01'?'PASSWORD_REJECTED':pgCode==='28000'?'LOGIN_REJECTED':
+     pgCode==='42501'?'POLICY_DENIED':pgCode==='3D000'?'DATABASE_REJECTED':
+     pgCode==='42P01'?'COORDINATOR_MISSING':pgCode==='57014'?'QUERY_TIMEOUT':
+     pgCode.startsWith('08')?'NETWORK_UNAVAILABLE':'COORDINATOR_UNAVAILABLE';
+   console.log(JSON.stringify({event:'OPERATIONAL_DB_DISPATCH',status:category}));
+   throw new Error('WRITE_COORDINATOR_UNAVAILABLE');
+  }
  }
  return Object.freeze({ready:payload=>dispatch('ready',payload),claim:payload=>dispatch('claim',payload),seal:payload=>dispatch('seal',payload),advance:payload=>dispatch('advance',payload),finish:payload=>dispatch('finish',payload)});
 }

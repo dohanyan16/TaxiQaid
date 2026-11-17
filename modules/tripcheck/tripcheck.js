@@ -531,11 +531,14 @@ function renderTripChecksTable(items) {
 
 /** Frontend inspection preview. Database integration pending. */
 let tripCheckRefreshSequence = 0;
-async function refreshTripCheckPreview() {
-  tripChecksDatabase = [];
-  document.getElementById("tripcheck-sync-status").textContent = "No records available — database not connected";
+async function refreshTripCheckPreview(signal) {
+  const sequence=++tripCheckRefreshSequence;
+  const result=await TaxiQaidSources.read('tripcheck',{signal});
+  if(sequence!==tripCheckRefreshSequence)return result;
+  tripChecksDatabase=result.records.map(row=>({...row.values,_recordId:row.id,_rowVersion:row.version}));
+  document.getElementById("tripcheck-sync-status").textContent=result.message;
   applyTripCheckFilters();
-  return false;
+  return result;
 }
 
 document.getElementById("refresh-tripchecks-btn").addEventListener("click", async event => {
@@ -877,4 +880,4 @@ updateTripCheckSignatureStatus();
   form.querySelectorAll("button[type=submit]").forEach(button => { button.type = "button"; button.addEventListener("click", showIntegrationPending); });
 });
 
-TaxiQaidModules.register('tripcheck',{onEnter:async()=>{await fetchTripChecks();return {connected:false,message:'Database integration pending — no operational source is connected.'};},onReset:()=>{tripChecksDatabase=[];applyTripCheckFilters();}});
+TaxiQaidModules.register('tripcheck',{onEnter:({signal})=>refreshTripCheckPreview(signal),onReset:()=>{tripCheckRefreshSequence++;tripChecksDatabase=[];applyTripCheckFilters();}});

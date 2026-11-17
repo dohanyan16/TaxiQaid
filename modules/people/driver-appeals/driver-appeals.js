@@ -33,3 +33,12 @@ const TaxiQaidAppealsPreview = (() => {
   return Object.freeze({setApprovedTypes(types){approvedTypes=[...new Set(types.filter(type=>typeof type==='string'&&type.trim()))];
   },setRecords(snapshot){records=snapshot.map(record=>({...record}));render();},openDetails});
 })();
+
+TaxiQaidModules.register('driver-appeals',{
+ onEnter:async({signal})=>{
+  const result=await TaxiQaidSources.read('driver-appeals',{signal});
+  TaxiQaidAppealsPreview.setRecords(result.records.map(row=>({...row.values})));
+  return result;
+ },
+ onReset:()=>TaxiQaidAppealsPreview.setRecords([])
+});
