@@ -117,7 +117,11 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
   const searchViews=['customer-care','fleet','drivers','accidents','breakdowns','maintenance','fuel','ncr','penalties','tripcheck','driver-appeals','training','driver-deductions','driver-portal-preview','user-management'];
   for(const width of [320,375,768,1024,1440]){
    await page.setViewportSize({width,height:1050});
-   for(const view of views){await nav(view);await audit('#view-'+view);if(searchViews.includes(view))assert.equal(await page.locator(`#view-${view} input[role=combobox]:visible`).count(),1,'Unified search '+view);}
+   for(const view of views){await nav(view);await audit('#view-'+view);if(searchViews.includes(view)){
+      assert.ok(await page.locator(`#view-${view} input[role=combobox]:visible`).count()>=1,'Unified searchable controls '+view);
+      const native=await page.locator(`#view-${view} select.tq-native-select`).count();
+      assert.equal(await page.locator(`#view-${view} .tq-select-control`).count(),native,'Native select enhanced '+view);
+     }}
    if(width===320||width===1440)for(const view of screenshotViews){await nav(view);await page.screenshot({animations:'disabled',path:path.join(output,`${width===320?'mobile':'desktop'}-${view}.png`)});}
    for(const [view,button,modal] of [['accidents','#open-add-accident-modal','#add-accident-modal'],['breakdowns','[data-open=breakdown-modal]','#breakdown-modal'],['maintenance','[data-open=request-modal]','#request-modal'],['fuel','#open-fuel-modal','#fuel-modal'],['ncr','#open-ncr-modal','#ncr-modal'],['tripcheck','#open-add-tripcheck-modal','#add-tripcheck-modal'],['driver-appeals','#appeals-preview','#appeals-modal'],['training','#training-create','#training-session-modal'],['driver-deductions','#deductions-add-expense','#deductions-expense-modal'],['customer-care','#care-open','#care-modal'],['helpdesk','#helpdesk-preview','#helpdesk-details-modal']]){
     await nav(view);if(view==='ncr')await page.locator('#ncr-tracker-tab').click();if(view==='training')await page.locator('#training-sessions-tab').click();if(view==='helpdesk')await page.locator('#helpdesk-manage-tab').click();if(view==='driver-deductions')await page.locator('#deductions-expenses-tab').click();
@@ -126,8 +130,8 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
     if(view==='ncr'){
      await page.locator('#ncr-category').selectOption('unauthorized-transport');
      const select=page.locator('#ncr-category');const text=await select.locator('option:checked').innerText();
-     if(await select.evaluate(el=>el.clientWidth<900))assert.equal(await page.locator('#ncr-category-selected-text').isVisible(),true);
-     assert.equal(await page.locator('#ncr-category-selected-text').textContent(),text);
+     assert.equal(await page.locator('#ncr-category-query').inputValue(),text,'Selected label preserved in searchable input');
+     assert.equal(await page.locator('#ncr-category-selected-text').isVisible(),false);
      await audit(modal);
     }
     await page.keyboard.press('Escape');
@@ -139,7 +143,7 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
   for(const view of screenshotViews){await nav(view);await audit('#view-'+view);}
   await nav('ncr');await page.locator('#ncr-tracker-tab').click();await page.locator('#open-ncr-modal').click();await page.locator('#ncr-category').selectOption('pickup-dropoff-rules');await audit('#ncr-modal');
   await page.screenshot({animations:'disabled',path:path.join(output,'text-200-ncr-form.png')});
-  await page.locator('#ncr-category-selected-text').scrollIntoViewIfNeeded();
+  await page.locator('#ncr-category-query').scrollIntoViewIfNeeded();
   await page.screenshot({animations:'disabled',path:path.join(output,'text-200-ncr-category.png')});await page.keyboard.press('Escape');
   await nav('tripcheck');await page.locator('#open-add-tripcheck-modal').click();await audit('#add-tripcheck-modal');await page.keyboard.press('Escape');
   await page.evaluate(()=>document.documentElement.style.fontSize='');
