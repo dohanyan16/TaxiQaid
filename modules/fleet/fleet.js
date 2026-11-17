@@ -85,7 +85,7 @@
       const plate = normalizePlate(vehicle["Plate"] ?? vehicle["plate"]);
       const latest = fleetPostTripReadings.get(plate);
       if (latest) return { value: latest.km, source: latest };
-      return { value: vehicle["Total KM"] ?? vehicle["total km"] ?? "", source: null };
+      return { value: vehicle["Total Km"] ?? vehicle["Total KM"] ?? vehicle["total km"] ?? "", source: null };
     }
 
     function showFleetOdometer(vehicle) {
@@ -120,11 +120,23 @@
       currentActiveVehicle = null;
     }
     const fleetSearch = setupSearchDropdown({
-      input:'fleet-plate-input', btn:'toggle-fleet-btn', dd:'fleet-dropdown', config:'fleet',
-      getData:()=>fleetDatabase, apply:()=>{fleetProfileContainer.style.display='none';currentActiveVehicle=null;},
+      input:'fleet-plate-input', btn:'toggle-fleet-btn', dd:'fleet-dropdown', config:'fleet', paginate:true,
+      getData:()=>fleetDatabase, apply:()=>{fleetProfileContainer.style.display='none';currentActiveVehicle=null;fleetOverviewPage=0;renderFleetOverview();},
       onSelect:renderVehicleProfile
     });
 
+
+    let fleetOverviewPage=0,fleetSourceConnected=false;
+    function renderFleetOverview(){
+      const columns=TaxiQaidSheetsModel.fleet,filtered=fleetDatabase.filter(r=>fleetSearch.matches(r)),pages=Math.max(1,Math.ceil(filtered.length/25));fleetOverviewPage=Math.min(fleetOverviewPage,pages-1);
+      const head=document.querySelector('#fleet-overview thead');head.replaceChildren();const tr=document.createElement('tr');for(const label of columns){const th=document.createElement('th');th.textContent=label;tr.append(th);}head.append(tr);
+      const records=filtered.slice(fleetOverviewPage*25,(fleetOverviewPage+1)*25);TaxiQaidPeopleUI.table('fleet-overview',records,columns,renderVehicleProfile);
+      [...document.querySelectorAll('#fleet-overview tbody tr')].forEach((row,i)=>{if(records[i])row.addEventListener('click',()=>renderVehicleProfile(records[i]));});
+      if(!filtered.length&&fleetSourceConnected)document.querySelector('#fleet-overview .table-empty').textContent='0 authorized records.';
+      document.getElementById('fleet-previous').disabled=fleetOverviewPage===0;document.getElementById('fleet-next').disabled=fleetOverviewPage+1>=pages;document.getElementById('fleet-page').textContent='Page '+(fleetOverviewPage+1)+' of '+pages+' — '+filtered.length+' records';
+    }
+    document.getElementById('fleet-previous').addEventListener('click',()=>{fleetOverviewPage--;renderFleetOverview();});document.getElementById('fleet-next').addEventListener('click',()=>{fleetOverviewPage++;renderFleetOverview();});
+    renderFleetOverview();
     function renderVehicleProfile(vehicle) {
       currentActiveVehicle = vehicle;
       isFleetEditMode = false;
@@ -133,13 +145,13 @@
       cancelFleetEditBtn.style.display = "none";
 
       const plateStr = String(vehicle["Plate"] || vehicle["plate"] || "");
-      const assignedDrivers = getAssignedDrivers(plateStr);
+      const assignedDrivers=vehicle._relationships==='verified'?vehicle._assignedDrivers.map(d=>({"Full Name":d.name,"Iqama Number":d.iqama})):getAssignedDrivers(plateStr);
 
       const driverTags=document.createElement('div');driverTags.className='driver-tag-box';
-      if(!assignedDrivers.length){const empty=document.createElement('span');empty.className='no-assigned-drivers';empty.textContent='No drivers assigned';driverTags.append(empty);}
+      if(!assignedDrivers.length){const empty=document.createElement('span');empty.className='no-assigned-drivers';empty.textContent=vehicle._relationships==='verified'?'No drivers assigned':String(vehicle['Assigned Driver']||'Assignment source unavailable');driverTags.append(empty);}
       assignedDrivers.forEach((d,index)=>{const tag=document.createElement('div');tag.className='driver-tag';const label=document.createElement('strong');label.textContent='Driver '+(index+1)+': ';tag.append(label,document.createTextNode(String(d['Full Name']||d.name||'')+' | Iqama: '+String(d['Iqama Number']||d.iqama||'')+(d.Shift||d.shift?' ('+(d.Shift||d.shift)+')':'')));driverTags.append(tag);});
-      let currentAvailability = vehicle["Availability"] || vehicle["availability"] || "Unassigned";
-      if (assignedDrivers.length > 0) currentAvailability = "Assigned";
+      let currentAvailability = vehicle["Availability"] || vehicle["availability"] || "Unavailable";
+      if(vehicle._relationships==='verified')currentAvailability=assignedDrivers.length?"Assigned":"Unassigned";else if(assignedDrivers.length>0)currentAvailability="Assigned";
 
       document.getElementById("profile-vehicle-name").textContent = plateStr + " - Profile";
       document.getElementById("f-val-plate").textContent = plateStr || "-";
@@ -150,7 +162,7 @@
       document.getElementById("f-val-assigned-drivers").replaceChildren(driverTags);
       showFleetOdometer(vehicle);
       document.getElementById("f-val-availability").textContent = currentAvailability;
-      document.getElementById("f-val-accidents").textContent = vehicle["Accidents"] || "0";
+      document.getElementById("f-val-accidents").textContent = String(vehicle["Accidents"] ?? "") || "-";
       document.getElementById("f-val-mantenimiento").textContent = formatDateForDisplay(vehicle["Last Maintenance"] || vehicle["last maintenance"]);
       document.getElementById("f-val-oil").textContent = formatDateForDisplay(vehicle["Last Oil Change"] || vehicle["last oil change"]);
       document.getElementById("f-val-ins-start").textContent = formatDateForDisplay(vehicle["Insurance Start Date"] || vehicle["insurance start date"]);
@@ -161,81 +173,23 @@
       fleetProfileContainer.style.display = "block";
     }
 
-    function enableFleetEditMode() {
-      if (!currentActiveVehicle) return;
-      isFleetEditMode = true;
-      editFleetBtn.textContent = "Save Vehicle Changes";
-      editFleetBtn.style.background = "var(--primary)";
-      cancelFleetEditBtn.style.display = "inline-block";
-
-      const v = currentActiveVehicle;
-      const assignedDrivers = getAssignedDrivers(v["Plate"] || v["plate"]);
-      const hasDriver = assignedDrivers.length > 0;
-
-      // Visual styling for fields that users cannot edit.
-      const disabledAttr = 'disabled style="background: var(--readonly-bg); cursor: not-allowed;"';
-
-      // 1. Lock all fields that must not be modified here.
-      for(const [host,id,value,type] of [['f-val-brand','edit-fleet-brand',v.Brand||v.brand],['f-val-model','edit-fleet-model',v.Model||v.model],['f-val-vin','edit-fleet-vin',v.VIN||v.vin],['f-val-km','edit-fleet-km',getFleetOdometer(v).value,'number']])TaxiQaidDOM.field(host,{id,value,type,disabled:true});
-      const fuel=v['Fuel Type']||v['fuel type']||'';TaxiQaidDOM.field('f-val-fuel',{id:'edit-fleet-fuel',value:fuel,disabled:true,options:[{value:fuel}]});
-      const availability=v.Availability||v.availability||'Unassigned';
-      TaxiQaidDOM.field('f-val-availability',{id:'edit-fleet-availability',value:hasDriver?'Assigned':availability==='Maintenance'?'Under Maintenance':availability,disabled:hasDriver,options:(hasDriver?['Assigned']:['Unassigned','Under Maintenance']).map(value=>({value}))});
-      for(const [host,id,key] of [['f-val-mantenimiento','edit-fleet-maint','Last Maintenance'],['f-val-oil','edit-fleet-oil','Last Oil Change'],['f-val-ins-start','edit-fleet-ins-start','Insurance Start Date'],['f-val-ins-exp','edit-fleet-ins-exp','Insurance Expiry Date'],['f-val-op-start','edit-fleet-op-start','Operation Card Start Date'],['f-val-op-exp','edit-fleet-op-exp','Operation Card Expiry Date']])TaxiQaidDOM.field(host,{id,type:'date',value:toDateInput(v[key]||v[key.toLowerCase()]),disabled:true});
+    let fleetReadSignal=null;
+    async function refreshFleetPreview({signal=fleetReadSignal}={}) {
+      const sequence=++fleetRefreshSequence,status=document.getElementById('fleet-sync-status');status.textContent='Loading authorized vehicles…';
+      try{const result=await TaxiQaidSources.read('fleet',{signal});if(sequence!==fleetRefreshSequence||signal?.aborted)return result;
+        fleetSourceConnected=result.connected;fleetDatabase=result.connected?result.records.map(r=>TaxiQaidSheetsModel.frontend('fleet',r)):[];fleetSearch.clear();currentActiveVehicle=null;fleetProfileContainer.style.display='none';status.textContent=result.message+(result.connected&&result.records.some(r=>r.relationships!=='verified')?' Driver assignment source unavailable; source values preserved.':'');TaxiQaidModules.fresh('fleet');return result;
+      }catch(error){if(error.name!=='AbortError'){status.textContent=error.message+' Previously loaded data may be out of date.';return {connected:false,message:status.textContent};}throw error;}
     }
-
-    async function saveEditedVehicle() {
-  showIntegrationPending();
-}
-
-    editFleetBtn.addEventListener("click", () => {
-      if (!isFleetEditMode) enableFleetEditMode();
-      else saveEditedVehicle();
-    });
-
-    cancelFleetEditBtn.addEventListener("click", () => {
-      if (currentActiveVehicle) renderVehicleProfile(currentActiveVehicle);
-    });
-
-// Load records and update the synchronization badge for this module.
-    async function refreshFleetPreview() {
-  fleetDatabase = [];
-  fleetSearch.clear();
-  document.getElementById("fleet-sync-status").textContent = "No records available — database not connected";
-
-  return false;
-}
-
-    async function refreshFleetData() {
-  return fetchFleet();
-}
-
+    async function refreshFleetData(){return fetchFleet();}
     function isFleetPostTripSynced(plate) {
       const normalized = normalizePlate(plate);
       const vehicle = fleetDatabase.find(v => normalizePlate(v["Plate"] ?? v["plate"]) === normalized);
       const latest = fleetPostTripReadings.get(normalized);
-      const sheetKm = vehicle && (vehicle["Total KM"] ?? vehicle["total km"]);
+      const sheetKm = vehicle && (vehicle["Total Km"] ?? vehicle["Total KM"] ?? vehicle["total km"]);
       return Boolean(vehicle && latest && ["number", "string"].includes(typeof sheetKm) &&
         String(sheetKm).trim() !== "" && Number(sheetKm) === latest.km);
     }
 
-// Refresh the records when the user clicks this module's refresh button.
-    document.getElementById("refresh-fleet-btn").addEventListener("click", refreshFleetData);
-
-// Export the currently loaded fleet data.
-    document.getElementById("export-fleet-excel-btn").addEventListener("click", event => exportLatestSheetData(event.currentTarget, refreshFleetData, () => {
-      if (fleetDatabase.length === 0) { alert("No fleet data available to export."); return; }
-      // Export the same latest odometer readings displayed in Fleet Management.
-      const exportData = fleetDatabase.map(vehicle => {
-        const row = { ...vehicle, "Total KM": getFleetOdometer(vehicle).value };
-        // Lowercase sheet headers must not leave a second, stale mileage column.
-        delete row["total km"];
-        delete row["accidents"];
-        return row;
-      });
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Fleet Database");
-      XLSX.writeFile(workbook, "Fleet_Database.xlsx");
-    }));
-
-TaxiQaidModules.register('fleet',{onEnter:async()=>{await fetchFleet();return {connected:false,message:'Database integration pending — no operational source is connected.'};},onReset:()=>{fleetDatabase=[];fleetSearch.clear();currentActiveVehicle=null;fleetPostTripReadings.clear();fleetProfileContainer.style.display='none';document.querySelectorAll('#fleet-profile-container [id^=f-val-]').forEach(e=>e.replaceChildren());}});
+document.getElementById('refresh-fleet-btn').addEventListener('click',()=>{void refreshFleetData().catch(()=>{});});
+document.getElementById('export-fleet-excel-btn').addEventListener('click',event=>{void TaxiQaidSources.exportExcel('fleet',event.currentTarget).catch(error=>document.getElementById('fleet-sync-status').textContent=error.message);});
+TaxiQaidModules.register('fleet',{onEnter:options=>{fleetReadSignal=options.signal;return refreshFleetPreview(options);},onReset:()=>{fleetRefreshSequence++;fleetDatabase=[];fleetSearch.clear();currentActiveVehicle=null;fleetPostTripReadings.clear();fleetProfileContainer.style.display='none';document.querySelectorAll('#fleet-profile-container [id^=f-val-]').forEach(e=>e.replaceChildren());}});

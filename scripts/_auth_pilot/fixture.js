@@ -51,6 +51,10 @@
   if(target.pathname==='/functions/v1/manage-users'&&request.method==='POST'){
    counts.admin++;if(typeof window.TaxiQaidLocalAdmin==='function')return await window.TaxiQaidLocalAdmin(body);return json({error:'Administrative service not activated in this fixture.'},503);
   }
+  if(target.pathname==='/functions/v1/operational-data'&&request.method==='POST'){
+   if(typeof window.TaxiQaidLocalOperational==='function')return await window.TaxiQaidLocalOperational(body);
+   return json({source:'authorized-backend',readOnly:true,writesEnabled:false,headers:body.module==='drivers'?['Iqama','Full Name']:['Plate','Model'],records:[],total:0,nextCursor:null});
+  }
   if(target.pathname==='/functions/v1/get-my-access'&&request.method==='GET'){
    counts.access++;if(mode==='access-denied')return json({error:'Synthetic access rejected.'},403);
    return json({version:1,uid,account:{uid,type:mode==='driver-account'?'driver':'management',status:'active',role:'super_admin',username,fullName:'Local Synthetic Master'},departments:['it'],permissions:{roleDefaults:catalog.filter(p=>p.audience!=='Driver').map(p=>p.key),overrides:mode==='permission-deny'?{'fuel.view':'deny','fuel.create':'allow'}:{}},scope:{departments:[],driverRecordRefs:[],documentIds:[]},validUntil:Date.now()+leaseMs});

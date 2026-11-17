@@ -29,6 +29,6 @@
 }
 
 // Shared lookup calls never force another page or a retired data transport to load.
-async function fetchDrivers(){return typeof refreshDriverPreview==='function'?refreshDriverPreview():false;}
-async function fetchFleet(){return typeof refreshFleetPreview==='function'?refreshFleetPreview():false;}
+async function fetchDrivers(){if(typeof TaxiQaidModules!=='undefined'&&TaxiQaidModules.current?.()!=='drivers')return false;return typeof refreshDriverPreview==='function'?refreshDriverPreview():false;}
+async function fetchFleet(){if(typeof TaxiQaidModules!=='undefined'&&TaxiQaidModules.current?.()!=='fleet')return false;return typeof refreshFleetPreview==='function'?refreshFleetPreview():false;}
 async function fetchTripChecks(){return typeof refreshTripCheckPreview==='function'?refreshTripCheckPreview():false;}

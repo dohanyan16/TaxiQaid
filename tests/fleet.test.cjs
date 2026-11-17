@@ -53,7 +53,8 @@ function setup({ drivers = false } = {}) {
   for (const file of ['shared/state.js', 'shared/utils.js', 'shared/data.js']) {
     run(fs.readFileSync(path.join(root, file), 'utf8'));
   }
-  run(source);
+  // This suite exercises the pure odometer rules; real DOM/source integration has browser coverage.
+  const boundary=source.indexOf('    let currentActiveVehicle');assert.ok(boundary>0);run(source.slice(0,boundary));
   if (drivers) run(fs.readFileSync(path.join(root, 'modules/drivers/drivers.js'), 'utf8'));
   return {
     run, context, responses, requests,

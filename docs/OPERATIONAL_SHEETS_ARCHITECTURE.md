@@ -1,10 +1,12 @@
-# Future operational Sheets adapters — disconnected
+# Operational Sheets adapters — approved readonly exception
 
-Authentication, accounts, permissions, departments and administrative audit remain authoritative in the dedicated Supabase project. Management uses the existing signed Worker/Supabase broker and online access response. Driver provisioning and operational data services remain disabled. No new spreadsheets, Google Cloud projects, credentials, secrets, databases or endpoints are created by this preparation.
+Drivers/Fleet readonly connection is now explicitly authorized. See [the exact service, schema, permission and write blockers](DRIVERS_FLEET_SHEETS.md). Only those two DATA sources are prepared for connection (deployment is currently approval-blocked); the future write/other-domain design below remains inactive.
+
+Authentication, accounts, permissions, departments and administrative audit remain authoritative in the dedicated Supabase project. Management uses the existing signed Worker/Supabase broker and online access response. Driver provisioning and other operational data services remain disabled. No new spreadsheets, Google Cloud projects, credentials, secrets, databases or endpoints are created by this preparation.
 
 ## Module lifecycle and reads
 
-`TaxiQaidModules` initializes each authorized page once, coalesces resource loads, cancels obsolete entry reads and rechecks the current permission lease before showing a page. `onEnter` refreshes; `onLeave` cancels reads, while writes retain their idempotency receipts rather than being assumed rolled back. `onReset` clears private state on identity/permission changes. User Management retains its existing authenticated Supabase service. All other `TaxiQaidSources` adapters return an explicit disconnected result; no legacy URL is called. There is no operational polling or localStorage/IndexedDB database. Existing authentication lease renewal remains a security control.
+`TaxiQaidModules` initializes each authorized page once, coalesces resource loads, cancels obsolete entry reads and rechecks the current permission lease before showing a page. `onEnter` refreshes; `onLeave` cancels reads, while writes retain their idempotency receipts rather than being assumed rolled back. `onReset` clears private state on identity/permission changes. User Management retains its existing authenticated Supabase service. All `TaxiQaidSources` adapters except approved Drivers/Fleet reads return an explicit disconnected result; no legacy URL is called. There is no operational polling or localStorage/IndexedDB database. Existing authentication lease renewal remains a security control.
 
 The pure `TaxiQaidOperationalContract` prepares bounded pages (maximum 100 records), opaque bounded cursors, unique stable record IDs, positive versions, operation IDs and bounded quota retries. It does not authorize an operation or supply an active transport. Future per-module adapters must use owner-approved typed schemas; browser requests are untrusted proposals. Cancellation cannot prove a write was rolled back.
 

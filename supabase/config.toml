@@ -20,3 +20,7 @@ verify_jwt = false
 # Review-only administrative API. Online Auth plus authoritative SQL capabilities are also mandatory.
 [functions.manage-users]
 verify_jwt = true
+
+# Approved readonly operational service. Online JWT and current permissions are mandatory in code too.
+[functions.operational-data]
+verify_jwt = true

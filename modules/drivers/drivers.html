@@ -11,7 +11,7 @@
 <button class="btn-secondary" id="export-excel-btn">Export Excel</button>
 </div>
 </div>
-<div class="status-badge" id="sync-status">No records available — database not connected</div>
+<div class="status-badge" id="sync-status">Open this page or Refresh to load authorized records.</div>
 <div class="search-row">
 <div class="search-wrapper">
 <label>Search Records</label>
@@ -23,6 +23,7 @@
 </div>
 </div>
 </div>
+<div class="card"><div class="tracker-table-container"><table id="drivers-overview"><thead></thead><tbody></tbody></table></div><div class="action-row"><button type="button" class="btn-secondary" id="drivers-previous">Previous</button><span id="drivers-page" role="status"></span><button type="button" class="btn-secondary" id="drivers-next">Next</button></div></div>
 <div id="driver-profile-container" style="display: none">
 <div class="profile-card">
 <h2 id="profile-driver-name">Driver Profile</h2>
@@ -44,11 +45,14 @@
 <div class="field-item"><div class="field-label">Shift</div><div class="field-value" id="val-shift">-</div></div>
 <div class="field-item"><div class="field-label">Car Plate</div><div class="field-value" id="val-car-plate">-</div></div>
 <div class="field-item"><div class="field-label">Status</div><div class="field-value" id="val-status">-</div></div>
+<div class="field-item"><div class="field-label">Out of Project Date</div><div class="field-value" id="val-out-project">-</div></div>
+<div class="field-item"><div class="field-label">Accidents</div><div class="field-value" id="val-driver-accidents">-</div></div>
 </div>
 <div class="action-row">
 <button class="btn-primary" id="edit-driver-btn">Edit Driver Details</button>
 <button class="btn-secondary" id="cancel-edit-btn" style="display: none">Cancel</button>
 </div>
+<p class="preview-note" id="driver-write-status" role="status">Driver writes are not activated.</p>
 </div>
 </div>
 </section>

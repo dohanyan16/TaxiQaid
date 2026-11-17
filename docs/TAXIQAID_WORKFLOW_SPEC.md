@@ -2,7 +2,7 @@
 
 ## Current frontend runtime
 
-Management and Driver entries are separate. The frontend uses permission-bound lazy modules, closed authorized navigation groups, current-lease authorization and refresh-on-entry. See [the frontend runtime](FRONTEND_RUNTIME.md). Google Sheets remains disconnected; [the future operational adapter design](OPERATIONAL_SHEETS_ARCHITECTURE.md) prepares one private DATA/CHANGE_LOG workbook per approved domain without creating or connecting any source. The following historical phase descriptions do not override the current runtime or authorize backend changes.
+Management and Driver entries are separate. The frontend uses permission-bound lazy modules, closed authorized navigation groups, current-lease authorization and refresh-on-entry. See [the frontend runtime](FRONTEND_RUNTIME.md). The approved Drivers/Fleet readonly Sheets exception is documented in [the service guide](DRIVERS_FLEET_SHEETS.md); other sources and all operational writes remain disconnected; [the future operational adapter design](OPERATIONAL_SHEETS_ARCHITECTURE.md) prepares one private DATA/CHANGE_LOG workbook per approved domain without creating or connecting any source. The following historical phase descriptions do not override the current runtime or authorize backend changes.
 
 ## Current phase and boundaries
 

@@ -47,7 +47,7 @@ const TaxiQaidSearch = (() => {
     });
   }
   const controllers = new Map();
-  function create({input, btn, dd, config, fields, keys, getData=()=>[], getIdentifier, label, apply=()=>{}, onSelect}) {
+  function create({input, btn, dd, config, fields, keys, getData=()=>[], getIdentifier, label, apply=()=>{}, onSelect, paginate=false}) {
     const inp = typeof input === 'string' ? document.getElementById(input) : input;
     if (!inp) throw new Error(`Missing search input: ${input}`);
     if (controllers.has(inp.id)) return controllers.get(inp.id);
@@ -80,7 +80,7 @@ const TaxiQaidSearch = (() => {
     inp.setAttribute('role','combobox');inp.setAttribute('aria-autocomplete','list');inp.setAttribute('aria-controls',list.id);
     inp.setAttribute('autocomplete','off');inp.setAttribute('aria-expanded','false');
     button.setAttribute('aria-controls',list.id);button.setAttribute('aria-expanded','false');
-    let items=[], active=-1, selected=null;
+    let items=[], active=-1, selected=null, suggestionPage=0;
     function close() { list.style.display='none'; inp.setAttribute('aria-expanded','false');button.setAttribute('aria-expanded','false');inp.removeAttribute('aria-activedescendant');active=-1; }
     function choose(record) {
       selected=record;inp.value=identify(record);close();inp.focus({preventScroll:true});
@@ -91,9 +91,10 @@ const TaxiQaidSearch = (() => {
       [...list.querySelectorAll('[role=option]')].forEach((option,i)=>{option.classList.toggle('keyboard-active',i===active);option.setAttribute('aria-selected',String(i===active));});
       if(active>=0) { const option=list.querySelectorAll('[role=option]')[active];inp.setAttribute('aria-activedescendant',option.id);option.scrollIntoView({block:'nearest'}); }
     }
-    function show() {
+    function show(reset=true) {
+      if(reset!==false)suggestionPage=0;
       controllers.forEach(controller=>{if(controller.input!==inp)controller.close();});
-      items=getData().filter(record=>matches(record,searchable,inp.value)).slice(0,100);
+      const matching=getData().filter(record=>matches(record,searchable,inp.value));items=matching.slice(paginate?suggestionPage*100:0,paginate?(suggestionPage+1)*100:100);
       list.replaceChildren();active=-1;inp.removeAttribute('aria-activedescendant');
       if(!items.length) {const empty=document.createElement('p');empty.className='search-empty';empty.textContent='No matching records available';list.appendChild(empty);}
       items.forEach((record,index)=>{
@@ -101,6 +102,7 @@ const TaxiQaidSearch = (() => {
         option.setAttribute('role','option');option.setAttribute('aria-selected','false');option.textContent=describe(record);
         option.addEventListener('pointerdown',event=>event.preventDefault());option.addEventListener('click',()=>choose(record));list.appendChild(option);
       });
+      if(paginate&&matching.length>100){const more=document.createElement('button');more.type='button';more.className='btn-secondary';more.textContent='Suggestions '+(suggestionPage*100+1)+'–'+Math.min((suggestionPage+1)*100,matching.length)+' of '+matching.length+' — '+((suggestionPage+1)*100<matching.length?'Next':'Start');more.addEventListener('click',()=>{suggestionPage=(suggestionPage+1)*100<matching.length?suggestionPage+1:0;show(false);});list.append(more);}
       list.style.top=`${controls.offsetTop+controls.offsetHeight+4}px`;
       list.style.display='block';inp.setAttribute('aria-expanded','true');button.setAttribute('aria-expanded','true');
     }
