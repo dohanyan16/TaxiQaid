@@ -16,8 +16,23 @@ const TaxiQaidModules=(()=>{
  if(definition.css!==false)await resource(definition.folder+'/'+(definition.css||name)+'.css',true);for(const script of definition.scripts){if(!allowed(name))throw new Error('Access denied.');await resource(script);}if(typeof initializeFrontendPreview==='function')initializeFrontendPreview();TaxiQaidPermissionBindings.reconcile();await hooks.get(name)?.init?.();document.dispatchEvent(new CustomEvent('taxiqaid:module-ready',{detail:{name}}));return section;});queue=promise.catch(()=>{});loaded.set(name,promise);promise.catch(()=>{if(!document.getElementById('view-'+name))loaded.delete(name);});return promise;}
  async function enter(name){const request=++navigation;controller?.abort();hooks.get(active)?.onLeave?.();controller=new AbortController();const signal=controller.signal;document.querySelectorAll('#module-views .view-section').forEach(e=>{e.classList.remove('active');e.hidden=true;e.inert=true;});active=null;const status=document.getElementById('module-status');status.hidden=false;status.textContent=loaded.has(name)?'Refreshing page data… Previously loaded data may be out of date.':'Loading page…';try{if(!allowed(name))throw new Error('Access denied.');const section=await ensure(name);if(request!==navigation||signal.aborted||!allowed(name))return false;active=name;section.dataset.ready='false';section.hidden=false;section.inert=false;section.classList.add('active');TaxiQaidPermissionBindings.reconcile();if(name==='user-management')await new Promise(resolve=>setTimeout(resolve,40));if(request!==navigation||signal.aborted||!allowed(name))return false;const hook=hooks.get(name);
    const backgroundRead=['accidents','tripcheck','penalties','driver-appeals'].includes(name);
+   const livePanelPage=['breakdowns','maintenance','fuel','ncr','training','driver-deductions','customer-care','user-management'].includes(name);
    let result;
-   if(backgroundRead){
+   if(livePanelPage){
+    const prior=hook?.onEnter?await hook.onEnter({signal}):null;
+    // Keep the existing forms and official User Management controls intact.
+    // Live DATA panels are read-only and must not delay module navigation.
+    void resource('shared/live-sheets.js').then(()=>{
+     if(request!==navigation||signal.aborted||active!==name||!allowed(name))return;
+     TaxiQaidLiveSheets.enter(name,section,signal);
+    }).catch(()=>{
+     if(request===navigation&&!signal.aborted&&active===name){
+      status.textContent='Unable to load the operational records view. Retry after refreshing.';
+      status.hidden=false;
+     }
+    });
+    result=name==='user-management'?prior:{connected:true};
+   }else if(backgroundRead){
     const task=hook?.onEnter?hook.onEnter({signal}):TaxiQaidSources.read(name,{signal});
     void Promise.resolve(task).then(loaded=>{
      if(request!==navigation||signal.aborted||active!==name||!allowed(name))return;
