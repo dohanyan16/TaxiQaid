@@ -107,13 +107,13 @@
       const d=currentActiveDriver,get=id=>document.getElementById(id)?.value??'';
       const phoneInput=document.getElementById('edit-phone'),region=get('edit-phone-country');
       if(phoneInput&&!phoneInput.reportValidity()){document.getElementById('driver-write-status').textContent='Enter a valid phone number.';return;}
-      let phone;
-      try{phone=libphonenumber.parsePhoneNumberFromString(get('edit-phone'),region);
-        if(!phone?.isValid())throw 0;
+      let phone=null;
+      try{if(get('edit-phone').trim()){phone=libphonenumber.parsePhoneNumberFromString(get('edit-phone'),region);if(!phone?.isValid())throw 0;}
+        else if(d['Phone Number'])throw 0;
       }catch{document.getElementById('driver-write-status').textContent='Invalid phone number or country prefix.';return;}
       const proposed={
         TID:get('edit-tid').trim(),
-        'Phone Number':phone.number,
+        'Phone Number':phone?.number||'',
         Arrangement:get('edit-arrangement'),
         'KSA Driving License Date':get('edit-license-date'),
         Shift:get('edit-shift'),
