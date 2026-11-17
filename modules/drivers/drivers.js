@@ -84,7 +84,7 @@
       await TaxiQaidModules.resource('assets/vendor/phone/libphonenumber-max.js');
       let vehicles=[];try{const result=await TaxiQaidSources.read('fleet',{action:'lookup',signal:driverReadSignal});vehicles=result.connected?result.records:[];}catch{document.getElementById('sync-status').textContent='Vehicle choices unavailable. Retry Refresh; changes cannot be saved.';}
       if (!currentActiveDriver || !TaxiQaidAccess.can('drivers.edit') || driverReadSignal?.aborted) return;
-      isEditMode=true;editDriverBtn.textContent='Changes are not saved';editDriverBtn.disabled=true;cancelEditBtn.style.display='inline-block';
+      isEditMode=true;editDriverBtn.textContent='Save Changes';editDriverBtn.disabled=false;cancelEditBtn.style.display='inline-block';
       const d=currentActiveDriver,select=(host,id,value,values)=>TaxiQaidDOM.field(host,{id,value,options:values.map(value=>({value}))});
       TaxiQaidDOM.field('val-tid',{id:'edit-tid',value:d.TID||''});
       const phone=libphonenumber.parsePhoneNumberFromString(String(d['Phone Number']||'')),host=document.getElementById('val-phone');host.replaceChildren();
@@ -100,9 +100,52 @@
       select('val-status','edit-status',({'Not Available':'Unavailable','No Longer in the Project':'Out of Project'}[d.Status]||d.Status||'Available'),['Available','Unavailable','Out of Project']);
       dateField('val-out-project','edit-out-project',d['Out of Project Date']);
       document.getElementById('edit-status').addEventListener('change',()=>{document.getElementById('edit-out-project').value=document.getElementById('edit-status').value==='Out of Project'?new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()):'';});
-      document.getElementById('driver-write-status').textContent='Editing preview only. Durable operation receipts, serialization and recovery require an approved backend migration before Save can be enabled.';
+      document.getElementById('driver-write-status').textContent='Only the eight approved fields can be saved. Changes are written to Google Sheets and audited when the backend coordinator is active.';
     }
-    editDriverBtn.addEventListener('click',()=>{void enableEditMode().catch(()=>{document.getElementById('driver-write-status').textContent='Unable to prepare the editing preview. Retry after refreshing.';});});
+    async function saveEditedDriver(){
+      if(!isEditMode||!currentActiveDriver||!TaxiQaidAccess.can('drivers.edit'))return;
+      const d=currentActiveDriver,get=id=>document.getElementById(id)?.value??'';
+      const phoneInput=document.getElementById('edit-phone'),region=get('edit-phone-country');
+      if(phoneInput&&!phoneInput.reportValidity()){document.getElementById('driver-write-status').textContent='Enter a valid phone number.';return;}
+      let phone;
+      try{phone=libphonenumber.parsePhoneNumberFromString(get('edit-phone'),region);
+        if(!phone?.isValid())throw 0;
+      }catch{document.getElementById('driver-write-status').textContent='Invalid phone number or country prefix.';return;}
+      const proposed={
+        TID:get('edit-tid').trim(),
+        'Phone Number':phone.number,
+        Arrangement:get('edit-arrangement'),
+        'KSA Driving License Date':get('edit-license-date'),
+        Shift:get('edit-shift'),
+        'Car Plate':get('edit-car-plate'),
+        Status:get('edit-status'),
+        'Out of Project Date':get('edit-out-project')
+      };
+      const changes=Object.fromEntries(Object.entries(proposed).filter(([key,val])=>String(d[key]??'')!==String(val)));
+      if(!Object.keys(changes).length){document.getElementById('driver-write-status').textContent='No changes to save.';return;}
+      if(driverReadSignal?.aborted){document.getElementById('driver-write-status').textContent='Reopen Drivers and try again.';return;}
+      const op=crypto.randomUUID(),id=d._recordId,version=d._rowVersion??0;
+      if(!id||!Number.isSafeInteger(version)){document.getElementById('driver-write-status').textContent='Record identity unavailable. Refresh and try again.';return;}
+      editDriverBtn.disabled=true;cancelEditBtn.disabled=true;
+      document.getElementById('driver-write-status').textContent='Saving authorized changes…';
+      try{
+        const confirmed=await TaxiQaidSources.updateDriver({operation:op,recordId:id,expectedVersion:version,changes});
+        document.getElementById('driver-write-status').textContent='Saved and audited. Refreshing current data…';
+        await refreshDriverPreview();
+        const updated=driversDatabase.find(x=>x._recordId===confirmed.recordId);
+        if(updated)renderDriverProfile(updated);
+        document.getElementById('sync-status').textContent='Changes saved to Google Sheets.';
+      }catch(error){
+        document.getElementById('driver-write-status').textContent=error.message;
+        // An uncertain write MUST NOT be automatically repeated or silently discarded.
+        if(/uncertain|reconcile|confirm/i.test(error.message))editDriverBtn.disabled=true;
+        else editDriverBtn.disabled=false;
+      }finally{cancelEditBtn.disabled=false;}
+    }
+    editDriverBtn.addEventListener('click',()=>{
+      if(isEditMode){void saveEditedDriver();return;}
+      void enableEditMode().catch(()=>{document.getElementById('driver-write-status').textContent='Unable to prepare editing. Retry after Refresh.';});
+    });
     cancelEditBtn.addEventListener('click',()=>{if(currentActiveDriver)renderDriverProfile(currentActiveDriver);});
     let driverReadSignal=null;
     async function refreshDriverPreview({signal=driverReadSignal}={}) {
