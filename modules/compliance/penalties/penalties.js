@@ -98,10 +98,10 @@ const TaxiQaidPenalties = (() => {
     document.getElementById('clear-penalties-filters').addEventListener('click', () => { inputs.slice(1).forEach(input => { input.value = ''; }); recordSearch.clear(); });
     document.getElementById('close-penalty-details').addEventListener('click', () => closePreviewModal(modal));
     document.getElementById('refresh-penalties-btn').addEventListener('click',()=>{void refreshPenalties().catch(error=>{status.textContent=error.message;});});
-    document.getElementById('export-penalties-btn').addEventListener('click',event=>{void TaxiQaidSources.exportExcel('penalties',event.currentTarget).catch(error=>{status.textContent=error.message;});});
+    document.getElementById('export-penalties-btn').addEventListener('click',event=>{if(window.TAXIQAID_DEDICATED_AUTH?.enabled!==true){showIntegrationPending();return;}void TaxiQaidSources.exportExcel('penalties',event.currentTarget).catch(error=>{status.textContent=error.message;});});
     applyFilters();
     // A read-only detail opener is returned for a future authorized source adapter; no adapter runs now.
-    return Object.freeze({openDetails,setRecords(data,isConnected=true){records=data.map(x=>({...x}));connected=isConnected;recordSearch.clear();applyFilters();}});
+    return Object.freeze({openDetails,setRecords(data,isConnected=true){records=data.map(x=>({...x}));connected=isConnected;applyFilters();}});
   }
   return Object.freeze({COLUMNS, EMPTY_MESSAGE, isIsoDate, formatAmount, formatTime, displayValue, filterRecords, buildReadOnlyRow, initialize});
 })();
@@ -112,6 +112,7 @@ async function refreshPenalties(signal){
   TaxiQaidPenaltiesView.setRecords(result.records.map(row=>({
     ...row.values,ID:row.values['Penalty ID'],Details:row.values.Details||''
   })),result.connected===true);
+  if(!result.connected&&!signal)showIntegrationPending();
   return result;
 }
 if(typeof document!=='undefined'){
