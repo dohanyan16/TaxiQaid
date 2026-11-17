@@ -67,7 +67,7 @@ const TaxiQaidPenalties = (() => {
 
   function initialize() {
     // Deliberately empty and immutable: no imports, data source, storage or sample records.
-    const records = Object.freeze([]);
+    let records = [],connected=false;
     const tbody = document.getElementById('penalties-table-body');
     const modal = document.getElementById('penalty-details-modal');
     const inputs = ['penalties-search-input', 'penalties-start-date', 'penalties-end-date']
@@ -89,7 +89,7 @@ const TaxiQaidPenalties = (() => {
       } catch (error) { status.textContent = error.message; }
       if (!filtered.length) {
         const row = document.createElement('tr'), cell = document.createElement('td'), text = document.createElement('span');
-        cell.colSpan = COLUMNS.length; text.className = 'table-empty'; text.textContent = EMPTY_MESSAGE;
+        cell.colSpan = COLUMNS.length; text.className = 'table-empty'; text.textContent = connected?'No matching traffic violations.':EMPTY_MESSAGE;
         cell.appendChild(text); row.appendChild(cell); tbody.appendChild(row);
       } else filtered.forEach(record => tbody.appendChild(buildReadOnlyRow(record, openDetails)));
     }
@@ -97,12 +97,26 @@ const TaxiQaidPenalties = (() => {
     inputs.slice(1).forEach(input => { input.addEventListener('input', applyFilters); input.addEventListener('change', applyFilters); });
     document.getElementById('clear-penalties-filters').addEventListener('click', () => { inputs.slice(1).forEach(input => { input.value = ''; }); recordSearch.clear(); });
     document.getElementById('close-penalty-details').addEventListener('click', () => closePreviewModal(modal));
-    ['refresh-penalties-btn', 'export-penalties-btn'].forEach(id => document.getElementById(id).addEventListener('click', showIntegrationPending));
+    document.getElementById('refresh-penalties-btn').addEventListener('click',()=>{void refreshPenalties().catch(error=>{status.textContent=error.message;});});
+    document.getElementById('export-penalties-btn').addEventListener('click',event=>{void TaxiQaidSources.exportExcel('penalties',event.currentTarget).catch(error=>{status.textContent=error.message;});});
     applyFilters();
     // A read-only detail opener is returned for a future authorized source adapter; no adapter runs now.
-    return Object.freeze({openDetails});
+    return Object.freeze({openDetails,setRecords(data,isConnected=true){records=data.map(x=>({...x}));connected=isConnected;recordSearch.clear();applyFilters();}});
   }
   return Object.freeze({COLUMNS, EMPTY_MESSAGE, isIsoDate, formatAmount, formatTime, displayValue, filterRecords, buildReadOnlyRow, initialize});
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = TaxiQaidPenalties;
 const TaxiQaidPenaltiesView = typeof document !== 'undefined' ? TaxiQaidPenalties.initialize() : null;
+async function refreshPenalties(signal){
+  const result=await TaxiQaidSources.read('penalties',{signal});
+  TaxiQaidPenaltiesView.setRecords(result.records.map(row=>({
+    ...row.values,ID:row.values['Penalty ID'],Details:row.values.Details||''
+  })));
+  return result;
+}
+if(typeof document!=='undefined'){
+ TaxiQaidModules.register('penalties',{
+  onEnter:({signal})=>refreshPenalties(signal),
+  onReset:()=>TaxiQaidPenaltiesView?.setRecords([],false)
+ });
+}
