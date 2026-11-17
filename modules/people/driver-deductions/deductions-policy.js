@@ -1,6 +1,6 @@
 /** Financial arithmetic in integer halalas. NCR points and fuel quantities are never money. */
 const TaxiQaidDeductionsPolicy = (() => {
-  const SOURCES=Object.freeze(['NCR Financial Fine','Fuel Charge','Traffic Violation','Manual Expense']);
+  const SOURCES=Object.freeze(['NCR Financial Fine','Fuel Charge','Traffic Violation','Manual Expense','Manual']);
   function cents(value,{positive=false}={}) {
     const text=String(value??'').trim();
     if(!/^\d+(?:\.\d{1,2})?$/.test(text))throw new Error('Enter a finite SAR amount with at most two decimal places.');
@@ -30,7 +30,7 @@ const TaxiQaidDeductionsPolicy = (() => {
   }
   function expense(source,amount,reference='') {
     if(!SOURCES.includes(source))throw new Error('Select an approved expense source.');
-    if(source!=='Manual Expense' && !reference.trim())throw new Error('The original source reference is required.');
+    if(!['Manual','Manual Expense'].includes(source) && !reference.trim())throw new Error('The original source reference is required.');
     return {source,amount:cents(amount,{positive:true}),reference:reference.trim()};
   }
   return Object.freeze({SOURCES,cents,format,preview,balance,expense});

@@ -1,0 +1,129 @@
+{
+  "status": "review-only; no backend grants or definitions changed",
+  "baseline": {
+    "definitions": 107,
+    "masterGrants": 101,
+    "driverDenials": 6
+  },
+  "mappings": [
+    {
+      "existing": "penalties.view",
+      "replacement": "penalties.view",
+      "change": "Visible label becomes Traffic Violations; preserve internal key",
+      "module": "penalties",
+      "supabase": "None"
+    },
+    {
+      "existing": "penalties.export",
+      "replacement": "penalties.export",
+      "change": "Preserve export; do not imply sync authority",
+      "module": "penalties",
+      "supabase": "None"
+    },
+    {
+      "existing": null,
+      "replacement": "penalties.sync-deductions",
+      "change": "Add source-ID-bound expense synchronization",
+      "module": "penalties",
+      "supabase": "Review definition/dependencies/scopes/grants and server enforcement first"
+    },
+    {
+      "existing": null,
+      "replacement": "ncr.finance-review",
+      "change": "Add Finance approve/deny with immutable review audit; no role-name bypass",
+      "module": "ncr",
+      "supabase": "Review definition, current Finance membership policy, dependencies, grants and dispatcher"
+    },
+    {
+      "existing": "driver-appeals.classify",
+      "replacement": null,
+      "change": "Remove unused Type classification control; preserve historical fields/backend grants until migration",
+      "module": "driver-appeals",
+      "supabase": "Separate usage inventory and reviewed grant retirement"
+    },
+    {
+      "existing": "roster.import",
+      "replacement": null,
+      "change": "No active Roster import control while Coming Soon",
+      "module": "roster",
+      "supabase": "Separate migration; preserve current grants now"
+    },
+    {
+      "existing": "roster.generate-pdf",
+      "replacement": null,
+      "change": "No active Roster generation control",
+      "module": "roster",
+      "supabase": "Separate migration; preserve current grants now"
+    },
+    {
+      "existing": "roster.download-pdf",
+      "replacement": null,
+      "change": "No active Roster PDF control",
+      "module": "roster",
+      "supabase": "Separate migration; preserve current grants now"
+    },
+    {
+      "existing": "roster.download-zip",
+      "replacement": null,
+      "change": "No active Roster ZIP control",
+      "module": "roster",
+      "supabase": "Separate migration; preserve current grants now"
+    },
+    {
+      "existing": "roster.manage-stops",
+      "replacement": null,
+      "change": "No active Roster stop editor",
+      "module": "roster",
+      "supabase": "Separate migration; retain non-personal catalog"
+    },
+    {
+      "existing": "roster.catalog-import",
+      "replacement": null,
+      "change": "No active Roster catalog import",
+      "module": "roster",
+      "supabase": "Separate migration; preserve current grants now"
+    },
+    {
+      "existing": "roster.catalog-export",
+      "replacement": null,
+      "change": "No active Roster catalog export",
+      "module": "roster",
+      "supabase": "Separate migration; preserve current grants now"
+    },
+    {
+      "existing": "roster.whatsapp-config",
+      "replacement": null,
+      "change": "No active Roster delivery configuration",
+      "module": "roster",
+      "supabase": "Separate migration; preserve current grants now"
+    },
+    {
+      "existing": "roster.whatsapp-send",
+      "replacement": null,
+      "change": "No active Roster delivery action",
+      "module": "roster",
+      "supabase": "Separate migration; preserve current grants now"
+    },
+    {
+      "existing": null,
+      "replacement": "driver-reset.review",
+      "change": "Add protected Master recovery approval with exact linked UID",
+      "module": "user-management",
+      "supabase": "Separate Driver identity/recovery migration; no public authority from this proposal"
+    },
+    {
+      "existing": "driver-portal.preview-schedule",
+      "replacement": null,
+      "change": "No active schedule preview/download control while Coming Soon",
+      "module": "driver-portal-preview",
+      "supabase": "Separate migration; preserve current grants and Driver denials now"
+    },
+    {
+      "existing": "driver-portal.preview-download",
+      "replacement": null,
+      "change": "No active schedule preview/download control while Coming Soon",
+      "module": "driver-portal-preview",
+      "supabase": "Separate migration; preserve current grants and Driver denials now"
+    }
+  ]
+}

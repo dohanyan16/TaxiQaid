@@ -1,0 +1,80 @@
+name: Review Drivers & Fleet staged writes
+on:
+  push:
+    branches:
+      - feat/drivers-fleet-sheets-writes
+  pull_request:
+    branches:
+      - main
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      NODE_PATH: /tmp/taxiqaid-browser/node_modules
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and build reproducibility
+        run: |
+          node --check modules/drivers/drivers.js
+          node --check shared/operational-sources.js
+          node --check supabase/dashboard/operational-data.mjs
+          node --check supabase/functions/operational-data/google-write.mjs
+          node --check supabase/functions/operational-data/write-engine.mjs
+          node --check supabase/functions/operational-data/write-receipts.mjs
+          node --check supabase/functions/operational-data/handler.mjs
+          node scripts/build-operational-data.cjs --check
+          node scripts/build-asset-versions.cjs --check
+      - name: Write tests with simulated providers
+        run: |
+          node --test tests/packaging.test.cjs
+          node --test tests/write-engine.test.cjs
+          node --test tests/sheets.test.cjs
+          node --test tests/google-configuration.test.cjs
+      - name: Install pinned test dependency before the offline safety preload
+        run: npm install --prefix /tmp/taxiqaid-browser --no-audit --no-fund playwright@1.62.1
+      - name: Schema contract and complete Node regressions
+        run: |
+          node scripts/build-operational-schemas.cjs --check
+          node scripts/build-operational-overviews.cjs --check
+          node scripts/check-auth-catalog.cjs
+          node --require ./tests/deny-live-auth.cjs --test tests/*.test.cjs
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.6
+      - name: Strict Deno and isolated provider tests
+        run: |
+          deno task --config supabase/deno.json check
+          deno test --allow-read supabase/functions/_shared/*_test.ts supabase/functions/_diagnostics/*_test.ts tests/*.deno.ts
+      - name: Disposable PostgreSQL 16 security and operational coordination
+        env:
+          TAXIQAID_TEST_PUBLIC_GATEWAY: 'true'
+          TAXIQAID_TEST_USER_ADMIN: 'true'
+          TAXIQAID_TEST_OPERATIONAL_WRITES: 'true'
+        run: node tests/broker-postgres.cjs
+      - name: Install pinned browser test runtime
+        run: |
+          /tmp/taxiqaid-browser/node_modules/.bin/playwright install --with-deps chromium
+          sudo ln -sf "$(node -e 'process.stdout.write(require("/tmp/taxiqaid-browser/node_modules/playwright").chromium.executablePath())')" /usr/bin/chromium
+      - name: Actual frontend regressions with only synthetic transport
+        env:
+          NODE_PATH: /tmp/taxiqaid-browser/node_modules
+          TAXIQAID_URL: http://127.0.0.1:8004/
+          TAXIQAID_SCREENSHOTS: /tmp/taxiqaid-screenshots
+          TAXIQAID_ROSTER_OUTPUT: /tmp/taxiqaid-roster
+          TAXIQAID_PORTAL_OUTPUT: /tmp/taxiqaid-portal
+        run: |
+          python3 -m http.server 8004 --bind 127.0.0.1 >/tmp/taxiqaid-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for suite in sheets driver-writes workflow ui people roster support portal auth-migration main-auth-gate master-pilot user-admin lazy-security ksa-time; do
+            node --require ./tests/deny-live-auth.cjs "tests/$suite.browser.cjs"
+          done

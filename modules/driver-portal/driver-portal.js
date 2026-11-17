@@ -1,7 +1,7 @@
 /** No operational requests or writes. Authorized adapters are reserved for future backend integration. */
 const TaxiQaidDriverPortal = (() => {
   const $=id=>document.getElementById(id),policy=TaxiQaidPortalPolicy;
-  let packet=null,mode='driver',documentLoader=null,documentState=null,epoch=0,objectUrls=[],worker=null,selectedPreview=null,previewDrivers=[];
+  let packet=null,mode='driver',documentLoader=null,documentState=null,epoch=0,objectUrls=[],selectedPreview=null,previewDrivers=[];
   const show=(id,text)=>{const element=$(id);element.textContent=text;element.hidden=false;};
   const resource=()=>({...policy.resource(packet),mode});
   const permitted=key=>mode==='driver'&&packet&&TaxiQaidAccess.can('driver-portal.'+key,resource());
@@ -13,16 +13,16 @@ const TaxiQaidDriverPortal = (() => {
   const previewSearch=$('portal-preview-driver')?TaxiQaidSearch.create({input:'portal-preview-driver',fields:['iqama','name'],getData:()=>previewDrivers,getIdentifier:driver=>driver.driverRecordRef,onSelect:driver=>{selectedPreview=driver;$('portal-preview-open').disabled=!TaxiQaidAccess.can('driver-portal.preview',{driverRecordRef:driver.driverRecordRef});}}):{clear(){}};
   $('portal-preview-driver')?.addEventListener('input',()=>{selectedPreview=null;$('portal-preview-open').disabled=true;});
   TaxiQaidPeopleUI.tabs($('portal-content'));
-  function revoke() {objectUrls.forEach(url=>URL.revokeObjectURL(url));objectUrls=[];worker?.terminate();worker=null;documentState=null;}
+  function revoke() {objectUrls.forEach(url=>URL.revokeObjectURL(url));objectUrls=[];documentState=null;}
   function clear() {
     epoch++;revoke();packet=null;documentLoader=null;previewDrivers=[];selectedPreview=null;previewSearch.clear();countrySearch.clear();selectedCountry=null;
     ['portal-settings-form','portal-appeals-form','portal-login-form'].forEach(id=>$(id).reset());
-    ['portal-settings-status','portal-appeals-status','portal-login-status','portal-schedule-status','portal-sign-status'].forEach(id=>$(id).hidden=true);
-    ['portal-approved-profile','portal-profile-requests','portal-files-list','portal-week','portal-document-viewer'].forEach(id=>$(id).replaceChildren());
+    ['portal-settings-status','portal-appeals-status','portal-login-status','portal-sign-status'].forEach(id=>$(id).hidden=true);
+    ['portal-approved-profile','portal-profile-requests','portal-files-list','portal-document-viewer'].forEach(id=>$(id).replaceChildren());
     ['portal-sign-modal','portal-document-modal'].forEach(id=>{if($(id).style.display==='flex')closePreviewModal($(id));});
     $('portal-document-title').textContent='Document';$('portal-document-version').textContent='';$('portal-document-status').textContent='';
-    $('portal-driver-name').textContent='Driver account integration pending';$('portal-profile-state').textContent='No Pending Requests';$('portal-schedule-version').textContent='';$('portal-schedule-summary').textContent='';
-    $('portal-files-empty').hidden=false;$('portal-schedule-empty').hidden=false;$('portal-download-schedule').disabled=true;
+    $('portal-driver-name').textContent='Driver account integration pending';$('portal-profile-state').textContent='No Pending Requests';
+    $('portal-files-empty').hidden=false;
     $('portal-content').hidden=true;$('driver-portal').hidden=true;
   }
   function shell(preview,loggedIn) {
@@ -53,30 +53,7 @@ const TaxiQaidDriverPortal = (() => {
       if(doc.status==='Signed'&&doc.confirmation){card.append(text('p','Method: '+doc.confirmation.method));if(doc.confirmation.signedAtKsa)card.append(text('p','Signed: '+doc.confirmation.signedAtKsa));if(doc.confirmation.reference)card.append(text('p','Confirmation: '+doc.confirmation.reference));}
       button.disabled=!documentLoader||!['Signed','Pending Signature'].includes(doc.status);button.addEventListener('click',()=>viewDocument(doc.documentId,doc.version));card.append(button);$('portal-files-list').append(card);
     });
-    renderSchedule();
     $('portal-request-changes').disabled=!permitted('request-changes');$('portal-submit-appeal').disabled=!permitted('submit-appeal');
-  }
-  function renderSchedule() {
-    $('portal-week').replaceChildren();const schedule=packet?.schedule;
-    const allowed=schedule&&(mode==='driver'?permitted('schedule.view'):previewCan('preview-schedule'));
-    $('portal-schedule-summary').textContent=allowed?schedule.driver.name+' | '+packet.iqama+' | '+schedule.driver.shift+' | '+schedule.week[0]+' – '+schedule.week[6]:'';
-    $('portal-schedule-empty').hidden=Boolean(allowed);$('portal-schedule-version').textContent=allowed?'Published version: '+schedule.version:'';
-    $('portal-download-schedule').disabled=!(allowed&&(mode==='driver'?permitted('schedule.download'):previewCan('preview-download')));
-    if(!allowed)return;
-    schedule.driver.assignments.forEach((day,index)=>{
-      const card=text('article','', 'portal-day'+(day.duty==='Rest Day'?' rest':''));card.append(text('h3',TaxiQaidRosterModel.DAYS[index]+' — '+day.date));
-      if(day.duty==='Rest Day')card.append(text('p','Rest Day'));
-      else {
-        card.append(text('p',day.start+' – '+day.end+(day.crossMidnight?' (next day)':'')),text('p','Car: '+day.plate));
-        for(const [label,name,kind] of [['Starting Zone',day.zone,'zone'],['Stop',day.stop,undefined],['Petrol Station',day.station?.name,undefined]]) {
-          if(!name){if(label==='Petrol Station')card.append(text('p','Petrol Station: Not Configured'));continue;}
-          const row=text('p',label+': '),location=TaxiQaidRosterModel.findLocation(schedule.catalog||[],name,kind),url=location&&TaxiQaidRosterModel.mapUrl(location);
-          if(url){const link=text('a',name);link.href=url;link.target='_blank';link.rel='noopener noreferrer';row.append(link);}else row.append(text('span',name));
-          if(label==='Petrol Station'&&day.station.time)row.append(text('span',' — '+TaxiQaidRosterModel.time(day.station.time)));card.append(row);
-        }
-      }
-      $('portal-week').append(card);
-    });
   }
   function openLogin(){clear();shell(false,false);$('portal-iqama').focus();}
   $('driver-signin-entry')?.addEventListener('click',openLogin);
@@ -119,20 +96,6 @@ const TaxiQaidDriverPortal = (() => {
   $('portal-document-reviewed').addEventListener('click',()=>{if(!documentState?.loaded)return;documentState.reviewed=true;$('portal-document-sign').disabled=!signable();});
   $('portal-document-sign').addEventListener('click',()=>{if(signable())openPreviewModal($('portal-sign-modal'));});
   $('portal-confirm-sign').addEventListener('click',()=>{if(signable())show('portal-sign-status','Signature integration pending — document not signed.');});
-  $('portal-download-schedule').addEventListener('click',()=>{
-    if(!packet?.schedule||!(mode==='driver'?permitted('schedule.download'):previewCan('preview-download')))return;
-    const schedule=structuredClone(packet.schedule),currentEpoch=epoch;worker?.terminate();worker=new Worker(TaxiQaidModules.worker('modules/people/roster/roster-worker.js'));
-    show('portal-schedule-status','Preparing your personal published schedule…');$('portal-download-schedule').disabled=true;
-    worker.onmessage=event=>{
-      if(currentEpoch!==epoch)return;
-      if(event.data.type==='pdf'){
-        const blob=new Blob([event.data.buffer],{type:'application/pdf'}),url=URL.createObjectURL(blob);objectUrls.push(url);const link=document.createElement('a');link.href=url;link.download=TaxiQaidRosterModel.filename(schedule.driver);link.click();show('portal-schedule-status','Personal PDF prepared from published version '+schedule.version+'.');
-      }else show('portal-schedule-status',event.data.message||'The personal PDF could not be prepared.');
-      worker.terminate();worker=null;renderSchedule();
-    };
-    worker.onerror=()=>{show('portal-schedule-status','The personal PDF could not be prepared.');worker?.terminate();worker=null;renderSchedule();};
-    worker.postMessage({id:'personal-published',type:'pdf',driver:schedule.driver,week:schedule.week,catalog:schedule.catalog||[],publication:{version:schedule.version}});
-  });
   TaxiQaidAccess.subscribe(()=>{const wasPreview=mode==='management-preview'&&!$('driver-portal').hidden;clear();if(wasPreview&&TaxiQaidAccess.getContext()?.accountType==='Management')if($('erp-app'))$('erp-app').style.display='flex';if(TaxiQaidAccess.getContext()?.accountType==='Driver'){if($('erp-app'))$('erp-app').style.display='none';const hasAccess=TaxiQaidAccess.can('driver-portal.view');shell(false,hasAccess);if(hasAccess)render();else show('portal-login-status','Driver Portal access is unavailable for this account.');}});
 
   return Object.freeze({openLogin,viewDocument,

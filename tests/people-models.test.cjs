@@ -73,7 +73,7 @@ test('only authorized posted financial values affect balances, never draft/dispu
  assert.throws(()=>money.balance([{authorized:true,posted:true,liters:20}],[]));
 });
 test('source classifications preserve original references and cannot treat NCR points as an amount',()=>{
- assert.deepEqual(money.SOURCES,['NCR Financial Fine','Fuel Charge','Traffic Violation','Manual Expense']);
+ assert.deepEqual(money.SOURCES,['NCR Financial Fine','Fuel Charge','Traffic Violation','Manual Expense','Manual']);
  for(const source of money.SOURCES.slice(0,3))assert.throws(()=>money.expense(source,'50',''),/reference/);
  assert.deepEqual(money.expense('NCR Financial Fine','25.00',' original-ncr-financial-fine '),{source:'NCR Financial Fine',amount:2500,reference:'original-ncr-financial-fine'});
  assert.throws(()=>money.expense('NCR Points','50','ncr-ref'));assert.throws(()=>money.expense('NCR Financial Fine','-50','ncr-ref'));

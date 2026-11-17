@@ -718,3 +718,14 @@ Support verification adds `node tests/support.browser.cjs` alongside the existin
 
 
 Driver Portal/User Management verification adds `node tests/portal.browser.cjs` and `tests/portal-permissions.test.cjs`. Synthetic authorized adapter fixtures verify unconfigured driver authentication makes no auth request, unchanged management login convention, driver-only role rejection, four sections, phone/name validation, no-op Driver requests/signatures/appeals and legacy-mode administrative guards; protected User Management persistence is covered separately, immutable private PDF hashes, repeat-sign prevention, published personal PDF reuse, selected-driver/document scopes, denied runtime controls, empty responsive preview and session clearing. No live driver credentials or backend source is configured. No private test PDFs, ZIPs, accounts or personal screenshots are committed.
+
+## Approved operational amendment — 17 November 2026
+
+The current owner's operational request supersedes older frontend-only NCR/roster/template descriptions in this document for the following specific rules. See [implementation and activation boundaries](OPERATIONAL_INTEGRATION_REVIEW.md); unfinished workflows remain explicitly pending.
+
+- NCR: exact 23 approved categories/severities/points, including Minor MDT Black Shift = 10; individual expiry and per-Iqama frequency quiet reset are **180 KSA calendar days**, replacing the previous 90-day rule. Store original category/severity/points/frequency without historical rewrites. Score = 100 minus active original points. Finance approval starts Pending. Driver documents expose only Category, Description and Individual Statement.
+- IDs: Accident ACD-00001, Breakdown BDW-00001, Maintenance MTN-000001 and NCR NCT-00001 are permanent and never renumbered/reused. Maintenance requests retain the original source ID/type. Fuel uses Plate-Iqama-Date plus an internal UUID/collision guard; Driver Appeal APP-Iqama-Date-Hour and Deduction SAR-Iqama-Date-Hour similarly require stable internal identities.
+- Depot tariff is 2.18 SAR/L. Preserve the actual record price, server-controlled KSA timestamps and idempotent fuel/traffic expense references. Post-Trip Km cannot overwrite a newer valid reading. Fleet is readonly in its own page.
+- Both Roster Management and Driver Portal Weekly Schedule show Coming Soon. Neither loads an import/schedule worker, model or PDF generator. Preserve historical data and libraries used by other modules.
+- User Directory has exactly one Updated At UTC, at the end of the technical Record ID / Row Version / Updated At UTC trio, consistent with Drivers/Fleet. Other spreadsheet structures remain unchanged.
+- New Driver UID/Iqama linkage/provisioning and Master-approved short-lived, single-use recovery need separate reviewed SQL/production approval. Supabase remains security authority. No plaintext credential, password hash, recovery link or token belongs in Google Sheets.

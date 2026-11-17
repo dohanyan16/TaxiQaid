@@ -25,23 +25,8 @@
 <label for="appeals-end">End Date</label>
 <input id="appeals-end" type="date" />
 </div>
-<div class="form-group">
-<label for="appeals-type">Appeal Type</label>
-<select id="appeals-type" >
-<option value="">Types pending configuration</option>
-</select>
-</div>
-<div class="form-group">
-<label for="appeals-department">Department</label>
-<select id="appeals-department" >
-<option value="">All Departments</option>
-<option value="Pending">Pending</option>
-<option value="Financial">Financial</option>
-<option value="Operation">Operation</option>
-<option value="Quality">Quality</option>
-<option value="IT">IT</option>
-</select>
-</div>
+
+
 <div class="form-group">
 <label for="appeals-status">Status</label>
 <select id="appeals-status" >
@@ -69,15 +54,15 @@
 <th scope="col">Driver Name</th>
 <th scope="col">Driver Iqama</th>
 <th scope="col">Nationality</th>
-<th scope="col">Appeal Type</th>
+
 <th scope="col">Description</th>
 <th scope="col">Status</th>
-<th scope="col">Department</th>
+
 </tr>
 </thead>
 <tbody>
 <tr>
-<td colspan="8">
+<td colspan="6">
 <span class="table-empty">No records available — database not connected</span>
 </td>
 </tr>
@@ -108,10 +93,7 @@
 <label for="appeal-detail-nationality">Nationality</label>
 <input id="appeal-detail-nationality" type="text" readonly placeholder="Unavailable — database not connected"/>
 </div>
-<div class="form-group">
-<label for="appeal-detail-appeal-type">Appeal Type</label>
-<input id="appeal-detail-appeal-type" type="text" readonly placeholder="Unavailable — database not connected"/>
-</div>
+
 <div class="form-group wide">
 <label for="appeal-detail-description">Description</label>
 <textarea id="appeal-detail-description" rows="3" readonly placeholder="Unavailable — database not connected">
@@ -125,7 +107,7 @@
 <label for="appeal-detail-submission-time">Submission Time</label>
 <input id="appeal-detail-submission-time" type="text" readonly placeholder="Unavailable — database not connected"/>
 </div>
-<div class="form-group"><label for="appeal-detail-classification">Classify Appeal Type</label><select id="appeal-detail-classification" disabled><option value="">Types pending configuration</option></select></div>
+
 <div class="form-group">
 <label for="appeal-detail-status">Status</label>
 <select id="appeal-detail-status" >
@@ -134,16 +116,7 @@
 <option value="Done">Done</option>
 </select>
 </div>
-<div class="form-group">
-<label for="appeal-detail-department">Department</label>
-<select id="appeal-detail-department" >
-<option value="Pending">Pending</option>
-<option value="Financial">Financial</option>
-<option value="Operation">Operation</option>
-<option value="Quality">Quality</option>
-<option value="IT">IT</option>
-</select>
-</div>
+
 <div class="form-group">
 <label for="appeal-detail-assigned-by">Assigned By</label>
 <input id="appeal-detail-assigned-by" type="text" readonly placeholder="Unavailable — database not connected"/>

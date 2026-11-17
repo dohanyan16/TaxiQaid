@@ -27,14 +27,10 @@
 </div>
 <div class="form-group ">
 <label for="requests-status">Status</label>
-<select id="requests-status">
-<option value="All statuses">All statuses</option>
-<option value="Pending">Pending</option>
-<option value="In Progress">In Progress</option>
-<option value="Done">Done</option>
-</select>
+<select id="requests-status"><option value="">All Statuses</option><option>Pending to Accept</option><option>Under Maintenance</option><option>Done</option></select>
 </div>
 </div>
+<div class="form-group"><label for="requests-source">Source</label><select id="requests-source"><option value="">All Sources</option><option>Accident</option><option>Breakdown</option></select></div>
 <button class="btn-secondary" data-open="request-modal">Preview Request Details</button>
 <p class="preview-note">Preview an empty form. No operational records are available.</p>
 </div>
@@ -46,6 +42,7 @@
 <th scope="col">ID</th>
 <th scope="col">Date</th>
 <th scope="col">Time</th>
+<th scope="col">Source</th>
 <th scope="col">Car Plate</th>
 <th scope="col">Car Model</th>
 <th scope="col">Sent By</th>
@@ -54,7 +51,7 @@
 </thead>
 <tbody>
 <tr>
-<td colspan="7" style="text-align: center"><span class="table-empty">No records available — database not connected</span></td>
+<td colspan="8" style="text-align: center"><span class="table-empty">No records available — database not connected</span></td>
 </tr>
 </tbody>
 </table>
@@ -87,7 +84,7 @@
 <label for="overview-status">Status</label>
 <select id="overview-status">
 <option value="All statuses">All statuses</option>
-<option value="Requested">Requested</option>
+
 <option value="In Progress">In Progress</option>
 <option value="Pending of Component">Pending of Component</option>
 <option value="Pending of Approval">Pending of Approval</option>
@@ -104,23 +101,20 @@
 <thead>
 <tr>
 <th scope="col">Maintenance ID</th>
+<th scope="col">Source ID</th>
 <th scope="col">Date</th>
 <th scope="col">Time</th>
 <th scope="col">Created By</th>
-<th scope="col">Maintenance Description</th>
+<th scope="col">Car Plate</th>
+<th scope="col">Car Model</th>
 <th scope="col">Maintenance Engineer Iqama</th>
-<th scope="col">Maintenance Location</th>
 <th scope="col">Status</th>
-<th scope="col">Breakdown Type</th>
-<th scope="col">Description Fault</th>
 <th scope="col">Action Taken</th>
-<th scope="col">Action Taken Description</th>
-<th scope="col">Remarks</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td colspan="13" style="text-align: center"><span class="table-empty">No records available — database not connected</span></td>
+<td colspan="10" style="text-align: center"><span class="table-empty">No records available — database not connected</span></td>
 </tr>
 </tbody>
 </table>
@@ -169,11 +163,7 @@
 </div>
 <div class="form-group ">
 <label for="request-request-status">Request Status</label>
-<select id="request-request-status">
-<option value="Pending">Pending</option>
-<option value="In Progress">In Progress</option>
-<option value="Done">Done</option>
-</select>
+<select id="request-request-status"><option>Pending to Accept</option><option>Under Maintenance</option><option>Done</option></select>
 </div>
 <div class="form-group ">
 <label for="request-linked-maintenance-id">Linked Maintenance ID</label>
@@ -251,7 +241,7 @@
 <div class="form-group ">
 <label for="workorder-status">Status</label>
 <select id="workorder-status">
-<option value="Requested">Requested</option>
+
 <option value="In Progress">In Progress</option>
 <option value="Pending of Component">Pending of Component</option>
 <option value="Pending of Approval">Pending of Approval</option>

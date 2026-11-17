@@ -2,32 +2,170 @@
 const TaxiQaidNcrPolicy = (() => {
   'use strict';
   const STARTING_POINTS = 100;
-  const ACTIVE_CALENDAR_DAYS = 90;
+  const ACTIVE_CALENDAR_DAYS = 180;
   const CATEGORIES = Object.freeze([
-    {key: 'cctv-tampering', label: 'Tampering with any CCTV cameras', penalty: -50},
-    {key: 'money-corruption', label: 'Money corruption, fraud, or disloyalty', penalty: -50},
-    {key: 'unauthorized-transport', label: 'Transporting passengers without payment or carrying unauthorized goods in the vehicle', penalty: -50},
-    {key: 'asset-damage', label: 'Damaging TaxiQaid assets, including vehicles or office buildings', penalty: -25},
-    {key: 'smoking', label: 'Smoking inside vehicles, offices, accommodation, or prohibited areas', penalty: -25},
-    {key: 'reckless-driving', label: 'Reckless driving, including vehicle drifting, without causing damage', penalty: -25},
-    {key: 'uniform-hygiene', label: 'Not wearing the full uniform or maintaining poor personal hygiene', penalty: -25},
-    {key: 'personal-vehicle-use', label: 'Using a company vehicle for personal purposes', penalty: -25},
-    {key: 'depot-violations', label: 'Depot violations, including speeding, littering, or improper parking', penalty: -25},
-    {key: 'fights-arguments', label: 'Engaging in fights or arguments with employees, passengers, or others', penalty: -10},
-    {key: 'phone-seat-belt', label: 'Using a phone or not fastening a seat belt while driving', penalty: -10},
-    {key: 'mdt-login', label: 'Failure to log in to the MDT device', penalty: -10},
-    {key: 'occ-reporting', label: 'Failure to report incidents to OCC', penalty: -10},
-    {key: 'unprofessional-behavior', label: 'Unprofessional or rude behavior toward others', penalty: -10},
-    {key: 'vehicle-sleeping-luggage', label: 'Placing blankets or luggage inappropriately, or sleeping in the vehicle', penalty: -10},
-    {key: 'alerts-instructions', label: 'Non-compliance with TaxiQaid alerts or instructions', penalty: -10},
-    {key: 'harmful-conduct', label: 'Conduct harmful to TaxiQaid business that is not otherwise listed', penalty: -10},
-    {key: 'third-party-site-rules', label: 'Non-compliance with rules at third-party operating sites', penalty: -10},
-    {key: 'excessive-stay', label: 'Remaining at one location for an excessive period', penalty: -10},
-    {key: 'unauthorized-absence', label: 'Absence from work without permission', penalty: -25},
-    {key: 'eating-while-driving', label: 'Eating while driving', penalty: -10},
-    {key: 'mdt-black-shift', label: 'MDT Black Shift', penalty: -10},
-    {key: 'pickup-dropoff-rules', label: 'Non-compliance with Passenger Pickup & Drop-off Rules', penalty: -25}
-  ].map(category => Object.freeze(category)));
+  {
+    "severity": "Severe",
+    "label": "Tampering with any CCTV Cameras",
+    "points": 25,
+    "key": "cctv-tampering",
+    "penalty": -25
+  },
+  {
+    "severity": "Severe",
+    "label": "Money corruption, fraud disloyalty",
+    "points": 25,
+    "key": "money-corruption",
+    "penalty": -25
+  },
+  {
+    "severity": "Severe",
+    "label": "Transporting passengers without money or carrying unauthorized goods in car",
+    "points": 25,
+    "key": "unauthorized-transport",
+    "penalty": -25
+  },
+  {
+    "severity": "Medium",
+    "label": "Damaging TaxiQaid asset such as car body, office building, etc…",
+    "points": 15,
+    "key": "asset-damage",
+    "penalty": -15
+  },
+  {
+    "severity": "Medium",
+    "label": "Smoking inside the car, office, accommodation, or any prohibited area",
+    "points": 15,
+    "key": "smoking",
+    "penalty": -15
+  },
+  {
+    "severity": "Medium",
+    "label": "Reckless driving, including drifting the vehicle, without causing damage",
+    "points": 15,
+    "key": "reckless-driving",
+    "penalty": -15
+  },
+  {
+    "severity": "Medium",
+    "label": "Not wearing full uniform / not maintaining good hygiene",
+    "points": 15,
+    "key": "uniform-hygiene",
+    "penalty": -15
+  },
+  {
+    "severity": "Medium",
+    "label": "Using car for personal use",
+    "points": 15,
+    "key": "personal-vehicle-use",
+    "penalty": -15
+  },
+  {
+    "severity": "Medium",
+    "label": "Station Depot violations (speeding, littering, parking wrong)",
+    "points": 15,
+    "key": "depot-violations",
+    "penalty": -15
+  },
+  {
+    "severity": "Minor",
+    "label": "Engaging in fights/arguments with anyone e.g. TaxiQaid employees or passengers",
+    "points": 5,
+    "key": "fights-arguments",
+    "penalty": -5
+  },
+  {
+    "severity": "Medium",
+    "label": "Using phone while driving and not fastening the seat belt while driving",
+    "points": 15,
+    "key": "phone-seat-belt",
+    "penalty": -15
+  },
+  {
+    "severity": "Minor",
+    "label": "Failure to log-in to the MDT device",
+    "points": 5,
+    "key": "mdt-login",
+    "penalty": -5
+  },
+  {
+    "severity": "Minor",
+    "label": "Failing to report incidents to OCC",
+    "points": 5,
+    "key": "occ-reporting",
+    "penalty": -5
+  },
+  {
+    "severity": "Minor",
+    "label": "Presenting unprofessional or rude behavior toward anyone",
+    "points": 5,
+    "key": "unprofessional-behavior",
+    "penalty": -5
+  },
+  {
+    "severity": "Minor",
+    "label": "Placing blankets or luggage, or sleeping in car.",
+    "points": 5,
+    "key": "vehicle-sleeping-luggage",
+    "penalty": -5
+  },
+  {
+    "severity": "Minor",
+    "label": "Non-compliance with the scope and description of alerts issued by TaxiQaid",
+    "points": 5,
+    "key": "alerts-instructions",
+    "penalty": -5
+  },
+  {
+    "severity": "Minor",
+    "label": "Any action or behavior that harms TaxiQaid business and not listed in above",
+    "points": 5,
+    "key": "harmful-conduct",
+    "penalty": -5
+  },
+  {
+    "severity": "Minor",
+    "label": "Non-compliance with rules at third-party sites where TaxiQaid operates",
+    "points": 5,
+    "key": "third-party-site-rules",
+    "penalty": -5
+  },
+  {
+    "severity": "Minor",
+    "label": "Staying for long time on one location",
+    "points": 5,
+    "key": "excessive-stay",
+    "penalty": -5
+  },
+  {
+    "severity": "Medium",
+    "label": "If driver is absent without permeation",
+    "points": 15,
+    "key": "unauthorized-absence",
+    "penalty": -15
+  },
+  {
+    "severity": "Minor",
+    "label": "Eating while driving",
+    "points": 5,
+    "key": "eating-while-driving",
+    "penalty": -5
+  },
+  {
+    "severity": "Minor",
+    "label": "MDT Black Shift",
+    "points": 10,
+    "key": "mdt-black-shift",
+    "penalty": -10
+  },
+  {
+    "severity": "Medium",
+    "label": "Not complying with PASSENGER PICKUP & DROP-OFF RULES",
+    "points": 15,
+    "key": "pickup-dropoff-rules",
+    "penalty": -15
+  }
+].map(Object.freeze));
   const byKey = new Map(CATEGORIES.map(category => [category.key, category]));
 
   function getCategoryPenalty(key) {
@@ -70,11 +208,11 @@ const TaxiQaidNcrPolicy = (() => {
     const expiryDate = getExpiryDate(ncrDate);
     // A future occurrence has no Active/Expired status yet and cannot deduct points.
     if (currentKsaDate < ncrDate) return null;
-    return currentKsaDate >= expiryDate ? 'Expired' : 'Active';
+    return currentKsaDate >= expiryDate ? 'Expiry' : 'Active';
   }
 
   function getTbtStatus(conductedDate) {
-    if (conductedDate === '' || conductedDate === null || conductedDate === undefined) return 'Pending';
+    if (conductedDate === '' || conductedDate === null || conductedDate === undefined) return 'No';
     parseIsoDate(conductedDate);
     return 'Conducted';
   }
@@ -88,12 +226,14 @@ const TaxiQaidNcrPolicy = (() => {
       currentPoints: STARTING_POINTS, validationIssues: []};
     records.forEach((record, index) => {
       if (!record || typeof record !== 'object') throw new TypeError('Each NCR must be a record.');
-      const magnitude = Math.abs(getCategoryPenalty(record.categoryKey));
+      const original=record.points??record.penalty;
+      if(original!==undefined&&(!Number.isFinite(original)||original===0))throw new RangeError('Invalid historical NCR points.');
+      const magnitude = original===undefined?Math.abs(getCategoryPenalty(record.categoryKey)):Math.abs(original);
       // Invalid/missing dates throw: never present a misleading resolved score.
       const status = getNcrStatus(record.ncrDate, currentKsaDate);
       summary.totalHistoricalDeductions += magnitude;
       if (status === 'Active') { summary.activeNcrs++; summary.activePointsDeducted += magnitude; }
-      else if (status === 'Expired') summary.expiredNcrs++;
+      else if (status === 'Expiry') summary.expiredNcrs++;
       else {
         summary.futureNcrs++;
         summary.validationIssues.push({index, reason: 'Future NCR Date: not yet active; no points deducted.'});
@@ -126,7 +266,20 @@ const TaxiQaidNcrPolicy = (() => {
     });
   }
 
-  return Object.freeze({STARTING_POINTS, ACTIVE_CALENDAR_DAYS, CATEGORIES, getCategoryPenalty,
+
+  // Only a new record receives a new frequency; stored historical values are never rewritten.
+  function nextFrequency(records, iqama, ncrDate) {
+    parseIsoDate(ncrDate);
+    const dates=records.filter(r=>r.iqama===iqama).map(r=>r.ncrDate).sort();dates.forEach(parseIsoDate);
+    if(dates.some(d=>d>ncrDate))throw new RangeError('Backdated frequency requires administrative review.');
+    let count=0,previous=null;
+    for(const day of [...dates,ncrDate]){if(previous===null||parseIsoDate(day)-parseIsoDate(previous)>=180*86400000)count=1;else count++;previous=day;}
+    const suffix=count%100>=11&&count%100<=13?'th':({1:'st',2:'nd',3:'rd'}[count%10]||'th');
+    return count+suffix+' NCR Initiated';
+  }
+  function driverDocument(record){return Object.freeze({category:record.category,description:record.description,individualStatement:record.individualStatement});}
+
+  return Object.freeze({nextFrequency,driverDocument,STARTING_POINTS, ACTIVE_CALENDAR_DAYS, CATEGORIES, getCategoryPenalty,
     parseIsoDate, getExpiryDate, getKsaDate, getNcrStatus, getTbtStatus, summarizeNcrs,
     countActiveNcrs, countExpiredNcrs, countHistoricalNcrs, getActivePointsDeducted,
     getCurrentDriverScore, filterDriversByPoints});
