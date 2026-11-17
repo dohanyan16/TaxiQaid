@@ -111,7 +111,7 @@ async function refreshPenalties(signal){
   const result=await TaxiQaidSources.read('penalties',{signal});
   TaxiQaidPenaltiesView.setRecords(result.records.map(row=>({
     ...row.values,ID:row.values['Penalty ID'],Details:row.values.Details||''
-  })));
+  })),result.connected===true);
   return result;
 }
 if(typeof document!=='undefined'){
