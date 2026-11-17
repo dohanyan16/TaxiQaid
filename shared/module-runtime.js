@@ -1,6 +1,6 @@
 /** Permission-bound lazy lifecycle. Resource promises initialize each classic module once. */
 const TaxiQaidModules=(()=>{
- const common=['shared/utils.js','shared/dom.js','shared/write-guard.js','shared/data.js','shared/search.js','shared/workflow-options.js','shared/frontend-preview.js','shared/people-preview.js','shared/operational-contract.js','shared/operational-schemas.js','shared/operational-sources.js'];
+ const common=['shared/utils.js','shared/dom.js','shared/write-guard.js','shared/data.js','shared/search.js','shared/workflow-options.js','shared/frontend-preview.js','shared/people-preview.js','shared/operational-contract.js','shared/operational-schemas.js','shared/sheets-model.js','shared/operational-sources.js'];
  const definitions=new Map(),loaded=new Map(),hooks=new Map(),resources=new Map(),quarantined=new Set();let queue=Promise.resolve(),navigation=0,active=null,controller=null;
  function define(items){if(definitions.size)throw new Error('Module registry is already initialized.');for(const item of items){if(!/^[a-z-]+$/.test(item.name)||!/^modules\/[a-z/-]+$/.test(item.folder)||!item.scripts.every(p=>/^(?:shared|modules|assets)\/[a-zA-Z0-9_./-]+\.js$/.test(p)))throw new Error('Invalid fixed module registry.');definitions.set(item.name,Object.freeze({...item,scripts:Object.freeze([...item.scripts])}));}}
  function allowed(name){const definition=definitions.get(name);if(!definition)return false;const context=TaxiQaidAccess.getContext();if(context?.accountType==='Management')return TaxiQaidAccess.can(definition.permission);return window.TAXIQAID_DEDICATED_AUTH?.enabled!==true&&TaxiQaidAccess.hasLegacyManagementSession();}
@@ -43,8 +43,15 @@ const TaxiQaidModules=(()=>{
     });
     result={connected:false,message:'Loading authorized operational data…'};
    }else result=hook?.onEnter?await hook.onEnter({signal}):name==='dashboard'||definitions.get(name).comingSoon?null:await TaxiQaidSources.read(name,{signal});
-   if(request!==navigation||signal.aborted||!allowed(name))return false;status.textContent=result?.connected===false?result.message:'';status.hidden=!status.textContent;section.dataset.ready='true';document.dispatchEvent(new CustomEvent('taxiqaid:module-entered',{detail:{name}}));return true;}catch(error){if(request===navigation&&!signal.aborted){status.textContent=error.name==='AbortError'?'Page request cancelled.':error.message||'Unable to refresh the page.';status.hidden=false;}return false;}}
- function reset(){navigation++;controller?.abort();const prior=active;active=null;document.querySelectorAll('.modal-overlay').forEach(m=>{m.style.display='none';m.setAttribute('aria-hidden','true');});document.querySelectorAll('#module-views .view-section').forEach(e=>{e.classList.remove('active');e.hidden=true;e.inert=true;});driversDatabase=[];fleetDatabase=[];tripChecksDatabase=[];accidentsDatabase=[];try{hooks.get(prior)?.onLeave?.();}catch{quarantined.add(prior);}for(const [name,h]of hooks)try{h.onReset?.();}catch{quarantined.add(name);}}
+   if(request!==navigation||signal.aborted||!allowed(name))return false;status.textContent=result?.connected===false?result.message:'';status.hidden=!status.textContent;section.dataset.ready='true';
+   if(['accidents','breakdowns','maintenance','fuel','ncr','driver-deductions','customer-care','training'].includes(name)){
+    void resource('shared/reference-bindings.js').then(()=>{
+     if(request!==navigation||signal.aborted||active!==name||!allowed(name))return;
+     return TaxiQaidReferenceBindings.enter(name,signal);
+    }).catch(()=>{/* Reference lookups remain unavailable rather than fabricating records. */});
+   }
+   document.dispatchEvent(new CustomEvent('taxiqaid:module-entered',{detail:{name}}));return true;}catch(error){if(request===navigation&&!signal.aborted){status.textContent=error.name==='AbortError'?'Page request cancelled.':error.message||'Unable to refresh the page.';status.hidden=false;}return false;}}
+ function reset(){navigation++;controller?.abort();const prior=active;active=null;document.querySelectorAll('.modal-overlay').forEach(m=>{m.style.display='none';m.setAttribute('aria-hidden','true');});document.querySelectorAll('#module-views .view-section').forEach(e=>{e.classList.remove('active');e.hidden=true;e.inert=true;});driversDatabase=[];fleetDatabase=[];tripChecksDatabase=[];accidentsDatabase=[];if(typeof TaxiQaidReferenceBindings!=='undefined')TaxiQaidReferenceBindings.reset();try{hooks.get(prior)?.onLeave?.();}catch{quarantined.add(prior);}for(const [name,h]of hooks)try{h.onReset?.();}catch{quarantined.add(name);}}
 
  function fresh(name){if(active===name&&allowed(name)){const status=document.getElementById('module-status');status.hidden=true;status.textContent='';}}
  return Object.freeze({define,allowed,register,ensure,enter,reset,resource,fragment,asset,worker,fresh,current:()=>active,loaded:()=>[...loaded.keys()]});
