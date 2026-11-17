@@ -47,7 +47,7 @@ const TaxiQaidSearch = (() => {
     });
   }
   const controllers = new Map();
-  function create({input, btn, dd, config, fields, keys, getData=()=>[], getIdentifier, label, apply=()=>{}, onSelect, paginate=false}) {
+  function create({input, btn, dd, config, fields, keys, getData=()=>[], getIdentifier, label, apply=()=>{}, onSelect, paginate=false, clearOnSelectedClick=false}) {
     const inp = typeof input === 'string' ? document.getElementById(input) : input;
     if (!inp) throw new Error(`Missing search input: ${input}`);
     if(controllers.has(inp.id)){const previous=controllers.get(inp.id);if(previous.input===inp)return previous;previous.close();controllers.delete(inp.id);}
@@ -114,7 +114,14 @@ const TaxiQaidSearch = (() => {
       else if(event.key==='Tab') close();
     });
     inp.addEventListener('blur',()=>setTimeout(()=>{if(!wrapper.contains(document.activeElement))close();},0));
-    button.addEventListener('click',()=>{if(list.style.display==='block')close();else show();inp.focus({preventScroll:true});});
+    // Only opt-in selectors clear an already selected record on the next click.
+    // Typing and the behavior of unrelated operational filters are unchanged.
+    function resetSelectedForNewSearch(){
+      if(!clearOnSelectedClick||!selected||inp.value!==identify(selected))return false;
+      selected=null;items=[];inp.value='';apply();return true;
+    }
+    inp.addEventListener('click',()=>{if(resetSelectedForNewSearch())show();});
+    button.addEventListener('click',()=>{if(resetSelectedForNewSearch())show();else if(list.style.display==='block')close();else show();inp.focus({preventScroll:true});});
     const controller={input:inp,close,show,clear(){selected=null;items=[];list.replaceChildren();inp.value='';close();apply();},
       matches(record){return selected ? identify(record)===identify(selected) : matches(record,searchable,inp.value);}};
     controllers.set(inp.id,controller);close();return controller;

@@ -120,7 +120,7 @@
       currentActiveVehicle = null;
     }
     const fleetSearch = setupSearchDropdown({
-      input:'fleet-plate-input', btn:'toggle-fleet-btn', dd:'fleet-dropdown', config:'fleet', paginate:true,
+      input:'fleet-plate-input', btn:'toggle-fleet-btn', dd:'fleet-dropdown', config:'fleet', paginate:true, clearOnSelectedClick:true,
       getData:()=>fleetDatabase, apply:()=>{fleetProfileContainer.style.display='none';currentActiveVehicle=null;},
       onSelect:renderVehicleProfile
     });
