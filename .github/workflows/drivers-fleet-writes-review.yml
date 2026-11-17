@@ -75,6 +75,6 @@ jobs:
           python3 -m http.server 8004 --bind 127.0.0.1 >/tmp/taxiqaid-http.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
-          for suite in workflow ui people roster support portal auth-migration main-auth-gate master-pilot user-admin lazy-security ksa-time sheets driver-writes; do
+          for suite in sheets driver-writes workflow ui people roster support portal auth-migration main-auth-gate master-pilot user-admin lazy-security ksa-time; do
             node --require ./tests/deny-live-auth.cjs "tests/$suite.browser.cjs"
           done
