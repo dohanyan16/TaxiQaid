@@ -83,7 +83,9 @@ const TaxiQaidLiveSheets=(()=>{
   const context=TaxiQaidAccess.getContext();
   if(page==='user-management'&&context?.role!=='super_admin')return;
   const panels=byPage[page].map(module=>createPanel(root,module));mounted.set(page,panels);
-  for(const item of panels)void item.load(signal);
+  // The Edge reader permits two Google source reads at a time. Master has three panels.
+  // Serialize panel reads to avoid an avoidable READ_BUSY failure.
+  void (async()=>{for(const item of panels){if(signal?.aborted)break;await item.load(signal);}})();
   signal?.addEventListener('abort',()=>{for(const item of panels)item.cancel();if(mounted.get(page)===panels)mounted.delete(page);},{once:true});
  }
  return Object.freeze({accepts,enter});
