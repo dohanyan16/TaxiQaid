@@ -1,0 +1,19 @@
+/* Searchable, keyboard-accessible presentation over the existing native select model. */
+.tq-select-control,.tq-datalist-control { position:relative;display:flex;align-items:stretch;width:100%;min-width:0; }
+.tq-select-control .tq-select-query,.tq-datalist-control input { padding-right:6.2rem!important; }
+.tq-select-control .tq-select-clear,.tq-select-control .tq-select-toggle,.tq-datalist-control .tq-select-clear,
+.tq-special-select .tq-select-clear { position:absolute;top:0;bottom:0;display:grid;place-items:center;min-height:var(--control-height);border:0;border-left:1px solid var(--border-color);background:var(--secondary);color:var(--text-main);font-size:1.1rem;padding:.25rem; }
+.tq-select-control .tq-select-clear,.tq-datalist-control .tq-select-clear,.tq-special-select .tq-select-clear { width:2.6rem;right:2.8rem; }
+.tq-select-control .tq-select-toggle { width:2.8rem;right:0;border-radius:0 var(--control-radius) var(--control-radius) 0; }
+.tq-select-control button:disabled,.tq-datalist-control button:disabled,.tq-special-select button:disabled { opacity:.5;cursor:not-allowed; }
+.tq-select-control button:not(:disabled):hover,.tq-datalist-control button:not(:disabled):hover,.tq-special-select button:not(:disabled):hover { background:var(--secondary-hover); }
+.tq-datalist-control input { padding-right:3rem!important; }
+.tq-datalist-control .tq-select-clear { right:0;border-radius:0 var(--control-radius) var(--control-radius) 0; }
+.tq-special-select input { padding-right:6.2rem!important; }
+.tq-special-select .dropdown-arrow-btn { right:0; }
+.tq-select-list { position:absolute;z-index:70;left:0;right:0;top:calc(100% + .2rem);max-height:min(18rem,45vh);overflow-y:auto;overscroll-behavior:contain;background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--control-radius);box-shadow:0 7px 18px #0002; }
+.tq-select-option { display:block;width:100%;padding:var(--control-padding);text-align:left;background:var(--card-bg);color:var(--text-main);border:0;border-bottom:1px solid var(--border-color);white-space:normal;overflow-wrap:anywhere;cursor:pointer; }
+.tq-select-option:hover,.tq-select-option[aria-selected="true"] { background:var(--primary-soft);color:#7C3600; }
+.tq-select-empty { padding:.65rem;color:var(--text-muted);font-size:var(--font-small); }
+select.tq-native-select { position:absolute!important;width:1px!important;height:1px!important;min-height:1px!important;max-width:1px!important;opacity:0!important;pointer-events:none!important;padding:0!important;margin:0!important;border:0!important; }
+#fuel-references-status { margin:.4rem 0; }
