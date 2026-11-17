@@ -11,7 +11,7 @@
 <button class="btn-secondary" id="export-fleet-excel-btn">Export Excel</button>
 </div>
 </div>
-<div class="status-badge" id="fleet-sync-status">No records available — database not connected</div>
+<div class="status-badge" id="fleet-sync-status">Open this page or Refresh to load authorized records.</div>
 <div class="search-row">
 <div class="search-wrapper">
 <label>Search Records</label>
@@ -23,6 +23,7 @@
 </div>
 </div>
 </div>
+<div class="card"><div class="tracker-table-container"><table id="fleet-overview"><thead></thead><tbody></tbody></table></div><div class="action-row"><button type="button" class="btn-secondary" id="fleet-previous">Previous</button><span id="fleet-page" role="status"></span><button type="button" class="btn-secondary" id="fleet-next">Next</button></div></div>
 <div id="fleet-profile-container" style="display: none">
 <div class="profile-card">
 <h2 id="profile-vehicle-name">Vehicle Profile</h2>
@@ -47,8 +48,8 @@
 <div class="field-item"><div class="field-label">Operation Card Expiry Date</div><div class="field-value" id="f-val-op-exp">-</div></div>
 </div>
 <div class="action-row">
-<button class="btn-primary" id="edit-fleet-btn">Edit Vehicle Details</button>
-<button class="btn-secondary" id="cancel-fleet-edit-btn" style="display: none">Cancel</button>
+<button class="btn-primary" id="edit-fleet-btn" hidden inert>Fleet is read-only</button>
+<button class="btn-secondary" id="cancel-fleet-edit-btn" hidden inert style="display: none">Cancel</button>
 </div>
 </div>
 </div>
