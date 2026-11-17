@@ -1,0 +1,34 @@
+name: Review Drivers & Fleet staged writes
+on:
+  push:
+    branches:
+      - feat/drivers-fleet-sheets-writes
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and build reproducibility
+        run: |
+          node --check modules/drivers/drivers.js
+          node --check shared/operational-sources.js
+          node --check supabase/dashboard/operational-data.mjs
+          node --check supabase/functions/operational-data/google-write.mjs
+          node --check supabase/functions/operational-data/write-engine.mjs
+          node --check supabase/functions/operational-data/write-receipts.mjs
+          node --check supabase/functions/operational-data/handler.mjs
+          node scripts/build-operational-data.cjs --check
+          node scripts/build-asset-versions.cjs --check
+      - name: Write tests with simulated providers
+        run: |
+          node --test tests/write-engine.test.cjs
+          node --test tests/sheets.test.cjs
+          node --test tests/google-configuration.test.cjs
