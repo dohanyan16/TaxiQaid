@@ -69,7 +69,7 @@ test('exactly 16 approved workbooks have one intended page each (14 operational 
   visible.add(page);
   assert.match(bootstrap,new RegExp('name:\\s*["\x27]'+page+'["\x27]'),'configured page '+page);
  }
- assert.equal(visible.size,13,'16 sources intentionally occupy 13 different management pages');
+ assert.equal(visible.size,14,'16 sources intentionally occupy 14 different management pages');
 });
 test('each of 14 Sheets uses its exact own Secret and only DATA as current reader',()=>{
  const values=Object.values(expectedSecrets);
