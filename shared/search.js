@@ -129,7 +129,7 @@ const TaxiQaidSearch = (() => {
     }
     inp.addEventListener('click',()=>{if(resetSelectedForNewSearch()){syncClear();show();}});
     button.addEventListener('click',()=>{if(resetSelectedForNewSearch()){syncClear();show();}else if(list.style.display==='block')close();else show();inp.focus({preventScroll:true});});
-    clearButton.addEventListener('click',()=>{controller.clear();inp.focus({preventScroll:true});});
+    clearButton.addEventListener('click',()=>{controller.clear();controller.show();inp.focus({preventScroll:true});});
     const controller={input:inp,close,show,clear(){selected=null;items=[];list.replaceChildren();inp.value='';close();apply();syncClear();},
       matches(record){return selected ? identify(record)===identify(selected) : matches(record,searchable,inp.value);}};
     controllers.set(inp.id,controller);close();syncClear();return controller;

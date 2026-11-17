@@ -23,7 +23,6 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=r
  await p.locator('#fleet-plate-input').locator('..').locator('.tq-search-clear').click();
  assert.equal(await p.locator('#fleet-plate-input').inputValue(),'');
  assert.equal(await p.locator('#fleet-profile-container').isVisible(),false);
- await p.locator('#toggle-fleet-btn').click();
  assert.equal(await p.locator('#fleet-dropdown').isVisible(),true);
  await p.locator('#fleet-plate-input').fill('Synthetic Model');
  await p.locator('#fleet-plate-input').press('ArrowDown');
