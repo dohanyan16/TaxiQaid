@@ -28,7 +28,7 @@ REVOKE ALL ON taxiqaid_private.operational_write_receipts FROM service_role;
 -- No browser may invoke these procedures. Backend alone may claim and resolve receipts.
 CREATE OR REPLACE FUNCTION public.taxiqaid_driver_write_claim(
  p_operation uuid, p_actor uuid, p_record text, p_expected integer, p_fingerprint text
-) RETURNS TABLE(result_state text, result_record_id text, result_version integer)
+) RETURNS TABLE(result_state text, result_record_id text, result_version integer, is_new boolean)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $fn$
 DECLARE r taxiqaid_private.operational_write_receipts%ROWTYPE;
@@ -42,7 +42,7 @@ BEGIN
    IF r.actor_uid<>p_actor OR r.record_id<>p_record OR
       r.expected_version<>p_expected OR r.request_sha256<>p_fingerprint
    THEN RAISE EXCEPTION 'OPERATION_REUSED'; END IF;
-   RETURN QUERY SELECT r.state,r.result_record_id,r.result_version;
+   RETURN QUERY SELECT r.state,r.result_record_id,r.result_version,false;
    RETURN;
  END IF;
  BEGIN
@@ -52,7 +52,7 @@ BEGIN
  EXCEPTION WHEN unique_violation THEN
    RAISE EXCEPTION 'WRITE_BUSY';
  END;
- RETURN QUERY SELECT 'claimed'::text,NULL::text,NULL::integer;
+ RETURN QUERY SELECT 'claimed'::text,NULL::text,NULL::integer,true;
 END $fn$;
 
 CREATE OR REPLACE FUNCTION public.taxiqaid_driver_write_finish(
