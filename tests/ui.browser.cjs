@@ -134,7 +134,12 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
      assert.equal(await page.locator('#ncr-category-selected-text').isVisible(),false);
      await audit(modal);
     }
+    // Focus the real visible search controls rather than the visually hidden native select model.
+    if(view==='ncr')await page.locator('#ncr-category-query').focus();
+    if(view==='fuel')await page.locator('#fuel-fueled-in-query').focus();
     await page.keyboard.press('Escape');
+    if(await page.locator(modal).isVisible())await page.keyboard.press('Escape'); // First Escape may dismiss an option list.
+    assert.equal(await page.locator(modal).isVisible(),false,'Modal dismissal '+view);
    }
    // Return tabbed modules to their default view for the next viewport's shared-search check.
    await nav('ncr');await page.locator('#ncr-scores-tab').click();await nav('training');await page.locator('#training-overview-tab').click();await nav('driver-deductions');await page.locator('#deductions-balances-tab').click();await nav('helpdesk');await page.locator('#helpdesk-create-tab').click();
