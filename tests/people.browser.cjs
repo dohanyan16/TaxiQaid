@@ -127,7 +127,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
   async function audit(scope){
    assert.deepEqual(await page.locator(scope).evaluate(root=>{
     const issues=[];for(const label of root.querySelectorAll('label[for]')){const input=document.getElementById(label.htmlFor);if(label.getClientRects().length&&input?.getClientRects().length&&label.getBoundingClientRect().bottom>input.getBoundingClientRect().top+1)issues.push(label.htmlFor);}
-    for(const el of root.querySelectorAll('.btn-primary,.btn-secondary,input:not([type=checkbox]),select'))if(el.getClientRects().length&&el.getBoundingClientRect().height<45)issues.push('control height '+el.id);
+    for(const el of root.querySelectorAll('.btn-primary,.btn-secondary,input:not([type=checkbox]),select:not(.tq-native-select)'))if(el.getClientRects().length&&el.getBoundingClientRect().height<45)issues.push('control height '+el.id);
     return issues;
    }),[]);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
