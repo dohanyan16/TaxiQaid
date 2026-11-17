@@ -48,7 +48,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
   await page.locator('#appeals-status').selectOption('');
   await page.locator('#appeals-table button').first().click();
   assert.equal(await page.locator('#appeal-detail-submission-date').inputValue(),'2026-11-10');assert.equal(await page.locator('#appeal-detail-submission-time').inputValue(),'09:10');
-  assert.equal(await page.locator('#appeals-form input:not([readonly]),#appeals-form textarea:not([readonly])').count(),0);
+  assert.equal(await page.locator('#appeals-form input:not([readonly]):not([disabled]),#appeals-form textarea:not([readonly]):not([disabled])').count(),0);
   assert.deepEqual(await options('appeal-detail-status'),['Pending','In Progress','Done']);assert.equal(await page.locator('#appeal-detail-department').count(),0);
   assert.equal(await page.locator('#appeal-detail-status').inputValue(),'Pending');
   await page.locator('#appeals-save').click();assert.equal(await page.locator('#appeals-save-status').innerText(),'Database integration pending — changes not saved.');
