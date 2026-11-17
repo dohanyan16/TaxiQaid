@@ -29,10 +29,12 @@ function openPreviewModal(modal) {
   if (parent) { previewParentModal.set(modal, parent); parent.style.display = 'none'; parent.setAttribute('aria-hidden', 'true'); }
   modal.style.display = 'flex';
   modal.setAttribute('aria-hidden', 'false');
+  if(typeof TaxiQaidSelectUI!=='undefined')TaxiQaidSelectUI.sync(modal);
   modal.querySelector('.modal-content').scrollTop = 0;
   [...modal.querySelectorAll('input, select, textarea, button, [tabindex="0"]')].find(control => !control.disabled && control.getClientRects().length)?.focus();
 }
 function closePreviewModal(modal) {
+  if(typeof TaxiQaidSelectUI!=='undefined')TaxiQaidSelectUI.close();
   modal.style.display = 'none';
   modal.setAttribute('aria-hidden', 'true');
   const parent = previewParentModal.get(modal);
@@ -68,6 +70,7 @@ function initializeFrontendPreview() {
   });
   if(window.TAXIQAID_DEDICATED_AUTH?.enabled===true){const label=document.querySelector('label[for=um-create-login]');if(label)label.textContent='Username / Login Identifier';document.querySelectorAll('select option[value="Quality"]').forEach(option=>option.textContent='QHSE');}
   initializeSelectDescriptions();
+  if(typeof TaxiQaidSelectUI!=='undefined')TaxiQaidSelectUI.enhance();
 
 }
 

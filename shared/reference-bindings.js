@@ -76,6 +76,7 @@ const TaxiQaidReferenceBindings=(()=>{
    // A full directory is NOT proof that a driver is eligible for a training session.
    TaxiQaidTrainingPreview.setDriverSource(driversDatabase,{complete:false});
   }
+  return {fleetReady,driversReady};
  }
  function reset(){
   for(const entries of Object.values(byPage))for(const [id,type,output]of entries){

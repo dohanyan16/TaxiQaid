@@ -70,6 +70,13 @@ const TaxiQaidSearch = (() => {
     let button=(btn && document.getElementById(btn)) || wrapper.querySelector('.dropdown-arrow-btn');
     if (!button) { button=document.createElement('button');button.type='button';button.className='dropdown-arrow-btn';controls.appendChild(button); }
     button.textContent='⌄';button.setAttribute('aria-label','Show search suggestions');
+    const clearButton=document.createElement('button');
+    clearButton.type='button';clearButton.className='tq-search-clear';
+    clearButton.textContent='×';clearButton.title='Clear selection';
+    clearButton.setAttribute('aria-label','Clear selection');
+    controls.classList.add('tq-search-controls');controls.append(clearButton);
+    const syncClear=()=>{clearButton.disabled=!inp.value||inp.disabled;};
+
     const help=document.createElement('p');help.className='search-fields-description';help.id=`${inp.id}-search-fields`;
     help.textContent='Search fields: '+searchable.map(field=>typeof field==='string'?field:field.key).join(', ');
     wrapper.appendChild(help);inp.setAttribute('aria-describedby',[inp.getAttribute('aria-describedby'),help.id].filter(Boolean).join(' '));
@@ -84,7 +91,7 @@ const TaxiQaidSearch = (() => {
     function close() { list.style.display='none'; inp.setAttribute('aria-expanded','false');button.setAttribute('aria-expanded','false');inp.removeAttribute('aria-activedescendant');active=-1; }
     function choose(record) {
       selected=record;inp.value=identify(record);close();inp.focus({preventScroll:true});
-      apply();if (onSelect) onSelect(record);
+      apply();if (onSelect) onSelect(record);syncClear();
     }
     function highlight(index) {
       active=index;
@@ -106,7 +113,7 @@ const TaxiQaidSearch = (() => {
       list.style.top=`${controls.offsetTop+controls.offsetHeight+4}px`;
       list.style.display='block';inp.setAttribute('aria-expanded','true');button.setAttribute('aria-expanded','true');
     }
-    inp.addEventListener('input',()=>{selected=null;apply();show();});
+    inp.addEventListener('input',()=>{selected=null;apply();syncClear();show();});
     inp.addEventListener('keydown',event=>{
       if(event.key==='ArrowDown'||event.key==='ArrowUp') {event.preventDefault();if(list.style.display!=='block')show();if(items.length)highlight(event.key==='ArrowDown'?(active+1)%items.length:(active<=0?items.length-1:active-1));}
       else if(event.key==='Enter' && list.style.display==='block' && items.length) {event.preventDefault();choose(items[active<0?0:active]);}
@@ -120,11 +127,12 @@ const TaxiQaidSearch = (() => {
       if(!clearOnSelectedClick||!selected||inp.value!==identify(selected))return false;
       selected=null;items=[];inp.value='';apply();return true;
     }
-    inp.addEventListener('click',()=>{if(resetSelectedForNewSearch())show();});
-    button.addEventListener('click',()=>{if(resetSelectedForNewSearch())show();else if(list.style.display==='block')close();else show();inp.focus({preventScroll:true});});
-    const controller={input:inp,close,show,clear(){selected=null;items=[];list.replaceChildren();inp.value='';close();apply();},
+    inp.addEventListener('click',()=>{if(resetSelectedForNewSearch()){syncClear();show();}});
+    button.addEventListener('click',()=>{if(resetSelectedForNewSearch()){syncClear();show();}else if(list.style.display==='block')close();else show();inp.focus({preventScroll:true});});
+    clearButton.addEventListener('click',()=>{controller.clear();inp.focus({preventScroll:true});});
+    const controller={input:inp,close,show,clear(){selected=null;items=[];list.replaceChildren();inp.value='';close();apply();syncClear();},
       matches(record){return selected ? identify(record)===identify(selected) : matches(record,searchable,inp.value);}};
-    controllers.set(inp.id,controller);close();return controller;
+    controllers.set(inp.id,controller);close();syncClear();return controller;
   }
   if(typeof document!=='undefined') {
     document.addEventListener('click',event=>controllers.forEach((controller,key)=>{if(!controller.input.isConnected){controllers.delete(key);return;}if(!controller.input.closest('.search-wrapper').contains(event.target))controller.close();}));
