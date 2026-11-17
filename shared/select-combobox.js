@@ -155,6 +155,16 @@ const TaxiQaidSelectUI=(()=>{
    });
    observer.observe(root,{childList:true,subtree:true,attributes:true,attributeFilter:['list']});
    document.addEventListener('pointerdown',event=>{for(const state of states)if(!state.wrap.contains(event.target))state.close();});
+   // Programmatic changes (and legacy form tests) may focus the invisible native
+   // select. Escape must still close its containing modal, as it did before.
+   document.addEventListener('keydown',event=>{
+    if(event.key!=='Escape'||!event.target?.matches?.('select.tq-native-select'))return;
+    const modal=event.target.closest('.modal-overlay');
+    if(modal?.style.display==='flex'&&typeof closePreviewModal==='function'){
+     event.preventDefault();event.stopPropagation();closePreviewModal(modal);
+    }
+   },true);
+
   }
  }
  function sync(root){
