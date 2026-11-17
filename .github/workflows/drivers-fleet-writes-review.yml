@@ -6,11 +6,17 @@ on:
   pull_request:
     branches:
       - main
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      NODE_PATH: /tmp/taxiqaid-browser/node_modules
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,6 +39,8 @@ jobs:
           node --test tests/write-engine.test.cjs
           node --test tests/sheets.test.cjs
           node --test tests/google-configuration.test.cjs
+      - name: Install pinned test dependency before the offline safety preload
+        run: npm install --prefix /tmp/taxiqaid-browser --no-audit --no-fund playwright@1.62.1
       - name: Schema contract and complete Node regressions
         run: |
           node scripts/build-operational-schemas.cjs --check
@@ -54,7 +62,6 @@ jobs:
         run: node tests/broker-postgres.cjs
       - name: Install pinned browser test runtime
         run: |
-          npm install --prefix /tmp/taxiqaid-browser --no-audit --no-fund playwright@1.62.1
           /tmp/taxiqaid-browser/node_modules/.bin/playwright install --with-deps chromium
           sudo ln -sf "$(node -e 'process.stdout.write(require("/tmp/taxiqaid-browser/node_modules/playwright").chromium.executablePath())')" /usr/bin/chromium
       - name: Actual frontend regressions with only synthetic transport
