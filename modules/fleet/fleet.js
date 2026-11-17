@@ -121,22 +121,11 @@
     }
     const fleetSearch = setupSearchDropdown({
       input:'fleet-plate-input', btn:'toggle-fleet-btn', dd:'fleet-dropdown', config:'fleet', paginate:true,
-      getData:()=>fleetDatabase, apply:()=>{fleetProfileContainer.style.display='none';currentActiveVehicle=null;fleetOverviewPage=0;renderFleetOverview();},
+      getData:()=>fleetDatabase, apply:()=>{fleetProfileContainer.style.display='none';currentActiveVehicle=null;},
       onSelect:renderVehicleProfile
     });
 
 
-    let fleetOverviewPage=0,fleetSourceConnected=false;
-    function renderFleetOverview(){
-      const columns=TaxiQaidSheetsModel.fleet,filtered=fleetDatabase.filter(r=>fleetSearch.matches(r)),pages=Math.max(1,Math.ceil(filtered.length/25));fleetOverviewPage=Math.min(fleetOverviewPage,pages-1);
-      const head=document.querySelector('#fleet-overview thead');head.replaceChildren();const tr=document.createElement('tr');for(const label of columns){const th=document.createElement('th');th.textContent=label;tr.append(th);}head.append(tr);
-      const records=filtered.slice(fleetOverviewPage*25,(fleetOverviewPage+1)*25);TaxiQaidPeopleUI.table('fleet-overview',records,columns,renderVehicleProfile);
-      [...document.querySelectorAll('#fleet-overview tbody tr')].forEach((row,i)=>{if(records[i])row.addEventListener('click',()=>renderVehicleProfile(records[i]));});
-      if(!filtered.length&&fleetSourceConnected)document.querySelector('#fleet-overview .table-empty').textContent='0 authorized records.';
-      document.getElementById('fleet-previous').disabled=fleetOverviewPage===0;document.getElementById('fleet-next').disabled=fleetOverviewPage+1>=pages;document.getElementById('fleet-page').textContent='Page '+(fleetOverviewPage+1)+' of '+pages+' — '+filtered.length+' records';
-    }
-    document.getElementById('fleet-previous').addEventListener('click',()=>{fleetOverviewPage--;renderFleetOverview();});document.getElementById('fleet-next').addEventListener('click',()=>{fleetOverviewPage++;renderFleetOverview();});
-    renderFleetOverview();
     function renderVehicleProfile(vehicle) {
       currentActiveVehicle = vehicle;
       isFleetEditMode = false;
@@ -177,7 +166,7 @@
     async function refreshFleetPreview({signal=fleetReadSignal}={}) {
       const sequence=++fleetRefreshSequence,status=document.getElementById('fleet-sync-status');status.textContent='Loading authorized vehicles…';
       try{const result=await TaxiQaidSources.read('fleet',{signal});if(sequence!==fleetRefreshSequence||signal?.aborted)return result;
-        fleetSourceConnected=result.connected;fleetDatabase=result.connected?result.records.map(r=>TaxiQaidSheetsModel.frontend('fleet',r)):[];fleetSearch.clear();currentActiveVehicle=null;fleetProfileContainer.style.display='none';status.textContent=result.message+(result.connected&&result.records.some(r=>r.relationships!=='verified')?' Driver assignment source unavailable; source values preserved.':'');TaxiQaidModules.fresh('fleet');return result;
+        fleetDatabase=result.connected?result.records.map(r=>TaxiQaidSheetsModel.frontend('fleet',r)):[];fleetSearch.clear();currentActiveVehicle=null;fleetProfileContainer.style.display='none';status.textContent=result.message+(result.connected&&result.records.some(r=>r.relationships!=='verified')?' Driver assignment source unavailable; source values preserved.':'');TaxiQaidModules.fresh('fleet');return result;
       }catch(error){if(error.name!=='AbortError'){status.textContent=error.message+' Previously loaded data may be out of date.';return {connected:false,message:status.textContent};}throw error;}
     }
     async function refreshFleetData(){return fetchFleet();}
