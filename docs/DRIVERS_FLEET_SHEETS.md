@@ -42,9 +42,9 @@ Rollback: restore the previous frontend release by a normal revert, and remove o
 
 ## Current deployment status
 
-The **new readonly** `operational-data` function was deployed directly to the existing TaxiQaid Supabase project `mqkflwsvnzcaylxtvsje`, as **version 1, ACTIVE**, with `verify_jwt=true`, from the reviewed generated artifact SHA-256 `cd44a236d07defc289ce42054d59e72fdccad94f3cdff38eb2ecfb00e906d34a`. Deployment was confirmed by the Supabase function listing and by fetching the hosted deployed source. The three preexisting functions (get-my-access, login-with-identifier, manage-users) remained active at their previous versions.
+The **new readonly** `operational-data` function was deployed directly to the existing TaxiQaid Supabase project `mqkflwsvnzcaylxtvsje`, originally as **version 1, ACTIVE**, with `verify_jwt=true`, from the reviewed generated artifact SHA-256 `cd44a236d07defc289ce42054d59e72fdccad94f3cdff38eb2ecfb00e906d34a`. Deployment was confirmed by the Supabase function listing and by fetching the hosted deployed source. The three preexisting functions (get-my-access, login-with-identifier, manage-users) remained active at their previous versions.
 
-**Not yet verified:** a real signed-in Master request, Google workbook access, actual row counts, pagination and hosted latency. No user's session or token was accessed for verification. Do not claim 0 records or a successful Sheets read until the owner runs the aggregate-only browser check above. The frontend remains unpublished on the review branch pending that check.
+**Owner-reported hosted evidence:** Master is signed in, get-my-access returns HTTP 200, and operational-data returns HTTP 503 with GOOGLE_CONFIGURATION_INVALID. Google workbook access, actual row counts, pagination and hosted latency are not yet confirmed. No user's session or token was accessed for verification. Do not claim 0 records or a successful Sheets read until the owner runs the aggregate-only browser check above. The frontend remains unpublished on the review branch pending that check.
 
 No SQL, operational write, CHANGE_LOG append, workbook edit, secret change, credential rotation or Driver activation was performed in this deployment. Future write activation still requires a separate reviewed schema/authorization and durable concurrency/idempotency coordinator.
 
@@ -71,3 +71,10 @@ The repair preserves the exact `TAXIQAID_GOOGLE_SERVICE_ACCOUNT_JSON` name and o
 | SHEET_HEADERS_MISMATCH / headers | Compare the DATA row-one headers with the exact arrays in shared/sheets-model.js. No automatic Sheet edits occur. A truly blank tab is not a valid header-only empty source. |
 
 Verification requires the new deployment's configuration code, actual owner-session reads for **both** books, exact-header validation and actual counts. Preserve the feature branch/PR and do not publish main/Pages while any read fails or remains unverified. Roll back only operational-data to the previously downloaded reviewed artifact if necessary; retain verify_jwt=true and leave all secrets, SQL, accounts and existing functions unchanged.
+
+
+### Repair deployment blocker
+
+The tested HTTP 503 repair was committed to the existing feature branch/PR. Updating only operational-data with verify_jwt=true was attempted, but automatic approval review rejected replacement of the active function because it does not recognize the authorization in the uploaded request as explicit trusted chat approval. The function remains at the previously inspected version 2 and old source unless independently changed by the owner. No secret was read out, exported, changed or rotated. No SQL or frontend publication was performed. Explicit approval directly in chat is required before retrying this deployment; do not use a different deployment path to evade that rejection.
+
+Until that approved update starts, the existing generic error cannot identify which private environment/JSON field failed. Do not assert the actual Secret was missing, mistyped or pasted incorrectly. The new runtime code/normalization report is required to establish the precise subtype. Do not repeat the same old-version Master request expecting better diagnostics.
