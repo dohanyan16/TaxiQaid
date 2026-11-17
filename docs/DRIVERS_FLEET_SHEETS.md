@@ -40,8 +40,10 @@ After approved readonly deployment, sign in normally as Master, open Drivers and
 
 Rollback: restore the previous frontend release by a normal revert, and remove only this new readonly function if necessary. No SQL, secret, workbook, account, audit or authentication rollback is needed. No cleanup of operational records is authorized.
 
-## Current review status
+## Current deployment status
 
-Local validation passes with simulated provider transport; this does not establish hosted Sheet access. The attempted creation of the **new** readonly `operational-data` function was rejected by automatic approval review, which requires explicit deployment authorization in chat rather than inferring it from the uploaded request. No function version exists from this work, no hosted Sheet request was performed, and neither 0 records nor an access error can be asserted for either book. The frontend remains unpublished on the review branch until this backend deployment blocker is resolved. Existing get-my-access/login-with-identifier/manage-users and all secrets/SQL/accounts remain untouched.
+The **new readonly** `operational-data` function was deployed directly to the existing TaxiQaid Supabase project `mqkflwsvnzcaylxtvsje`, as **version 1, ACTIVE**, with `verify_jwt=true`, from the reviewed generated artifact SHA-256 `cd44a236d07defc289ce42054d59e72fdccad94f3cdff38eb2ecfb00e906d34a`. Deployment was confirmed by the Supabase function listing and by fetching the hosted deployed source. The three preexisting functions (get-my-access, login-with-identifier, manage-users) remained active at their previous versions.
 
-Required owner approval: explicitly authorize creation of only the new readonly operational-data function in TaxiQaid with verify_jwt=true and the existing Google secrets, followed by authorized owner-session read verification and publication of the validated frontend to main/Pages. Operational SQL/write activation remains excluded. Use the aggregate-only browser check above after deployment; a valid signed-in Master session must stay private to the owner.
+**Not yet verified:** a real signed-in Master request, Google workbook access, actual row counts, pagination and hosted latency. No user's session or token was accessed for verification. Do not claim 0 records or a successful Sheets read until the owner runs the aggregate-only browser check above. The frontend remains unpublished on the review branch pending that check.
+
+No SQL, operational write, CHANGE_LOG append, workbook edit, secret change, credential rotation or Driver activation was performed in this deployment. Future write activation still requires a separate reviewed schema/authorization and durable concurrency/idempotency coordinator.
