@@ -17,3 +17,9 @@
 .tq-select-empty { padding:.65rem;color:var(--text-muted);font-size:var(--font-small); }
 select.tq-native-select { position:absolute!important;width:1px!important;height:1px!important;min-height:1px!important;max-width:1px!important;opacity:0!important;pointer-events:none!important;padding:0!important;margin:0!important;border:0!important; }
 #fuel-references-status { margin:.4rem 0; }
+
+/* Existing shared-search fields also gain a discrete clear button. */
+.tq-search-controls > input { padding-right:6.3rem!important; }
+.tq-search-controls .tq-search-clear { position:absolute;top:0;bottom:0;right:2.875rem;width:2.6rem;border:0;border-left:1px solid var(--border-color);background:var(--secondary);color:var(--text-main);font-size:1.1rem;display:grid;place-items:center; }
+.tq-search-controls .tq-search-clear:hover:not(:disabled) { background:var(--secondary-hover); }
+.tq-search-controls .tq-search-clear:disabled { opacity:.5;cursor:not-allowed; }

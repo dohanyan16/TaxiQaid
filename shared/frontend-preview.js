@@ -88,6 +88,7 @@ function initializeSelectDescriptions() {
       hint=document.createElement('p');hint.className='selected-option-text';hint.id=`${select.id}-selected-text`;hint.hidden=true;select.after(hint);
       select.setAttribute('aria-describedby',[select.getAttribute('aria-describedby'),hint.id].filter(Boolean).join(' '));
     }
+    if(select.classList.contains('tq-native-select')){hint.hidden=true;return;}
     const style=getComputedStyle(select);
     context.font=style.font;
     const availableWidth=select.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight);

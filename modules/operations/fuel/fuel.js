@@ -102,7 +102,7 @@ const TAXIQAID_DEPOT_FUEL_PRICE_SAR_PER_LITER = 2.18;
 
   document.getElementById('open-fuel-modal').addEventListener('click', () => openFuelPreview('add'));
   document.getElementById('preview-fuel-details').addEventListener('click', () => openFuelPreview('details'));
-  edit.addEventListener('click', () => { setPreviewMode('edit'); document.getElementById('fuel-date').focus(); });
+  edit.addEventListener('click', () => { setPreviewMode('edit'); if(typeof TaxiQaidSelectUI!=='undefined')TaxiQaidSelectUI.sync(modal); document.getElementById('fuel-date').focus(); });
   document.getElementById('close-fuel-modal').addEventListener('click', () => closePreviewModal(modal));
   fueledIn.addEventListener('change', () => {
     // Clear the previous mode's price before applying the approved Depot tariff or manual entry.
