@@ -28,7 +28,28 @@
       showIntegrationPending();
 }
 
-// Shared lookup calls never force another page or a retired data transport to load.
-async function fetchDrivers(){if(typeof TaxiQaidModules!=='undefined'&&TaxiQaidModules.current?.()!=='drivers')return false;return typeof refreshDriverPreview==='function'?refreshDriverPreview():false;}
-async function fetchFleet(){if(typeof TaxiQaidModules!=='undefined'&&TaxiQaidModules.current?.()!=='fleet')return false;return typeof refreshFleetPreview==='function'?refreshFleetPreview():false;}
+// Only authorized reference reads can populate cross-module dropdowns.
+// This never reactivates legacy Google / Apps Script transports or writes.
+async function fetchDrivers({signal}={}){
+ if(typeof TaxiQaidModules!=='undefined'&&TaxiQaidModules.current?.()==='drivers')
+  return typeof refreshDriverPreview==='function'?refreshDriverPreview():false;
+ if(!TaxiQaidAccess.can('drivers.view')){driversDatabase=[];return false;}
+ try{
+  const uid=TaxiQaidAccess.getUid(),result=await TaxiQaidSources.read('drivers',{signal});
+  if(!result.connected||signal?.aborted||uid!==TaxiQaidAccess.getUid()||!TaxiQaidAccess.can('drivers.view')){driversDatabase=[];return false;}
+  driversDatabase=result.records.map(row=>TaxiQaidSheetsModel.frontend('drivers',row));
+  return true;
+ }catch{driversDatabase=[];return false;}
+}
+async function fetchFleet({signal}={}){
+ if(typeof TaxiQaidModules!=='undefined'&&TaxiQaidModules.current?.()==='fleet')
+  return typeof refreshFleetPreview==='function'?refreshFleetPreview():false;
+ if(!TaxiQaidAccess.can('fleet.view')){fleetDatabase=[];return false;}
+ try{
+  const uid=TaxiQaidAccess.getUid(),result=await TaxiQaidSources.read('fleet',{signal});
+  if(!result.connected||signal?.aborted||uid!==TaxiQaidAccess.getUid()||!TaxiQaidAccess.can('fleet.view')){fleetDatabase=[];return false;}
+  fleetDatabase=result.records.map(row=>TaxiQaidSheetsModel.frontend('fleet',row));
+  return true;
+ }catch{fleetDatabase=[];return false;}
+}
 async function fetchTripChecks(){return typeof refreshTripCheckPreview==='function'?refreshTripCheckPreview():false;}
