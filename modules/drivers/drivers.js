@@ -28,7 +28,7 @@
       currentActiveDriver = null;
     }
     const driverSearch = setupSearchDropdown({
-      input:'driver-search-input', btn:'toggle-driver-btn', dd:'driver-dropdown', config:'drivers', paginate:true,
+      input:'driver-search-input', btn:'toggle-driver-btn', dd:'driver-dropdown', config:'drivers', paginate:true, clearOnSelectedClick:true,
       getData:()=>driversDatabase, apply:()=>{profileContainer.style.display='none';currentActiveDriver=null;},
       onSelect:renderDriverProfile
     });
