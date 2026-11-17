@@ -29,22 +29,11 @@
     }
     const driverSearch = setupSearchDropdown({
       input:'driver-search-input', btn:'toggle-driver-btn', dd:'driver-dropdown', config:'drivers', paginate:true,
-      getData:()=>driversDatabase, apply:()=>{profileContainer.style.display='none';currentActiveDriver=null;driverOverviewPage=0;renderDriverOverview();},
+      getData:()=>driversDatabase, apply:()=>{profileContainer.style.display='none';currentActiveDriver=null;},
       onSelect:renderDriverProfile
     });
 
 
-    let driverOverviewPage=0,driverSourceConnected=false;
-    function renderDriverOverview(){
-      const columns=TaxiQaidSheetsModel.drivers,filtered=driversDatabase.filter(r=>driverSearch.matches(r)),pages=Math.max(1,Math.ceil(filtered.length/25));driverOverviewPage=Math.min(driverOverviewPage,pages-1);
-      const head=document.querySelector('#drivers-overview thead');head.replaceChildren();const tr=document.createElement('tr');for(const label of columns){const th=document.createElement('th');th.textContent=label;tr.append(th);}head.append(tr);
-      const records=filtered.slice(driverOverviewPage*25,(driverOverviewPage+1)*25);TaxiQaidPeopleUI.table('drivers-overview',records,columns,renderDriverProfile);
-      [...document.querySelectorAll('#drivers-overview tbody tr')].forEach((row,i)=>{if(records[i])row.addEventListener('click',()=>renderDriverProfile(records[i]));});
-      if(!filtered.length&&driverSourceConnected)document.querySelector('#drivers-overview .table-empty').textContent='0 authorized records.';
-      document.getElementById('drivers-previous').disabled=driverOverviewPage===0;document.getElementById('drivers-next').disabled=driverOverviewPage+1>=pages;document.getElementById('drivers-page').textContent='Page '+(driverOverviewPage+1)+' of '+pages+' — '+filtered.length+' records';
-    }
-    document.getElementById('drivers-previous').addEventListener('click',()=>{driverOverviewPage--;renderDriverOverview();});document.getElementById('drivers-next').addEventListener('click',()=>{driverOverviewPage++;renderDriverOverview();});
-    renderDriverOverview();
     function renderDriverProfile(driver) {
       currentActiveDriver = driver;
       isEditMode = false;
@@ -157,7 +146,7 @@
     async function refreshDriverPreview({signal=driverReadSignal}={}) {
       const sequence=++driverRefreshSequence,status=document.getElementById('sync-status');status.textContent='Loading authorized drivers…';
       try{const result=await TaxiQaidSources.read('drivers',{signal});if(sequence!==driverRefreshSequence||signal?.aborted)return result;
-        driverSourceConnected=result.connected;driverWritesEnabled=result.connected&&result.writesEnabled===true;driversDatabase=result.connected?result.records.map(r=>TaxiQaidSheetsModel.frontend('drivers',r)):[];driverSearch.clear();currentActiveDriver=null;profileContainer.style.display='none';status.textContent=result.message;TaxiQaidModules.fresh('drivers');return result;
+        driverWritesEnabled=result.connected&&result.writesEnabled===true;driversDatabase=result.connected?result.records.map(r=>TaxiQaidSheetsModel.frontend('drivers',r)):[];driverSearch.clear();currentActiveDriver=null;profileContainer.style.display='none';status.textContent=result.message;TaxiQaidModules.fresh('drivers');return result;
       }catch(error){if(error.name!=='AbortError'){status.textContent=error.message+' Previously loaded data may be out of date.';return {connected:false,message:status.textContent};}throw error;}
     }
     document.getElementById('refresh-db-btn').addEventListener('click',()=>{void fetchDrivers().catch(()=>{});});
