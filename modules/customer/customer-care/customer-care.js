@@ -3,6 +3,7 @@ const TaxiQaidCustomerCare = (() => {
   const $=id=>document.getElementById(id),policy=TaxiQaidSupportPolicy;
   const form=$('care-form'),modal=$('care-modal');
   const audit=new Set([...form.querySelectorAll('[readonly]')].map(control=>control.id));
+  const overviewColumns=['ID','Received Date','Customer Name','Case Type','Priority','Assigned To','Status','Customer Satisfaction','Solved Date'];
   let records=[],mode='add',actorId=null;
   const fields={'ID':'id','Received Date':'received-date','Customer Name':'customer-name','Customer Contact':'contact','Channel':'channel','Case Type':'type','Category':'category','Car Plate':'plate','Trip/Route':'trip','Complaint/Requirement Details':'details','Priority':'priority','Department':'department','Status':'status','Date':'created-date','Time':'created-time','Created By':'created-by','Root Cause':'root-cause','Action Taken':'action-taken','Solved Date':'solved-date','Solved Hour':'solved-hour'};
   const caseSearch=setupSearchDropdown({input:'care-search',config:'customerCare',getData:()=>records,apply:render});
@@ -47,8 +48,8 @@ const TaxiQaidCustomerCare = (() => {
   function render() {
     const filtered=records.filter(record=>caseSearch.matches(record)&&policy.matchesCase(record,{plate:$('care-car-filter').value,status:$('care-status-filter').value}));
     $('care-count').textContent=filtered.length+' cases found';const body=$('care-table').tBodies[0];body.replaceChildren();
-    if(!filtered.length){const cell=body.insertRow().insertCell();cell.colSpan=policy.CASE_COLUMNS.length;const empty=document.createElement('span');empty.className='table-empty';empty.textContent='No customer care cases available — database integration pending.';cell.appendChild(empty);return;}
-    filtered.forEach(record=>{const row=body.insertRow();policy.CASE_COLUMNS.forEach((column,index)=>{
+    if(!filtered.length){const cell=body.insertRow().insertCell();cell.colSpan=overviewColumns.length;const empty=document.createElement('span');empty.className='table-empty';empty.textContent='No customer care cases available — database integration pending.';cell.appendChild(empty);return;}
+    filtered.forEach(record=>{const row=body.insertRow();overviewColumns.forEach((column,index)=>{
       const cell=row.insertCell(),text=value(record,column);
       if(index===0){const button=document.createElement('button');button.type='button';button.className='btn-secondary';button.textContent=text||'View Case Details';button.addEventListener('click',()=>open('details',record));cell.appendChild(button);}
       else {const span=document.createElement('span');span.className=['Priority','Status'].includes(column)?'status-badge':'care-cell-text';span.textContent=text;span.title=text;cell.appendChild(span);}

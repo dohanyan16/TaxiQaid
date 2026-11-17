@@ -13,7 +13,7 @@ const TaxiQaidDeductionsPreview = (() => {
     selectedDriver=record?String(TaxiQaidSearch.read(record,TaxiQaidSearch.CONFIG.drivers.fields[0])):'';populateExpenses();
   });
   const expenseColumns=['Expense Reference','Date','Driver Iqama','Driver Name','Source Type','Source Reference','Description',record=>money(record['Original Amount (SAR)']),record=>money(record['Amount Deducted (SAR)']),record=>money(record['Outstanding Amount (SAR)']),'Status'];
-  const appliedColumns=['Deduction Reference','Date','Driver Iqama','Driver Name','Related Expense',record=>money(record['Deduction Amount (SAR)']),record=>money(record['Remaining Outstanding (SAR)']),'Deduction Method','Applied By','Remarks'];
+  const appliedColumns=['Deduction Reference','Date','Driver Iqama','Driver Name',record=>money(record['Deduction Amount (SAR)']),record=>money(record['Remaining Outstanding (SAR)']),'Applied By','Remarks'];
   function draw(id,records,columns,onOpen) {ui.table(id,records,columns,onOpen);$(id+'-count').textContent=`${records.length} records found`;}
   function render() {
     const balances=drivers.map(driver=>{
@@ -62,7 +62,7 @@ const TaxiQaidDeductionsPreview = (() => {
     if(id==='deduction-amount')updateCalculation();
   }));
   $('deduction-expense').addEventListener('change',selectExpense);$('deduction-amount').addEventListener('input',updateCalculation);
-  $('expense-source').addEventListener('change',()=>{$('expense-source-reference').required=Boolean($('expense-source').value&&$('expense-source').value!=='Manual Expense');});
+  $('expense-source').addEventListener('change',()=>{$('expense-source-reference').required=Boolean($('expense-source').value&&$('expense-source').value!=='Manual');});
   $('deductions-add-expense').addEventListener('click',()=>{$('deductions-expense-form').reset();$('expense-amount').setCustomValidity('');$('expense-source-reference').required=false;$('expense-save-status').hidden=true;});
   $('deductions-apply').addEventListener('click',()=>{$('deductions-apply-form').reset();selectedDriver='';populateExpenses();$('deduction-save-status').hidden=true;});
   function saveExpense() {

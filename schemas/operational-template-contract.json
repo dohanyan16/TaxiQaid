@@ -1,0 +1,1742 @@
+{
+  "schemaVersion": 1,
+  "domains": {
+    "accidents": {
+      "module": "accidents",
+      "label": "Accident Tracker",
+      "secret": "TAXIQAID_ACCIDENTS_SHEET_ID",
+      "tabs": {
+        "DATA": [
+          "Accident ID",
+          "Date",
+          "Time",
+          "Reporting Date",
+          "Reporting Hour",
+          "Reported By",
+          "Car Plate",
+          "Car Model",
+          "Driver Iqama",
+          "Driver Name",
+          "Location",
+          "Severity",
+          "Send to Maintenance",
+          "Maintenance Description",
+          "Maintenance Status",
+          "Injured",
+          "Najm",
+          "Najm Status",
+          "Mistake %",
+          "Investigation",
+          "Investigation Status",
+          "Accident Type",
+          "Description",
+          "Root Causes",
+          "Damage Description",
+          "Record ID",
+          "Row Version",
+          "Updated At UTC"
+        ],
+        "CHANGE_LOG": [
+          "Event ID",
+          "Occurred At UTC",
+          "Actor UID",
+          "Actor Username",
+          "Source",
+          "Action",
+          "Record ID",
+          "Changed Fields",
+          "Old Values (Redacted)",
+          "New Values (Redacted)",
+          "Operation ID",
+          "Result"
+        ]
+      },
+      "fields": {
+        "Accident ID": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Date": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Time": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Reporting Date": {
+          "editable": false,
+          "overview": false,
+          "detail": true
+        },
+        "Reporting Hour": {
+          "editable": false,
+          "overview": false,
+          "detail": true
+        },
+        "Reported By": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Car Plate": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Car Model": {
+          "editable": false,
+          "overview": false,
+          "detail": true
+        },
+        "Driver Iqama": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Driver Name": {
+          "editable": false,
+          "overview": false,
+          "detail": true
+        },
+        "Location": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Severity": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Send to Maintenance": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Maintenance Description": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Maintenance Status": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Injured": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Najm": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Najm Status": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Mistake %": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Investigation": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Investigation Status": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Accident Type": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Description": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Root Causes": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Damage Description": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        }
+      },
+      "idField": "Accident ID",
+      "viewCapability": "accidents.view",
+      "sourceVerified": false
+    },
+    "breakdowns": {
+      "module": "breakdowns",
+      "label": "Breakdown Tracker",
+      "secret": "TAXIQAID_BREAKDOWNS_SHEET_ID",
+      "tabs": {
+        "DATA": [
+          "Breakdown ID",
+          "Date",
+          "Time",
+          "Reporting Date",
+          "Reporting Hour",
+          "Reported By",
+          "Car Plate",
+          "Car Model",
+          "Driver Iqama",
+          "Driver Name",
+          "Location",
+          "Send to Maintenance",
+          "Maintenance Description",
+          "Maintenance Status",
+          "Impact to the Service",
+          "Investigation",
+          "Investigation Status",
+          "Breakdown Symptoms",
+          "Breakdown Description",
+          "Record ID",
+          "Row Version",
+          "Updated At UTC"
+        ],
+        "CHANGE_LOG": [
+          "Event ID",
+          "Occurred At UTC",
+          "Actor UID",
+          "Actor Username",
+          "Source",
+          "Action",
+          "Record ID",
+          "Changed Fields",
+          "Old Values (Redacted)",
+          "New Values (Redacted)",
+          "Operation ID",
+          "Result"
+        ]
+      },
+      "fields": {
+        "Breakdown ID": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Date": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Time": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Reporting Date": {
+          "editable": false,
+          "overview": false,
+          "detail": true
+        },
+        "Reporting Hour": {
+          "editable": false,
+          "overview": false,
+          "detail": true
+        },
+        "Reported By": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Car Plate": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Car Model": {
+          "editable": false,
+          "overview": false,
+          "detail": true
+        },
+        "Driver Iqama": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Driver Name": {
+          "editable": false,
+          "overview": false,
+          "detail": true
+        },
+        "Location": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Send to Maintenance": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Maintenance Description": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Maintenance Status": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Impact to the Service": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Investigation": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Investigation Status": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Breakdown Symptoms": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Breakdown Description": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        }
+      },
+      "idField": "Breakdown ID",
+      "viewCapability": "breakdowns.view",
+      "sourceVerified": false
+    },
+    "maintenance": {
+      "module": "maintenance",
+      "label": "Maintenance Tracker",
+      "secret": "TAXIQAID_MAINTENANCE_SHEET_ID",
+      "tabs": {
+        "DATA": [
+          "Maintenance ID",
+          "Source ID",
+          "Date",
+          "Time",
+          "Created By",
+          "Car Plate",
+          "Car Model",
+          "Maintenance Description",
+          "Maintenance Engineer Iqama",
+          "Maintenance Location",
+          "Status",
+          "Description Fault",
+          "Action Taken",
+          "Action Taken Description",
+          "Remarks",
+          "Record ID",
+          "Row Version",
+          "Updated At UTC"
+        ],
+        "REQUESTS": [
+          "ID",
+          "Date",
+          "Time",
+          "Source",
+          "Car Plate",
+          "Car Model",
+          "Sent By",
+          "Status",
+          "Record ID",
+          "Row Version",
+          "Updated At UTC"
+        ],
+        "CHANGE_LOG": [
+          "Event ID",
+          "Occurred At UTC",
+          "Actor UID",
+          "Actor Username",
+          "Source",
+          "Action",
+          "Record ID",
+          "Changed Fields",
+          "Old Values (Redacted)",
+          "New Values (Redacted)",
+          "Operation ID",
+          "Result"
+        ]
+      },
+      "fields": {
+        "Maintenance ID": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Source ID": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Date": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Time": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Created By": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Car Plate": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Car Model": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Maintenance Description": {
+          "editable": false,
+          "overview": false,
+          "detail": true
+        },
+        "Maintenance Engineer Iqama": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Maintenance Location": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Status": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Description Fault": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Action Taken": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Action Taken Description": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Remarks": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        }
+      },
+      "idField": "Maintenance ID",
+      "viewCapability": "maintenance.overview.view",
+      "sourceVerified": false
+    },
+    "fuel": {
+      "module": "fuel",
+      "label": "Fuel Tracker",
+      "secret": "TAXIQAID_FUEL_SHEET_ID",
+      "tabs": {
+        "DATA": [
+          "ID",
+          "Date",
+          "Time",
+          "Car Plate",
+          "Car Model",
+          "Iqama",
+          "Name",
+          "Arrangement",
+          "Fueled In",
+          "Location",
+          "Fuel Received L",
+          "Fuel Pricing SAR/L",
+          "Total Amount",
+          "Record ID",
+          "Row Version",
+          "Updated At UTC"
+        ],
+        "CHANGE_LOG": [
+          "Event ID",
+          "Occurred At UTC",
+          "Actor UID",
+          "Actor Username",
+          "Source",
+          "Action",
+          "Record ID",
+          "Changed Fields",
+          "Old Values (Redacted)",
+          "New Values (Redacted)",
+          "Operation ID",
+          "Result"
+        ]
+      },
+      "fields": {
+        "ID": {
+          "editable": false,
+          "overview": false,
+          "detail": true
+        },
+        "Date": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Time": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Car Plate": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Car Model": {
+          "editable": false,
+          "overview": false,
+          "detail": true
+        },
+        "Iqama": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Name": {
+          "editable": false,
+          "overview": false,
+          "detail": true
+        },
+        "Arrangement": {
+          "editable": false,
+          "overview": false,
+          "detail": true
+        },
+        "Fueled In": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Location": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Fuel Received L": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Fuel Pricing SAR/L": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Total Amount": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        }
+      },
+      "idField": "ID",
+      "viewCapability": "fuel.view",
+      "sourceVerified": false
+    },
+    "tripcheck": {
+      "module": "tripcheck",
+      "label": "Trip Check",
+      "secret": "TAXIQAID_TRIPCHECK_SHEET_ID",
+      "tabs": {
+        "DATA": [
+          "Check ID",
+          "Check Type",
+          "Date",
+          "Time",
+          "Car Plate",
+          "Driver Iqama",
+          "Driver Name",
+          "Odometer (KM)",
+          "Score",
+          "Overall Status",
+          "Checked By",
+          "Remarks",
+          "Signed",
+          "Record ID",
+          "Row Version",
+          "Updated At UTC"
+        ],
+        "ANSWERS": [
+          "Check ID",
+          "Question Code",
+          "Question",
+          "Answer",
+          "Points",
+          "Remarks",
+          "Record ID",
+          "Row Version",
+          "Updated At UTC"
+        ],
+        "CHANGE_LOG": [
+          "Event ID",
+          "Occurred At UTC",
+          "Actor UID",
+          "Actor Username",
+          "Source",
+          "Action",
+          "Record ID",
+          "Changed Fields",
+          "Old Values (Redacted)",
+          "New Values (Redacted)",
+          "Operation ID",
+          "Result"
+        ]
+      },
+      "fields": {
+        "Check ID": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Check Type": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Date": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Time": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Car Plate": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Driver Iqama": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Driver Name": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Odometer (KM)": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Score": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Overall Status": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Checked By": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Remarks": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Signed": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        }
+      },
+      "idField": "Check ID",
+      "viewCapability": "tripcheck.view",
+      "sourceVerified": false
+    },
+    "ncr": {
+      "module": "ncr",
+      "label": "NCR Tracker",
+      "secret": "TAXIQAID_NCR_SHEET_ID",
+      "tabs": {
+        "DATA": [
+          "NCR ID",
+          "NCR Date",
+          "Iqama",
+          "Driver Name",
+          "Driver Phone",
+          "NCR Category",
+          "NCR Description",
+          "NCR Score",
+          "NCR Severity",
+          "NCR Frequency",
+          "NCR Amount",
+          "TBT Status",
+          "TBT Date",
+          "NCR Status",
+          "Individual Statement",
+          "NCR Amount Approval",
+          "Record ID",
+          "Row Version",
+          "Updated At UTC"
+        ],
+        "DRIVER_SCORE": [
+          "Driver Iqama",
+          "Driver Name",
+          "Total Points",
+          "Record ID",
+          "Row Version",
+          "Updated At UTC"
+        ],
+        "FINANCIAL_APPROVAL": [
+          "NCR ID",
+          "NCR Date",
+          "Iqama",
+          "Driver Name",
+          "NCR Category",
+          "NCR Frequency",
+          "NCR Amount",
+          "NCR Amount Approval",
+          "Approved/Denied By",
+          "Decision At UTC",
+          "Record ID",
+          "Row Version",
+          "Updated At UTC"
+        ],
+        "CATEGORIES": [
+          "Severity",
+          "Labor Breach",
+          "New Points"
+        ],
+        "CHANGE_LOG": [
+          "Event ID",
+          "Occurred At UTC",
+          "Actor UID",
+          "Actor Username",
+          "Source",
+          "Action",
+          "Record ID",
+          "Changed Fields",
+          "Old Values (Redacted)",
+          "New Values (Redacted)",
+          "Operation ID",
+          "Result"
+        ]
+      },
+      "fields": {
+        "NCR ID": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "NCR Date": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Iqama": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Driver Name": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Driver Phone": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "NCR Category": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "NCR Description": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "NCR Score": {
+          "editable": false,
+          "overview": false,
+          "detail": true
+        },
+        "NCR Severity": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "NCR Frequency": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "NCR Amount": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "TBT Status": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "TBT Date": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "NCR Status": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Individual Statement": {
+          "editable": false,
+          "overview": false,
+          "detail": true
+        },
+        "NCR Amount Approval": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        }
+      },
+      "idField": "NCR ID",
+      "viewCapability": "ncr.records.view",
+      "sourceVerified": false
+    },
+    "penalties": {
+      "module": "penalties",
+      "label": "Traffic Violations",
+      "secret": "TAXIQAID_TRAFFIC_VIOLATIONS_SHEET_ID",
+      "tabs": {
+        "DATA": [
+          "Penalty ID",
+          "Date",
+          "Time",
+          "Car Plate",
+          "Driver Iqama",
+          "Driver Name",
+          "Amount",
+          "Charged To",
+          "Deduction Sync Status",
+          "Deduction Reference",
+          "Record ID",
+          "Row Version",
+          "Updated At UTC"
+        ],
+        "CHANGE_LOG": [
+          "Event ID",
+          "Occurred At UTC",
+          "Actor UID",
+          "Actor Username",
+          "Source",
+          "Action",
+          "Record ID",
+          "Changed Fields",
+          "Old Values (Redacted)",
+          "New Values (Redacted)",
+          "Operation ID",
+          "Result"
+        ]
+      },
+      "fields": {
+        "Penalty ID": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Date": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Time": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Car Plate": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Driver Iqama": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Driver Name": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Amount": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Charged To": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Deduction Sync Status": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Deduction Reference": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        }
+      },
+      "idField": "Penalty ID",
+      "viewCapability": "penalties.view",
+      "sourceVerified": false
+    },
+    "training": {
+      "module": "training",
+      "label": "Training Tracker",
+      "secret": "TAXIQAID_TRAINING_SHEET_ID",
+      "tabs": {
+        "DATA": [
+          "Session Reference",
+          "Training Name",
+          "Trainer",
+          "Session Date",
+          "Session Time",
+          "Location",
+          "Assigned Drivers",
+          "Confirmed Attendance",
+          "Session Status",
+          "Training Description",
+          "Start Time",
+          "End Time",
+          "Capacity",
+          "Additional Notes",
+          "Record ID",
+          "Row Version",
+          "Updated At UTC"
+        ],
+        "SIGNOFFS": [
+          "Session Reference",
+          "Driver Iqama",
+          "Driver Name",
+          "Confirmation Status",
+          "Confirmation Date",
+          "Confirmation Time",
+          "Verified By",
+          "Record ID",
+          "Row Version",
+          "Updated At UTC"
+        ],
+        "CHANGE_LOG": [
+          "Event ID",
+          "Occurred At UTC",
+          "Actor UID",
+          "Actor Username",
+          "Source",
+          "Action",
+          "Record ID",
+          "Changed Fields",
+          "Old Values (Redacted)",
+          "New Values (Redacted)",
+          "Operation ID",
+          "Result"
+        ]
+      },
+      "fields": {
+        "Session Reference": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Training Name": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Trainer": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Session Date": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Session Time": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Location": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Assigned Drivers": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Confirmed Attendance": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Session Status": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Training Description": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Start Time": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "End Time": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Capacity": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Additional Notes": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        }
+      },
+      "idField": "Session Reference",
+      "viewCapability": "training.sessions.view",
+      "sourceVerified": false
+    },
+    "driver-deductions": {
+      "module": "driver-deductions",
+      "label": "Driver Deductions",
+      "secret": "TAXIQAID_DEDUCTIONS_SHEET_ID",
+      "tabs": {
+        "DATA": [
+          "ID",
+          "Date",
+          "Time",
+          "Driver Iqama",
+          "Driver Name",
+          "Source Type",
+          "Source Reference",
+          "Description",
+          "Original Amount (SAR)",
+          "Amount Deducted (SAR)",
+          "Outstanding Amount (SAR)",
+          "Status",
+          "Applied By",
+          "Remarks",
+          "Record ID",
+          "Row Version",
+          "Updated At UTC"
+        ],
+        "EXPENSES": [
+          "Expense Reference",
+          "Date",
+          "Driver Iqama",
+          "Driver Name",
+          "Source Type",
+          "Source Reference",
+          "Description",
+          "Amount (SAR)",
+          "Created By",
+          "Created At UTC",
+          "Record ID",
+          "Row Version",
+          "Updated At UTC"
+        ],
+        "CHANGE_LOG": [
+          "Event ID",
+          "Occurred At UTC",
+          "Actor UID",
+          "Actor Username",
+          "Source",
+          "Action",
+          "Record ID",
+          "Changed Fields",
+          "Old Values (Redacted)",
+          "New Values (Redacted)",
+          "Operation ID",
+          "Result"
+        ]
+      },
+      "fields": {
+        "ID": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Date": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Time": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Driver Iqama": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Driver Name": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Source Type": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Source Reference": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Description": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Original Amount (SAR)": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Amount Deducted (SAR)": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Outstanding Amount (SAR)": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Status": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Applied By": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Remarks": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        }
+      },
+      "idField": "ID",
+      "viewCapability": "driver-deductions.deductions.view",
+      "sourceVerified": false
+    },
+    "driver-appeals": {
+      "module": "driver-appeals",
+      "label": "Driver Appeals",
+      "secret": "TAXIQAID_APPEALS_SHEET_ID",
+      "tabs": {
+        "DATA": [
+          "Appeal ID",
+          "Driver Iqama",
+          "Driver Name",
+          "Nationality",
+          "Description",
+          "Submission Date",
+          "Submission Time",
+          "Status",
+          "Assigned By",
+          "Assigned At",
+          "Last Updated By",
+          "Last Updated At",
+          "Record ID",
+          "Row Version",
+          "Updated At UTC"
+        ],
+        "CHANGE_LOG": [
+          "Event ID",
+          "Occurred At UTC",
+          "Actor UID",
+          "Actor Username",
+          "Source",
+          "Action",
+          "Record ID",
+          "Changed Fields",
+          "Old Values (Redacted)",
+          "New Values (Redacted)",
+          "Operation ID",
+          "Result"
+        ]
+      },
+      "fields": {
+        "Appeal ID": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Driver Iqama": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Driver Name": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Nationality": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Description": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Submission Date": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Submission Time": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Status": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Assigned By": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Assigned At": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Last Updated By": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Last Updated At": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        }
+      },
+      "idField": "Appeal ID",
+      "viewCapability": "driver-appeals.view",
+      "sourceVerified": false
+    },
+    "customer-care": {
+      "module": "customer-care",
+      "label": "Customer Care Tracker",
+      "secret": "TAXIQAID_CUSTOMER_CARE_SHEET_ID",
+      "tabs": {
+        "DATA": [
+          "ID",
+          "Received Date",
+          "Customer Name",
+          "Customer Contact",
+          "Channel",
+          "Case Type",
+          "Category",
+          "Plate",
+          "Trip",
+          "Complaint/Requirement",
+          "Priority",
+          "Department",
+          "Assigned To",
+          "Status",
+          "Date",
+          "Time",
+          "Created By",
+          "Root Cause",
+          "Action Taken",
+          "Refund",
+          "Customer Satisfaction",
+          "Solved Date",
+          "Solved Hour",
+          "Record ID",
+          "Row Version",
+          "Updated At UTC"
+        ],
+        "CHANGE_LOG": [
+          "Event ID",
+          "Occurred At UTC",
+          "Actor UID",
+          "Actor Username",
+          "Source",
+          "Action",
+          "Record ID",
+          "Changed Fields",
+          "Old Values (Redacted)",
+          "New Values (Redacted)",
+          "Operation ID",
+          "Result"
+        ]
+      },
+      "fields": {
+        "ID": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Received Date": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Customer Name": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Customer Contact": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Channel": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Case Type": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Category": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Plate": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Trip": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Complaint/Requirement": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Priority": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Department": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Assigned To": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Status": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Date": {
+          "editable": false,
+          "overview": false,
+          "detail": true
+        },
+        "Time": {
+          "editable": false,
+          "overview": false,
+          "detail": true
+        },
+        "Created By": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Root Cause": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Action Taken": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Refund": {
+          "editable": true,
+          "overview": false,
+          "detail": true
+        },
+        "Customer Satisfaction": {
+          "editable": true,
+          "overview": true,
+          "detail": true
+        },
+        "Solved Date": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Solved Hour": {
+          "editable": false,
+          "overview": false,
+          "detail": true
+        }
+      },
+      "idField": "ID",
+      "viewCapability": "customer-care.view",
+      "sourceVerified": false
+    },
+    "driver-profile-requests": {
+      "module": "driver-profile-requests",
+      "label": "Driver Profile Requests",
+      "secret": "TAXIQAID_DRIVER_PROFILE_REQUESTS_SHEET_ID",
+      "tabs": {
+        "DATA": [
+          "Request Reference",
+          "Driver Iqama",
+          "Driver Name",
+          "Requested Field",
+          "Current Value",
+          "Requested Value",
+          "Status",
+          "Requested At UTC",
+          "Reviewed By",
+          "Reviewed At UTC",
+          "Review Note",
+          "Record ID",
+          "Row Version",
+          "Updated At UTC"
+        ],
+        "CHANGE_LOG": [
+          "Event ID",
+          "Occurred At UTC",
+          "Actor UID",
+          "Actor Username",
+          "Source",
+          "Action",
+          "Record ID",
+          "Changed Fields",
+          "Old Values (Redacted)",
+          "New Values (Redacted)",
+          "Operation ID",
+          "Result"
+        ]
+      },
+      "fields": {
+        "Request Reference": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Driver Iqama": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Driver Name": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Requested Field": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Current Value": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Requested Value": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Status": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Requested At UTC": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Reviewed By": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Reviewed At UTC": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Review Note": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        }
+      },
+      "idField": "Request Reference",
+      "viewCapability": "user-management.profile-requests.view",
+      "sourceVerified": false
+    },
+    "user-directory": {
+      "module": "user-directory",
+      "label": "User Directory",
+      "secret": "TAXIQAID_USER_DIRECTORY_SHEET_ID",
+      "tabs": {
+        "DATA": [
+          "UID",
+          "Username",
+          "Full Name",
+          "Contact Email",
+          "Role",
+          "Departments",
+          "Account Status",
+          "Record ID",
+          "Row Version",
+          "Updated At UTC"
+        ],
+        "CHANGE_LOG": [
+          "Event ID",
+          "Occurred At UTC",
+          "Actor UID",
+          "Actor Username",
+          "Source",
+          "Action",
+          "Record ID",
+          "Changed Fields",
+          "Old Values (Redacted)",
+          "New Values (Redacted)",
+          "Operation ID",
+          "Result"
+        ]
+      },
+      "fields": {
+        "UID": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Username": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Full Name": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Contact Email": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Role": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Departments": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Account Status": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        }
+      },
+      "idField": "UID",
+      "viewCapability": "user-management.view",
+      "sourceVerified": false
+    },
+    "driver-reset-requests": {
+      "module": "driver-reset-requests",
+      "label": "Driver Password Reset Requests",
+      "secret": "TAXIQAID_DRIVER_RESET_REQUESTS_SHEET_ID",
+      "tabs": {
+        "DATA": [
+          "Request ID",
+          "Driver Iqama",
+          "Driver Phone (Masked)",
+          "Country Prefix",
+          "Requested At UTC",
+          "Status",
+          "Reviewed By UID",
+          "Reviewed At UTC",
+          "Token Issued At UTC",
+          "Token Expires At UTC",
+          "Password Changed At UTC",
+          "Record ID",
+          "Row Version",
+          "Updated At UTC"
+        ],
+        "CHANGE_LOG": [
+          "Event ID",
+          "Occurred At UTC",
+          "Actor UID",
+          "Actor Username",
+          "Source",
+          "Action",
+          "Record ID",
+          "Changed Fields",
+          "Old Values (Redacted)",
+          "New Values (Redacted)",
+          "Operation ID",
+          "Result"
+        ]
+      },
+      "fields": {
+        "Request ID": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Driver Iqama": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Driver Phone (Masked)": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Country Prefix": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Requested At UTC": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Status": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Reviewed By UID": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Reviewed At UTC": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Token Issued At UTC": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Token Expires At UTC": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        },
+        "Password Changed At UTC": {
+          "editable": false,
+          "overview": true,
+          "detail": true
+        }
+      },
+      "idField": "Request ID",
+      "viewCapability": "user-management.view",
+      "sourceVerified": false
+    }
+  },
+  "sourceSha256": "255764df969805ff5de5d876c0fbbd09fbf0d47db651d83268553f899c609fa9",
+  "overrides": [
+    "Permanent IDs never renumber or reuse after deletion.",
+    "NCR expiry/frequency use 180 days; exact owner category points override severity defaults.",
+    "User Directory retains only its final technical Updated At UTC column (explicit owner approval)."
+  ]
+}

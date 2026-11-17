@@ -37,15 +37,9 @@
 
   function updatePreview() {
     lastPreviewDate = policy.getKsaDate(new Date());
+    document.getElementById('ncr-severity').value=policy.CATEGORIES.find(c=>c.key===category.value)?.severity||'';
     score.value = category.value ? `${policy.getCategoryPenalty(category.value)} pt` : '';
     score.classList.toggle('ncr-score-negative', Boolean(category.value));
-    try {
-      document.getElementById('ncr-tbt-status').value = policy.getTbtStatus(tbtDate.value);
-      tbtDate.setCustomValidity('');
-    } catch (error) {
-      document.getElementById('ncr-tbt-status').value = 'Unresolved — invalid TBT date';
-      tbtDate.setCustomValidity(error.message);
-    }
     expiry.value = ''; status.value = '';
     date.setCustomValidity('');
     if (!date.value) {
@@ -58,7 +52,7 @@
       status.value = calculated || '';
       calculationStatus.textContent = calculated === null
         ? 'Future NCR Date — not yet active; no Active/Expired status or deduction applies before this date.'
-        : calculated === 'Expired'
+        : calculated === 'Expiry'
           ? 'Expired preview — this penalty no longer affects the current score. The NCR and its original penalty remain in history.'
           : `Active preview as of ${lastPreviewDate} in Asia/Riyadh. Points recover at the beginning of ${expiry.value}; history is retained.`;
     } catch (error) {
@@ -70,6 +64,7 @@
   function setMode(mode) {
     const details = mode === 'details';
     form.querySelectorAll('input:not([readonly]), select, textarea').forEach(input => { input.disabled = details; });
+    date.disabled=details||mode==='edit';document.getElementById('ncr-driver-iqama').disabled=details||mode==='edit';
     document.getElementById('ncr-modal-title').textContent = details ? 'NCR Details — Empty Preview'
       : mode === 'edit' ? 'Edit NCR — Preview' : 'Report New NCR';
     document.getElementById('save-ncr-btn').hidden = details;
@@ -95,7 +90,7 @@
   document.getElementById('close-ncr-modal').addEventListener('click', () => closePreviewModal(modal));
   document.getElementById('save-ncr-btn').addEventListener('click', previewSave);
   form.addEventListener('submit', event => { event.preventDefault(); previewSave(); });
-  [date, category, tbtDate].forEach(input => {
+  [date, category].forEach(input => {
     input.addEventListener('input', updatePreview);
     input.addEventListener('change', updatePreview);
   });
@@ -107,22 +102,10 @@
   }, 1000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden && modal.style.display === 'flex') updatePreview(); });
 
+  document.getElementById('ncr-tbt-status').addEventListener('change',event=>{tbtDate.value=event.target.value==='No'?'':policy.getKsaDate(new Date());});
   const driverModal = document.getElementById('ncr-driver-modal');
   document.getElementById('preview-ncr-driver').addEventListener('click', () => openPreviewModal(driverModal));
   document.getElementById('close-ncr-driver-modal').addEventListener('click', () => closePreviewModal(driverModal));
   document.querySelectorAll('[data-ncr-pending]').forEach(button => button.addEventListener('click', showIntegrationPending));
-  function validateScoreFilters() {
-    const message = document.getElementById('ncr-score-filter-status');
-    try {
-      // The disconnected collection is deliberately empty; never fabricate drivers.
-      policy.filterDriversByPoints([], {
-        exact: document.getElementById('ncr-points-exact').value,
-        min: document.getElementById('ncr-points-min').value,
-        max: document.getElementById('ncr-points-max').value
-      });
-      message.textContent = 'No driver scores available — database not connected. Filters are retained when switching views.';
-    } catch (error) { message.textContent = error.message; }
-  }
-  ['ncr-points-exact', 'ncr-points-min', 'ncr-points-max'].forEach(id => document.getElementById(id).addEventListener('input', validateScoreFilters));
-  validateScoreFilters(); updatePreview();
+  updatePreview();
 })();

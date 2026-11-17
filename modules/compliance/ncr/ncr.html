@@ -16,28 +16,12 @@
 <button type="button" class="btn-secondary" data-ncr-pending>Export Excel</button>
 </div>
 </div>
-<p class="ncr-policy-note">Starting points: 100. Active penalties reduce the current score, which may be negative. Each penalty recovers automatically after 90 KSA calendar days; history remains available.</p>
+<p class="ncr-policy-note">Starting points: 100. Active penalties reduce the current score, which may be negative. Each penalty recovers automatically after 180 KSA calendar days; history remains available.</p>
 <div class="workflow-grid">
 <div class="form-group"><label for="ncr-score-search">Search Records</label><input id="ncr-score-search" type="search" autocomplete="off" placeholder="Search by Iqama or Name..."/></div>
 
 </div>
-<fieldset class="ncr-form-section">
-<legend>Current Points</legend>
-<div class="workflow-grid">
-<div class="form-group ">
-<label for="ncr-points-exact">Exact Points</label>
-<input id="ncr-points-exact" placeholder="Any score" type="number"/>
-</div>
-<div class="form-group ">
-<label for="ncr-points-min">Minimum Points</label>
-<input id="ncr-points-min" placeholder="No lower limit" type="number"/>
-</div>
-<div class="form-group ">
-<label for="ncr-points-max">Maximum Points</label>
-<input id="ncr-points-max" placeholder="No upper limit" type="number"/>
-</div>
-</div>
-</fieldset>
+
 <p id="ncr-score-filter-status" class="preview-note" role="status">
 </p>
 <button type="button" class="btn-secondary" id="preview-ncr-driver">Preview Driver Score Details</button>
@@ -46,21 +30,11 @@
 <div class="tracker-table-container" role="region" tabindex="0" aria-label="ncr-scores-table table">
 <table id="ncr-scores-table" class="tracker-table">
 <thead>
-<tr>
-<th scope="col">Driver Iqama</th>
-<th scope="col">Driver Name</th>
-<th scope="col">Driver Phone Number</th>
-<th scope="col">Starting Points</th>
-<th scope="col">Total NCRs</th>
-<th scope="col">Active NCRs</th>
-<th scope="col">Expired NCRs</th>
-<th scope="col">Active Points Deducted</th>
-<th scope="col">Current Points</th>
-</tr>
+<tr><th scope="col">Driver Iqama</th><th scope="col">Driver Name</th><th scope="col">Total Points</th></tr>
 </thead>
 <tbody>
 <tr>
-<td colspan="9">
+<td colspan="3">
 <span class="table-empty">No records available — database not connected</span>
 </td>
 </tr>
@@ -100,7 +74,7 @@
 <label for="ncr-filter-tbt">TBT Status</label>
 <select id="ncr-filter-tbt">
 <option value="">All Statuses</option>
-<option value="Pending">Pending</option>
+<option value="No">No</option><option value="In Progres">In Progres</option>
 <option value="Conducted">Conducted</option>
 </select>
 </div>
@@ -109,7 +83,7 @@
 <select id="ncr-filter-status">
 <option value="">All Statuses</option>
 <option value="Active">Active</option>
-<option value="Expired">Expired</option>
+<option value="Expiry">Expiry</option>
 </select>
 </div>
 </div>
@@ -121,26 +95,22 @@
 <thead>
 <tr>
 <th scope="col">NCR ID</th>
-<th scope="col">Driver Iqama</th>
-<th scope="col">Driver Name</th>
-<th scope="col">Driver Phone Number</th>
-<th scope="col">Category</th>
-<th scope="col">NCR Score</th>
-<th scope="col">NCR Description</th>
 <th scope="col">NCR Date</th>
+<th scope="col">Iqama</th>
+<th scope="col">Driver Name</th>
+<th scope="col">Driver Phone</th>
+<th scope="col">NCR Category</th>
+<th scope="col">NCR Severity</th>
+<th scope="col">NCR Frequency</th>
 <th scope="col">TBT Status</th>
-<th scope="col">TBT Conducted Date</th>
-<th scope="col">Action Taken</th>
-<th scope="col">Action Taken Date</th>
-<th scope="col">Non-Compliance Expiry Date</th>
-<th scope="col">Non-Compliance Status</th>
-<th scope="col">Individual Statement</th>
-<th scope="col">Remarks</th>
+<th scope="col">TBT Date</th>
+<th scope="col">NCR Status</th>
+<th scope="col">NCR Amount Approval</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td colspan="16">
+<td colspan="12">
 <span class="table-empty">No records available — database not connected</span>
 </td>
 </tr>
@@ -214,40 +184,28 @@
 <div class="workflow-grid">
 <div class="form-group ">
 <label for="ncr-tbt-date">TBT Conducted Date</label>
-<input id="ncr-tbt-date" type="date"/>
+<input id="ncr-tbt-date" type="date" readonly/>
 </div>
 <div class="form-group ">
 <label for="ncr-tbt-status">TBT Status</label>
-<input id="ncr-tbt-status" readonly type="text"/>
+<select id="ncr-tbt-status"><option>No</option><option>Conducted</option><option>In Progres</option></select>
 </div>
 <p class="preview-note wide">TBT completion does not expire an NCR or recover points.</p>
 </div>
 </fieldset>
+
+<fieldset class="ncr-form-section"><legend>Category and Financial Review</legend><div class="workflow-grid">
+<div class="form-group"><label for="ncr-severity">NCR Severity</label><input id="ncr-severity" readonly/></div>
+<div class="form-group"><label for="ncr-frequency">NCR Frequency</label><input id="ncr-frequency" readonly placeholder="Calculated by the authorized backend"/></div>
+<div class="form-group"><label for="ncr-amount">NCR Amount (SAR)</label><input id="ncr-amount" type="number" min="0" step="0.01"/></div>
+<div class="form-group"><label for="ncr-financial-approval">NCR Amount Approval</label><input id="ncr-financial-approval" readonly value="Pending"/></div>
+</div><p class="preview-note">Finance approval is required before a proposed amount can be charged. No amount is posted from this preview.</p></fieldset>
 <fieldset class="ncr-form-section">
-<legend>Disciplinary Action</legend>
-<div class="workflow-grid">
-<div class="form-group ">
-<label for="ncr-action">Action Taken</label>
-<select id="ncr-action">
-<option value="">Select an action</option>
-<option value="TBT Conducted">TBT Conducted</option>
-<option value="1st NCR Initiated">1st NCR Initiated</option>
-<option value="2nd NCR Initiated">2nd NCR Initiated</option>
-<option value="3rd NCR Initiated">3rd NCR Initiated</option>
-</select>
-</div>
-<div class="form-group ">
-<label for="ncr-action-date">Action Taken Date</label>
-<input id="ncr-action-date" type="date"/>
-</div>
-</div>
-</fieldset>
-<fieldset class="ncr-form-section">
-<legend>90-Day Point Recovery — Preview</legend>
+<legend>180-Day Point Recovery — Preview</legend>
 <div class="workflow-grid">
 <div class="form-group ">
 <label for="ncr-expiry-date">Non-Compliance Expiry Date</label>
-<input id="ncr-expiry-date" readonly placeholder="NCR Date + 90 calendar days" type="text"/>
+<input id="ncr-expiry-date" readonly placeholder="NCR Date + 180 calendar days" type="text"/>
 </div>
 <div class="form-group ">
 <label for="ncr-expiry-status">Non-Compliance Status</label>
@@ -351,7 +309,6 @@
 <th scope="col">Expiry Date</th>
 <th scope="col">Current NCR Status</th>
 <th scope="col">TBT Status</th>
-<th scope="col">Action Taken</th>
 </tr>
 </thead>
 <tbody>
@@ -377,7 +334,6 @@
 <th scope="col">Expiry Date</th>
 <th scope="col">Current NCR Status</th>
 <th scope="col">TBT Status</th>
-<th scope="col">Action Taken</th>
 </tr>
 </thead>
 <tbody>

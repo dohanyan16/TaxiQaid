@@ -1,14 +1,14 @@
 /** Appeals arrive only from a future authorized source. Administrative drafts are never saved. */
 const TaxiQaidAppealsPreview = (() => {
   const $ = id=>document.getElementById(id), policy=TaxiQaidAppealsPolicy;
-  const columns=['Appeal ID','Driver Name','Driver Iqama','Nationality','Appeal Type','Description','Status','Department'];
+  const columns=['Appeal ID','Driver Name','Driver Iqama','Nationality','Description','Status'];
   let records=[], approvedTypes=[];
   const search=setupSearchDropdown({input:'appeals-search',config:'appeals',getData:()=>records,apply:render});
   function render() {
     const start=$('appeals-start').value,end=$('appeals-end').value;
     $('appeals-date-error').hidden=!(start&&end&&start>end);
     const filtered=records.filter(record=>search.matches(record)&&policy.matches(record,{start,end,
-      type:$('appeals-type').value,department:$('appeals-department').value,status:$('appeals-status').value}));
+      status:$('appeals-status').value}));
     TaxiQaidPeopleUI.table('appeals-table',filtered,columns,openDetails);
     $('appeals-table-count').textContent=`${filtered.length} records found`;
   }
@@ -19,20 +19,17 @@ const TaxiQaidAppealsPreview = (() => {
       const label=input.closest('.form-group').querySelector('label').textContent;
       input.value=record?String(record[label]??''):'';
     });
-    $('appeal-detail-classification').value=approvedTypes.includes(record?.['Appeal Type'])?record['Appeal Type']:'';
     $('appeal-detail-status').value=record?.Status || 'Pending';
-    $('appeal-detail-department').value=record?.Department || 'Pending';
     $('appeals-form').querySelectorAll('select').forEach(select=>select.dataset.originalValue=select.value);
     openPreviewModal($('appeals-modal'));
   }
   $('appeals-preview').addEventListener('click',()=>openDetails());
-  ['appeals-start','appeals-end','appeals-type','appeals-department','appeals-status'].forEach(id=>$(id).addEventListener('change',render));
+  ['appeals-start','appeals-end','appeals-status'].forEach(id=>$(id).addEventListener('change',render));
   $('appeals-save').addEventListener('click',()=>{
-    policy.assignment($('appeal-detail-status').value,$('appeal-detail-department').value);
+    if(!policy.STATUSES.includes($('appeal-detail-status').value))return;
     $('appeals-save-status').hidden=false;
   });
   $('appeals-form').addEventListener('submit',event=>{event.preventDefault();$('appeals-save').click();});
   return Object.freeze({setApprovedTypes(types){approvedTypes=[...new Set(types.filter(type=>typeof type==='string'&&type.trim()))];
-    for(const id of ['appeals-type','appeal-detail-classification']){const select=$(id);select.replaceChildren();const blank=document.createElement('option');blank.value='';blank.textContent=approvedTypes.length?'All / Unclassified':'Types pending configuration';select.append(blank);approvedTypes.forEach(type=>{const option=document.createElement('option');option.value=type;option.textContent=type;select.append(option);});select.disabled=id==='appeal-detail-classification'&&!approvedTypes.length;}
   },setRecords(snapshot){records=snapshot.map(record=>({...record}));render();},openDetails});
 })();

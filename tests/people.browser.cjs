@@ -33,10 +33,10 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
   await nav('driver-appeals');
   assert.equal(await page.locator('#view-driver-appeals').getByText('Review, assign and resolve appeals submitted by drivers.',{exact:true}).count(),1);
   assert.equal(await page.getByRole('button',{name:'Add Appeal',exact:true}).count(),0);
-  assert.deepEqual(await columns('appeals-table'),['Appeal ID','Driver Name','Driver Iqama','Nationality','Appeal Type','Description','Status','Department']);
+  assert.deepEqual(await columns('appeals-table'),['Appeal ID','Driver Name','Driver Iqama','Nationality','Description','Status']);
   assert.deepEqual(await options('appeals-status'),['All Statuses','Pending','In Progress','Done']);
-  assert.deepEqual(await options('appeals-department'),['All Departments','Pending','Financial','Operation','Quality','IT']);
-  assert.deepEqual(await options('appeals-type'),['Types pending configuration']);
+  assert.equal(await page.locator('#appeals-department').count(),0);
+  assert.equal(await page.locator('#appeals-type').count(),0);
   await page.evaluate(()=>TaxiQaidAppealsPreview.setRecords([
    {'Appeal ID':'test-appeal-first','Driver Name':'Synthetic driver','Driver Iqama':'test-iqama',Nationality:'test-only','Appeal Type':'unconfigured','Description':'<img src=x onerror="window.appealsXss=true">','Submission Date':'2026-11-10','Submission Time':'09:10',Status:'Pending',Department:'Pending','Assigned By':'test-actor','Assigned At':'test-time','Last Updated By':'test-actor','Last Updated At':'test-time'},
    {'Appeal ID':'test-appeal-second','Driver Name':'Synthetic driver','Driver Iqama':'test-iqama','Submission Date':'2026-11-11',Status:'In Progress',Department:'IT'},
@@ -45,16 +45,15 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
   await page.locator('#appeals-start').fill('2026-11-10');await page.locator('#appeals-end').fill('2026-11-11');await page.locator('#appeals-search').fill('synthetic');await page.locator('#appeals-search').press('Escape');
   assert.equal(await page.locator('#appeals-table tbody tr').count(),2);assert.equal(await page.locator('#appeals-table img').count(),0);
   await page.locator('#appeals-status').selectOption('In Progress');assert.match(await page.locator('#appeals-table tbody').innerText(),/test-appeal-second/);
-  await page.locator('#appeals-department').selectOption('Financial');assert.match(await page.locator('#appeals-table tbody').innerText(),/No records/);
-  await page.locator('#appeals-department').selectOption('');await page.locator('#appeals-status').selectOption('');
+  await page.locator('#appeals-status').selectOption('');
   await page.locator('#appeals-table button').first().click();
   assert.equal(await page.locator('#appeal-detail-submission-date').inputValue(),'2026-11-10');assert.equal(await page.locator('#appeal-detail-submission-time').inputValue(),'09:10');
   assert.equal(await page.locator('#appeals-form input:not([readonly]),#appeals-form textarea:not([readonly])').count(),0);
-  assert.deepEqual(await options('appeal-detail-status'),['Pending','In Progress','Done']);assert.deepEqual(await options('appeal-detail-department'),['Pending','Financial','Operation','Quality','IT']);
-  await page.locator('#appeal-detail-department').selectOption('Financial');assert.equal(await page.locator('#appeal-detail-status').inputValue(),'Pending');
+  assert.deepEqual(await options('appeal-detail-status'),['Pending','In Progress','Done']);assert.equal(await page.locator('#appeal-detail-department').count(),0);
+  assert.equal(await page.locator('#appeal-detail-status').inputValue(),'Pending');
   await page.locator('#appeals-save').click();assert.equal(await page.locator('#appeals-save-status').innerText(),'Database integration pending — changes not saved.');
   await page.keyboard.press('Escape');assert.equal(await page.locator('#appeals-table button').first().evaluate(el=>el===document.activeElement),true);
-  assert.match(await page.locator('#appeals-table tbody tr').first().innerText(),/Pending\s+Pending$/);
+  assert.match(await page.locator('#appeals-table tbody tr').first().innerText(),/Pending$/);
   await page.locator('#appeals-start').fill('2026-11-12');assert.equal(await page.locator('#appeals-date-error').isVisible(),true);
   await page.evaluate(()=>{TaxiQaidAppealsPreview.setRecords([]);document.getElementById('appeals-start').value='';document.getElementById('appeals-end').value='';});
   await page.locator('#appeals-search').fill('');await page.locator('#appeals-search').press('Escape');assert.equal(await page.evaluate(()=>window.appealsXss),undefined);
@@ -91,9 +90,8 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
   assert.deepEqual(await page.locator('#view-driver-deductions [role=tab]').allTextContents(),['Driver Balances','Driver Expenses','Applied Deductions']);
   assert.deepEqual(await columns('deductions-balances-table'),['Driver Iqama','Driver Name','Total Charged (SAR)','Total Deducted (SAR)','Outstanding Balance (SAR)']);
   await page.locator('#deductions-expenses-tab').click();assert.equal((await columns('deductions-expenses-table')).length,11);
-  await page.locator('#deductions-add-expense').click();assert.deepEqual(await options('expense-source'),['Select source type','NCR Financial Fine','Fuel Charge','Traffic Violation','Manual Expense']);
-  await page.locator('#expense-source').selectOption('NCR Financial Fine');assert.equal(await page.locator('#expense-source-reference').getAttribute('required'),'');
-  await page.locator('#expense-source').selectOption('Manual Expense');assert.equal(await page.locator('#expense-source-reference').getAttribute('required'),null);
+  await page.locator('#deductions-add-expense').click();assert.deepEqual(await options('expense-source'),['Manual']);
+  await page.locator('#expense-source').selectOption('Manual');assert.equal(await page.locator('#expense-source-reference').getAttribute('required'),null);
   await page.locator('#expense-amount').fill('-50');await page.locator('#expense-save').click();assert.equal(await page.locator('#expense-amount').evaluate(el=>el.validity.customError),true);assert.match(await page.locator('#expense-save-status').innerText(),/expense not saved/);await page.keyboard.press('Escape');
   await page.evaluate(()=>{
    driversDatabase=[{'Iqama Number':'test-iqama','Full Name':'Synthetic driver'}];
@@ -101,9 +99,9 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
    TaxiQaidDeductionsPreview.setSnapshot(financialFixture);
   });
   await page.locator('#deductions-balances-tab').click();assert.match(await page.locator('#deductions-balances-table tbody').innerText(),/500\.00\s+150\.00\s+350\.00/);
-  await page.locator('#deductions-balances-table button').click();assert.match(await page.locator('#deductions-history-expenses tbody').innerText(),/test-source-preserved/);assert.match(await page.locator('#deductions-history-applied tbody').innerText(),/test-expense-original/);await page.keyboard.press('Escape');
-  await page.locator('#deductions-applied-tab').click();assert.equal((await columns('deductions-applied-table')).length,10);await page.locator('#deductions-apply').click();
-  assert.deepEqual(await options('deduction-method'),['Methods pending approval']);
+  await page.locator('#deductions-balances-table button').click();assert.match(await page.locator('#deductions-history-expenses tbody').innerText(),/test-source-preserved/);assert.match(await page.locator('#deductions-history-applied tbody').innerText(),/test-deduction-original/);assert.equal(await page.locator('#deductions-history-applied th').filter({hasText:'Related Expense'}).count(),0);await page.keyboard.press('Escape');
+  await page.locator('#deductions-applied-tab').click();assert.equal((await columns('deductions-applied-table')).length,8);await page.locator('#deductions-apply').click();
+  assert.equal(await page.locator('#deduction-method').count(),0);
   await page.locator('#deduction-iqama').fill('synthetic');await page.locator('#deduction-iqama').press('ArrowDown');await page.locator('#deduction-iqama').press('Enter');assert.equal(await page.locator('#deduction-name').inputValue(),'Synthetic driver');
   await page.locator('#deduction-expense').selectOption('test-expense-original');assert.equal(await page.locator('#deduction-outstanding').inputValue(),'350.00');
   await page.locator('#deduction-amount').fill('100');assert.equal(await page.locator('#deduction-remaining').innerText(),'250.00 SAR');
@@ -149,8 +147,8 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
     await page.keyboard.press('Escape');
    }
   }
-  await page.evaluate(()=>document.documentElement.style.fontSize='');await nav('roster');assert.match(await page.locator('#view-roster').innerText(),/Roster Management/);assert.equal(await page.locator('#view-roster [role=tab]').count(),5);assert.match(await page.locator('#roster-active-week').innerText(),/No validated roster/);
+  await page.evaluate(()=>document.documentElement.style.fontSize='');await nav('roster');assert.match(await page.locator('#view-roster').innerText(),/Roster Management/);assert.equal(await page.locator('#view-roster [role=tab]').count(),0);assert.match(await page.locator('#view-roster').innerText(),/Coming Soon/);
   assert.deepEqual(await page.evaluate(()=>operationalStorageWrites),[]);assert.deepEqual(errors,[]);assert.deepEqual(legacy,[]);assert.deepEqual(writes,[]);assert.deepEqual(downloads,[]);
-  console.log(JSON.stringify({result:'PASS',modules:['Driver Appeals','Training Tracker','Drivers Deduction'],syntheticDrivers:900,maximumPickerRows:25,viewports:[320,375,768,1024,1440],textScaling:'200%',roster:'empty local import interface',errors,legacy,writes,downloads,storageWrites:[],screenshots:output},null,2));
+  console.log(JSON.stringify({result:'PASS',modules:['Driver Appeals','Training Tracker','Drivers Deduction'],syntheticDrivers:900,maximumPickerRows:25,viewports:[320,375,768,1024,1440],textScaling:'200%',roster:'Coming Soon',errors,legacy,writes,downloads,storageWrites:[],screenshots:output},null,2));
  }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

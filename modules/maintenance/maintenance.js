@@ -17,7 +17,7 @@ maintenanceTabs.forEach((tab, index) => {
   });
 });
 document.getElementById('request-request-status').addEventListener('change', event => {
-  if (event.target.value === 'In Progress') openPreviewModal(document.getElementById('acceptance-modal'));
+  if (event.target.value === 'Under Maintenance') openPreviewModal(document.getElementById('acceptance-modal'));
 });
 // Empty previews never assign an originating record or generate an ID.
 document.querySelectorAll('#request-modal form, #acceptance-modal form').forEach(form => form.addEventListener('submit', event => { event.preventDefault(); showIntegrationPending(); }));

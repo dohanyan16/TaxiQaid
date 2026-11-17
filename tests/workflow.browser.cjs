@@ -59,7 +59,7 @@ const path = require('node:path');
   await page.locator('#open-add-accident-modal').click();
   assert.equal(await page.locator('#add-acc-date').inputValue(),'');
   assert.equal(await page.locator('#add-acc-id').inputValue(),'');
-  const locations=await page.locator('#add-acc-location option').allTextContents(); assert.equal(locations.length,41);
+  const locations=await page.locator('#add-acc-location option').allTextContents(); assert.equal(locations.length,46);
   await page.locator('#add-acc-najm').selectOption('Yes'); assert.equal(await page.locator('#add-acc-najm-status').isEnabled(),true);
   await page.locator('#save-accident-btn').click();assert.match(await page.locator('#integration-notice').innerText(),/pending/);
   await page.locator('#delete-accident-btn').click();
@@ -68,7 +68,7 @@ const path = require('node:path');
   await page.screenshot({animations:'disabled',path:path.join(screenshotDir,'accident-tracker.png')});
   await nav('breakdowns'); await page.locator('[data-open=breakdown-modal]').click();
   assert.deepEqual((await page.locator('#bdw-breakdown-location option').allTextContents()).slice(1),locations.slice(1));
-  assert.equal(await page.locator('#bdw-breakdown-symptoms option').count(),13);
+  assert.equal(await page.locator('#bdw-breakdown-symptoms option').count(),14);
   assert.equal(await page.locator('#bdw-maintenance-status').inputValue(),'Not Requested');
   await page.locator('#bdw-send-to-maintenance').selectOption('Yes');
   assert.equal(await page.locator('#bdw-maintenance-status').inputValue(),'Not Requested');
@@ -81,10 +81,10 @@ const path = require('node:path');
   await page.screenshot({animations:'disabled',path:path.join(screenshotDir,'maintenance-requests.png')});
   await page.locator('[data-open=request-modal]').click();
   for(const id of ['request-original-source-id','request-source-type','request-original-description','request-linked-maintenance-id']) assert.ok(await page.locator('#'+id).getAttribute('readonly')!==null);
-  await page.locator('#request-request-status').selectOption('In Progress');
+  await page.locator('#request-request-status').selectOption('Under Maintenance');
   assert.ok(await page.locator('#acceptance-modal').isVisible());
   for(const id of ['workorder-maintenance-id','workorder-original-source-id','workorder-original-source-type','workorder-maintenance-request-reference']) {assert.equal(await page.locator('#'+id).inputValue(),'');assert.ok(await page.locator('#'+id).getAttribute('readonly')!==null);}
-  assert.deepEqual(await page.locator('#workorder-status option').allTextContents(),['Requested','In Progress','Pending of Component','Pending of Approval','Done']);
+  assert.deepEqual(await page.locator('#workorder-status option').allTextContents(),['In Progress','Pending of Component','Pending of Approval','Done']);
   assert.equal(await page.locator('#workorder-breakdown-type option').count(),15);
   assert.deepEqual(await page.locator('#workorder-action-taken option').allTextContents(),['Changed','Repaired','Nothing']);
   await page.locator('#acceptance-modal [data-close]').click();
@@ -94,10 +94,7 @@ const path = require('node:path');
   await page.screenshot({animations:'disabled',path:path.join(screenshotDir,'maintenance-overview.png')});
   await page.locator('#overview-tab').press('ArrowLeft');assert.ok(await page.locator('#requests-panel').isVisible());
   await nav('fuel');
-  assert.deepEqual(await page.locator('#fuel-table th').allTextContents(),[
-   'Date','Time','Car Plate','Car Model','Driver Iqama','Driver Name','Driver Arrangement',
-   'Fueled In','Outside Depot Location','Fuel Received (L)','Fuel Pricing (SAR/L)','Total Amount (SAR)'
-  ]);
+  assert.deepEqual(await page.locator('#fuel-table th').allTextContents(),['Date','Time','Car Plate','Iqama','Fueled In','Location','Fuel Received L','Total Amount']);
   await page.locator('#fuel-search-input').fill('No connected driver');
   assert.equal(await page.locator('#fuel-table tbody tr').count(),1);
   assert.match(await page.locator('#fuel-table tbody').innerText(),/No records available/);
@@ -169,17 +166,13 @@ const path = require('node:path');
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#fuel-modal').isVisible(),false);
   await page.locator('#integration-notice button').click();
-  await page.clock.setFixedTime(new Date('2025-03-31T20:59:59Z'));
+  await page.clock.setFixedTime(new Date('2025-06-29T20:59:59Z'));
   await nav('ncr');
   assert.equal(await page.locator('#view-ncr [role=tab]').count(),2);
   assert.equal(await page.locator('#ncr-scores-panel').isVisible(),true);
   assert.deepEqual(await page.locator('#ncr-scores-table th').allTextContents(),[
-   'Driver Iqama','Driver Name','Driver Phone Number','Starting Points','Total NCRs','Active NCRs','Expired NCRs','Active Points Deducted','Current Points']);
+   'Driver Iqama','Driver Name','Total Points']);
   await page.locator('#ncr-score-search').fill('Unsaved filter');
-  await page.locator('#ncr-points-exact').fill('-10');
-  await page.locator('#ncr-points-min').fill('-50');
-  await page.locator('#ncr-points-max').fill('0');
-  assert.match(await page.locator('#ncr-score-filter-status').innerText(),/No driver scores/);
   await page.locator('#preview-ncr-driver').click();
   assert.equal(await page.locator('#ncr-driver-modal').isVisible(),true);
   for(const id of ['ncr-detail-iqama','ncr-detail-name','ncr-detail-phone','ncr-detail-starting','ncr-detail-current']) {
@@ -192,53 +185,45 @@ const path = require('node:path');
   await page.screenshot({animations:'disabled',path:path.join(screenshotDir,'ncr-driver-scores.png')});
   await page.locator('#ncr-tracker-tab').click();
   assert.equal(await page.locator('#ncr-tracker-panel input[type=time]').count(),0);
-  assert.deepEqual(await page.locator('#ncr-records-table th').allTextContents(),[
-   'NCR ID','Driver Iqama','Driver Name','Driver Phone Number','Category','NCR Score','NCR Description','NCR Date',
-   'TBT Status','TBT Conducted Date','Action Taken','Action Taken Date','Non-Compliance Expiry Date','Non-Compliance Status','Individual Statement','Remarks']);
+  assert.deepEqual(await page.locator('#ncr-records-table th').allTextContents(),["NCR ID", "NCR Date", "Iqama", "Driver Name", "Driver Phone", "NCR Category", "NCR Severity", "NCR Frequency", "TBT Status", "TBT Date", "NCR Status", "NCR Amount Approval"]);
   await page.locator('#ncr-filter-start').fill('2025-01-01');await page.locator('#ncr-filter-end').fill('2025-04-01');
   await page.locator('#ncr-filter-driver').fill('Unsaved name filter');
-  await page.locator('#ncr-filter-status').selectOption('Expired');await page.locator('#ncr-filter-tbt').selectOption('Conducted');
+  await page.locator('#ncr-filter-status').selectOption('Expiry');await page.locator('#ncr-filter-tbt').selectOption('Conducted');
   await page.locator('#ncr-scores-tab').click();
-  assert.equal(await page.locator('#ncr-points-exact').inputValue(),'-10');
-  assert.equal(await page.locator('#ncr-points-min').inputValue(),'-50');
-  assert.equal(await page.locator('#ncr-points-max').inputValue(),'0');
   assert.equal(await page.locator('#ncr-score-search').inputValue(),'Unsaved filter');
   await page.locator('#ncr-scores-tab').press('ArrowRight');
-  assert.equal(await page.locator('#ncr-filter-status').inputValue(),'Expired');
+  assert.equal(await page.locator('#ncr-filter-status').inputValue(),'Expiry');
   assert.equal(await page.locator('#ncr-filter-tbt').inputValue(),'Conducted');
   assert.equal(await page.locator('#ncr-filter-start').inputValue(),'2025-01-01');
   assert.equal(await page.locator('#ncr-filter-driver').inputValue(),'Unsaved name filter');
   await page.screenshot({animations:'disabled',path:path.join(screenshotDir,'ncr-tracker.png')});
   await page.locator('#open-ncr-modal').click();
   assert.equal(await page.locator('#ncr-category option:not([value=""])').count(),23);
-  assert.ok((await page.locator('#ncr-category option').allTextContents()).slice(1).every(label=>/\(-(?:50|25|10) pt\)$/.test(label)));
+  assert.ok((await page.locator('#ncr-category option').allTextContents()).slice(1).every(label=>/\(-(?:25|15|10|5) pt\)$/.test(label)));
   for(const id of ['ncr-id','ncr-driver-name','ncr-driver-phone','ncr-reported-by','ncr-reporting-date','ncr-reporting-time','ncr-modified-by','ncr-modified-at']) {
    assert.notEqual(await page.locator('#'+id).getAttribute('readonly'),null);
    assert.equal(await page.locator('#'+id).inputValue(),'');
   }
-  for(const [key,score] of [['cctv-tampering','-50 pt'],['asset-damage','-25 pt'],['mdt-black-shift','-10 pt']]) {
+  for(const [key,score] of [['cctv-tampering','-25 pt'],['asset-damage','-15 pt'],['mdt-black-shift','-10 pt']]) {
    await page.locator('#ncr-category').selectOption(key);assert.equal(await page.locator('#ncr-score').inputValue(),score);
   }
   await page.locator('#ncr-date').fill('2025-01-01');
-  assert.equal(await page.locator('#ncr-expiry-date').inputValue(),'2025-04-01');
+  assert.equal(await page.locator('#ncr-expiry-date').inputValue(),'2025-06-30');
   assert.equal(await page.locator('#ncr-expiry-status').inputValue(),'Active');
-  assert.equal(await page.locator('#ncr-tbt-status').inputValue(),'Pending');
+  assert.equal(await page.locator('#ncr-tbt-status').inputValue(),'No');
   // KSA midnight changes the unsaved preview automatically, with no Refresh click.
-  await page.clock.setFixedTime(new Date('2025-03-31T21:00:00Z'));
-  await page.waitForFunction(()=>document.getElementById('ncr-expiry-status').value==='Expired');
-  await page.locator('#ncr-tbt-date').fill('2025-03-01');
-  assert.equal(await page.locator('#ncr-tbt-status').inputValue(),'Conducted');
-  assert.equal(await page.locator('#ncr-expiry-status').inputValue(),'Expired');
-  await page.locator('#ncr-tbt-date').fill('');
-  assert.equal(await page.locator('#ncr-tbt-status').inputValue(),'Pending');
-  assert.deepEqual((await page.locator('#ncr-action option').allTextContents()).slice(1),['TBT Conducted','1st NCR Initiated','2nd NCR Initiated','3rd NCR Initiated']);
-  await page.locator('#ncr-action').selectOption('3rd NCR Initiated');
-  assert.equal(await page.locator('#ncr-tbt-status').inputValue(),'Pending');
-  await page.locator('#ncr-date').fill('2025-04-02');
+  await page.clock.setFixedTime(new Date('2025-06-29T21:00:00Z'));
+  await page.waitForFunction(()=>document.getElementById('ncr-expiry-status').value==='Expiry');
+  await page.locator('#ncr-tbt-status').selectOption('Conducted');
+  assert.equal(await page.locator('#ncr-tbt-date').inputValue(),'2025-06-30');
+  assert.equal(await page.locator('#ncr-expiry-status').inputValue(),'Expiry');
+  await page.locator('#ncr-tbt-status').selectOption('No');assert.equal(await page.locator('#ncr-tbt-date').inputValue(),'');
+  assert.equal(await page.locator('#ncr-action').count(),0);
+  await page.locator('#ncr-date').fill('2025-07-01');
   assert.equal(await page.locator('#ncr-expiry-status').inputValue(),'');
   assert.match(await page.locator('#ncr-calculation-status').innerText(),/Future.*not yet active/);
   await page.locator('#ncr-date').fill('2024-02-29');
-  assert.equal(await page.locator('#ncr-expiry-date').inputValue(),'2024-05-29');
+  assert.equal(await page.locator('#ncr-expiry-date').inputValue(),'2024-08-27');
   await page.locator('#ncr-description').fill('Unsaved form preview only');
   await page.locator('#save-ncr-btn').click();
   assert.equal(await page.locator('#ncr-save-status').innerText(),'Database integration pending — NCR not saved.');
@@ -249,12 +234,12 @@ const path = require('node:path');
   assert.equal(await page.locator('#ncr-description').isDisabled(),true);
   assert.equal(await page.locator('#ncr-id').inputValue(),'');
   await page.locator('#edit-ncr-preview').click();
-  assert.equal(await page.locator('#ncr-description').isEnabled(),true);
+  assert.equal(await page.locator('#ncr-description').isEnabled(),true);assert.equal(await page.locator('#ncr-date').isDisabled(),true);assert.equal(await page.locator('#ncr-driver-iqama').isDisabled(),true);
   await page.locator('#delete-ncr-preview').click();
   assert.equal(await page.locator('#ncr-save-status').innerText(),'Database integration pending — NCR not deleted.');
   await page.keyboard.press('Escape');
   await nav('penalties');
-  assert.equal(await page.locator('#view-penalties h2').first().innerText(),'Penalties Tracker');
+  assert.equal(await page.locator('#view-penalties h2').first().innerText(),'Traffic Violations');
   assert.deepEqual(await page.locator('#penalties-main-actions button').allTextContents(),['Refresh','Export by Period']);
   assert.deepEqual(await page.locator('#penalties-table th').allTextContents(),['ID','Details','Date','Time','Car Plate','Driver Iqama','Driver Name','Amount','Charged To']);
   assert.equal(await page.locator('#view-penalties input[type=time]').count(),0);

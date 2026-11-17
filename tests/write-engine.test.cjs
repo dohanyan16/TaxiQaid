@@ -1,43 +1,29 @@
-const test=require('node:test'),assert=require('node:assert/strict'),{pathToFileURL}=require('node:url'),path=require('node:path');
-let engine;
-async function makeEngine(options={}){
- const {createDriverWriteEngine}=await import(pathToFileURL(path.resolve('supabase/functions/operational-data/write-engine.mjs')));
- const entry={id:null,version:null,values:{Iqama:'0000000001','Car Plate':'','Full Name':'Driver X',TID:''},sheetRowIndex:1};
- const seen={claimed:[],finishes:[],writes:[],syncs:[]};
- const schema={editable:['TID','Phone Number','Arrangement','KSA Driving License Date','Shift','Car Plate','Status','Out of Project Date'],plate:v=>String(v||'').toLowerCase(),patch:change=>({...change})};
- const google={data:async module=>({rows:module==='drivers'?[entry]:[]}),writeDriver:async arg=>{seen.writes.push(arg);if(options.failDriver)throw Error('timeout');},syncFleet:async arg=>{seen.syncs.push(arg);if(options.failFleet)throw Error('timeout');}};
- const receipts={claim:async arg=>{seen.claimed.push(arg);return {is_new:true,result_state:'claimed'};},finish:async arg=>{seen.finishes.push(arg);return arg.state;}};
- return {run:createDriverWriteEngine({google,receipts,schema,permissions:{can:()=>true},now:()=>Date.UTC(2026,10,17)}).update,
- seen};
+// Real engine + Google adapter, synthetic workbooks and restricted in-memory receipt contract.
+const {test}=require('node:test'),assert=require('node:assert/strict'),schema=require('../shared/sheets-model.js');
+const uid='00000000-0000-4000-8000-000000000001',op='11111111-1111-4111-8111-111111111111';
+const context={verified:true,uid,username:'fixture',accountType:'Management'};
+async function fixture(options={}){
+ const {createDriverWriteEngine,operationalFingerprint}=await import('../supabase/functions/operational-data/write-engine.mjs'),{createGoogleWriteAdapter}=await import('../supabase/functions/operational-data/google-write.mjs');
+ const d=Object.fromEntries(schema.drivers.map(k=>[k,'']));Object.assign(d,{Iqama:'0000000001','Full Name':'Synthetic Driver',Status:'Available','Car Plate':'AAA','Phone Number':'+966501234567'});
+ const f=plate=>Object.fromEntries(schema.fleet.map(k=>[k,k==='Plate'?plate:k==='Availability'?'Unassigned':'']));
+ const books={drivers:{DATA:[schema.columns('drivers'),schema.columns('drivers').map(k=>d[k]||'')],CHANGE_LOG:[schema.log]},fleet:{DATA:[schema.columns('fleet'),schema.columns('fleet').map(k=>f('AAA')[k]||''),schema.columns('fleet').map(k=>f('BBB')[k]||'')],CHANGE_LOG:[schema.log]}};
+ const calls=[],store=new Map();let mutations=0;
+ const fetcher=async(url,init)=>{const module=url.includes('drivers-fixture')?'drivers':'fleet',book=books[module];calls.push({module,method:init.method});if(url.includes(':batchUpdate')){
+  mutations++;if(options.failBefore===module)throw Error('timeout');
+  for(const r of JSON.parse(init.body).requests){if(r.updateCells){const {start,rows}=r.updateCells;book.DATA[start.rowIndex][start.columnIndex]=rows[0].values[0].userEnteredValue.stringValue;}else if(r.appendCells)book.CHANGE_LOG.push(r.appendCells.rows[0].values.map(v=>v.userEnteredValue.stringValue));}
+  if(options.failAfter===module)throw Error('timeout');return Response.json({replies:[]});
+ }if(url.includes('/values/')){const range=decodeURIComponent(url.split('/values/')[1].split('?')[0]);return Response.json({values:range.includes('CHANGE_LOG')?range.endsWith('1:1')?[book.CHANGE_LOG[0]]:book.CHANGE_LOG:book.DATA});}return Response.json({sheets:[{properties:{sheetId:1,title:'DATA'}},{properties:{sheetId:2,title:'CHANGE_LOG'}}]});};
+ const google=createGoogleWriteAdapter(k=>k.includes('DRIVERS')?'drivers-fixture-workbook-00000':'fleet-fixture-workbook-000000',{auth:{accessToken:async()=>'SYNTHETIC'},fetcher});
+ const receipts={claim:async r=>{const existing=store.get(r.operation);if(existing){if(existing.sha!==r.sha)throw Error('OPERATION_REUSED');return {...existing,is_new:false};}if([...store.values()].some(x=>!['applied','conflict'].includes(x.state)))throw Error('WRITE_BUSY');const entry={...r,state:'claimed',key:crypto.randomUUID()};store.set(r.operation,entry);return {...entry,is_new:true};},seal:async r=>{Object.assign(store.get(r.operation),{plan:structuredClone(r.plan),state:'planned'});},advance:async r=>{store.get(r.operation).state=r.state;},finish:async r=>{Object.assign(store.get(r.operation),r);}};
+ const run=createDriverWriteEngine({google,receipts,schema,permissions:{can:()=>true},now:()=>Date.UTC(2026,10,17)}).update;
+ return {run,books,store,calls,google,mutationCount:()=>mutations,input:{operation:op,recordId:'ro-'+await operationalFingerprint('drivers:'+d.Iqama),expectedVersion:0,changes:{'Car Plate':'BBB'}}};
 }
-const context={verified:true,uid:'00000000-0000-4000-8000-000000000001',username:'tester',accountType:'Management'};
-const operation='11111111-1111-4111-8111-111111111111';
-const hash=async str=>'ro-'+[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str)))].map(n=>n.toString(16).padStart(2,'0')).join('');
-test('successful first edit initializes opaque ID, increments version, audits and reconciles',async()=>{
- const {run,seen}=await makeEngine(),recordId=await hash('drivers:0000000001');
- const r=await run({operation,recordId,expectedVersion:0,changes:{TID:'700'}},context);
- assert.equal(r.confirmed,true);assert.equal(r.version,1);
- assert.equal(seen.writes.length,1);assert.equal(seen.syncs.length,1);
- assert.deepEqual(seen.finishes.map(f=>f.state),['applied']);
- assert.equal(seen.writes[0].changes.TID,'700');
-});
-test('reject readonly fields before any receipt',async()=>{
- const {run,seen}=await makeEngine();
- await assert.rejects(run({operation,recordId:'anything',expectedVersion:0,changes:{Iqama:'XXX'}},context),/INVALID_WRITE/);
- assert.equal(seen.claimed.length,0);
-});
-test('driver write timeout remains unresolved to prevent unsafe replay',async()=>{
- const {run,seen}=await makeEngine({failDriver:true}),recordId=await hash('drivers:0000000001');
- await assert.rejects(run({operation,recordId,expectedVersion:0,changes:{TID:'800'}},context),/RECOVERY_REQUIRED/);
- assert.equal(seen.finishes[0].state,'uncertain');assert.equal(seen.syncs.length,0);
-});
-test('fleet sync uncertainty cannot be reported as successful',async()=>{
- const {run,seen}=await makeEngine({failFleet:true}),recordId=await hash('drivers:0000000001');
- await assert.rejects(run({operation,recordId,expectedVersion:0,changes:{TID:'800'}},context),/RECOVERY_REQUIRED/);
- assert.equal(seen.finishes[0].state,'uncertain');assert.equal(seen.writes.length,1);
-});
-test('version conflict frees receipt without mutating Google',async()=>{
- const {run,seen}=await makeEngine();
- await assert.rejects(run({operation,recordId:'unknown',expectedVersion:0,changes:{TID:'800'}},context),/VERSION_CONFLICT/);
- assert.equal(seen.finishes[0].state,'conflict');assert.equal(seen.writes.length,0);
-});
+test('complete atomic Drivers/audit and Fleet/audit flow supports multiple assigned drivers and exact replay',async()=>{const f=await fixture();const result=await f.run(f.input,context);assert.equal(result.confirmed,true);assert.equal(f.mutationCount(),2);assert.equal(f.books.drivers.CHANGE_LOG.length,2);assert.equal(f.books.fleet.CHANGE_LOG.length,2);const index=schema.columns('fleet').indexOf('Assigned Driver');assert.equal(f.books.fleet.DATA[2][index],'Synthetic Driver (0000000001)');assert.equal((await f.run(f.input,context)).replayed,true);assert.equal(f.mutationCount(),2);assert.ok(!JSON.stringify(f.books.drivers.CHANGE_LOG).includes('+966'));});
+test('unrelated edit never rewrites Fleet; key ordering produces the same request fingerprint',async()=>{const f=await fixture();f.input.changes={TID:'700',Shift:'Day Shift'};await f.run(f.input,context);await f.run({...f.input,changes:{Shift:'Day Shift',TID:'700'}},context);assert.equal(f.mutationCount(),1);});
+test('uncertain Driver batch holds serialization and cannot be resent or reported saved',async()=>{const f=await fixture({failBefore:'drivers'});await assert.rejects(f.run(f.input,context),/RECOVERY_REQUIRED/);await assert.rejects(f.run(f.input,context),/RECOVERY_REQUIRED/);assert.equal(f.mutationCount(),1);assert.equal(f.store.get(op).state,'uncertain');await assert.rejects(f.run({...f.input,operation:crypto.randomUUID()},context),/WRITE_BUSY/);});
+test('applied Fleet timeout reconciles by exact readback without a duplicate audit append',async()=>{const f=await fixture({failAfter:'fleet'});await assert.rejects(f.run(f.input,context),/RECOVERY_REQUIRED/);const recovered=await f.run(f.input,context);assert.equal(recovered.confirmed,true);assert.equal(f.mutationCount(),2);assert.equal(f.books.fleet.CHANGE_LOG.length,2);});
+test('partial cross-workbook write stays blocked until controlled recovery; missing evidence is never success',async()=>{const f=await fixture({failBefore:'fleet'});await assert.rejects(f.run(f.input,context),/RECOVERY_REQUIRED/);await assert.rejects(f.run(f.input,context),/RECOVERY_REQUIRED/);assert.equal(f.mutationCount(),2);assert.equal(f.books.drivers.CHANGE_LOG.length,2);assert.equal(f.books.fleet.CHANGE_LOG.length,1);});
+test('tampered or duplicated audit evidence fails closed',async()=>{const f=await fixture({failAfter:'drivers'});f.input.changes={TID:'700'};await assert.rejects(f.run(f.input,context),/RECOVERY_REQUIRED/);f.books.drivers.CHANGE_LOG.push([...f.books.drivers.CHANGE_LOG[1]]);await assert.rejects(f.run(f.input,context),/RECOVERY_REQUIRED/);assert.equal(f.mutationCount(),1);});
+test('unauthorized/readonly/version conflicts have no Google mutations',async()=>{const f=await fixture();await assert.rejects(f.run(f.input,{...context,accountType:'Driver'}),/PERMISSION_DENIED/);await assert.rejects(f.run({...f.input,changes:{Iqama:'bad'}},context),/INVALID_WRITE/);await assert.rejects(f.run({...f.input,expectedVersion:9},context),/VERSION_CONFLICT/);assert.equal(f.mutationCount(),0);});
+test('two requests for one operation can never send two batches',async()=>{const f=await fixture();f.input.changes={TID:'700'};const results=await Promise.allSettled([f.run(f.input,context),f.run(f.input,context)]);assert.equal(results.filter(r=>r.status==='fulfilled').length,1);assert.equal(f.mutationCount(),1);});
+test('restricted connection rejects broad identities, TLS overrides and foreign hosts',async()=>{const {operationalConnectionOptions:options}=await import('../supabase/functions/operational-data/write-receipts.mjs');const uri='postgres://taxiqaid_operational_login.mqkflwsvnzcaylxtvsje:synthetic@aws-0-eu-west-1.pooler.supabase.com:6543/postgres';assert.equal(options(uri).ssl.rejectUnauthorized,true);for(const x of [uri.replace('taxiqaid_operational_login','postgres'),uri+'?sslmode=disable',uri.replace('pooler.supabase.com','invalid.example'),uri+'?options=x'])assert.throws(()=>options(x));});

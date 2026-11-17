@@ -1,4 +1,6 @@
-# Operational Sheets adapters — approved readonly exception
+# Operational Sheets adapters — production reads and staged writes
+
+Current development status, exact template mapping, restricted coordinator proposal and remaining activation gates: [Operational integration review](OPERATIONAL_INTEGRATION_REVIEW.md). Drivers/Fleet production remains readonly; no write deployment is authorized by this document.
 
 Drivers/Fleet readonly connection is now explicitly authorized. See [the exact service, schema, permission and write blockers](DRIVERS_FLEET_SHEETS.md). Only those two DATA sources are prepared for connection (deployment is currently approval-blocked); the future write/other-domain design below remains inactive.
 

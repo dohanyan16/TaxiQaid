@@ -114,7 +114,7 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
    assert.ok(await page.locator('.main-content').evaluate(el=>el.scrollWidth<=el.clientWidth+1),'Main panel overflow');
    if(scope.endsWith('-modal'))assert.ok(await page.locator(scope+' .modal-content').evaluate(el=>el.scrollWidth<=el.clientWidth+1),'Modal panel overflow: '+scope);
   }
-  const searchViews=['customer-care','fleet','drivers','accidents','breakdowns','maintenance','fuel','ncr','penalties','tripcheck','driver-appeals','training','driver-deductions','roster','driver-portal-preview','user-management'];
+  const searchViews=['customer-care','fleet','drivers','accidents','breakdowns','maintenance','fuel','ncr','penalties','tripcheck','driver-appeals','training','driver-deductions','driver-portal-preview','user-management'];
   for(const width of [320,375,768,1024,1440]){
    await page.setViewportSize({width,height:1050});
    for(const view of views){await nav(view);await audit('#view-'+view);if(searchViews.includes(view))assert.equal(await page.locator(`#view-${view} input[role=combobox]:visible`).count(),1,'Unified search '+view);}

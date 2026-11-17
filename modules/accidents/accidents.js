@@ -97,13 +97,15 @@
       document.getElementById("accident-count-badge").textContent = `${items.length} records found`;
 
       if (items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="24" style="text-align: center; color: var(--text-muted); padding: 20px;"><span class="table-empty">No records available — database not connected</span></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: var(--text-muted); padding: 20px;"><span class="table-empty">No records available — database not connected</span></td></tr>`;
         return;
       }
 
       items.forEach(acc => {
         const tr = document.createElement("tr");
-        [acc["Accident ID"] || acc["accident id"] || "-",formatDateForDisplay(acc["Date"] || acc["date"]),formatTimeForDisplay(acc["Time"] || acc["time"]),formatDateForDisplay(acc["Reporting Date"] || acc["reporting date"]),formatTimeForDisplay(acc["Reporting Time"] || acc["reporting time"]),acc["Reported By"] || acc["reported by"] || "-",acc["Car Plate"] || acc["car plate"] || "-",acc["Car Model"] || acc["car model"] || "-",acc["Driver Iqama"] || acc["driver iqama"] || "-",acc["Driver Name"] || acc["driver name"] || "-",acc["Accident Location"] || acc["accident location"] || "-",acc["Severity"] || acc["severity"] || "-",String(acc["Send to Maintenance"] || acc["send to maintenance"] || "").trim() === "Yes" ? "Yes" : String(acc["Send to Maintenance"] || acc["send to maintenance"] || "").trim() === "No" ? "No" : "-",acc["Maintenance Status"] || "Not Requested",acc["Injured"] || acc["injured"] || "-",acc["Najm"] || acc["najm"] || "-",acc["Najm Report Status"] || acc["najm report status"] || "-",acc["Mistake Percentage"] !== undefined ? acc["Mistake Percentage"] + "%" : "-",acc["Investigation Conducted"] || acc["investigation conducted"] || "-",acc["Investigation Status"] || acc["investigation status"] || "-",acc["Accident Type"] || acc["accident type"] || "-",acc["Accident Description"] || acc["accident description"] || "-",acc["Root Causes"] || acc["root causes"] || "-",acc["Damage Description"] || acc["damage description"] || "-"].forEach((value,index)=>{const cell=document.createElement('td');const content=index===6?document.createElement('strong'):cell;content.textContent=String(value??'');if(content!==cell)cell.append(content);tr.append(cell);});
+        const visible=['Accident ID','Date','Time','Reported By','Car Plate','Driver Iqama','Location','Severity','Send to Maintenance','Maintenance Status','Investigation Status'];
+        for(const key of visible){const cell=document.createElement('td');let value=acc[key]??acc[key.toLowerCase()]??(key==='Location'?acc['Accident Location']:null)??(key==='Maintenance Status'?'Not Requested':'-');if(key==='Date')value=formatDateForDisplay(value);if(key==='Time')value=formatTimeForDisplay(value);cell.textContent=String(value??'');tr.append(cell);}
+
 
         tr.addEventListener("click", async () => {
           await Promise.all([fetchFleet(), fetchDrivers()]);

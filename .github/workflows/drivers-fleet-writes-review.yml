@@ -33,3 +33,41 @@ jobs:
           node --test tests/write-engine.test.cjs
           node --test tests/sheets.test.cjs
           node --test tests/google-configuration.test.cjs
+      - name: Schema contract and complete Node regressions
+        run: |
+          node scripts/build-operational-schemas.cjs --check
+          node scripts/build-operational-overviews.cjs --check
+          node scripts/check-auth-catalog.cjs
+          node --require ./tests/deny-live-auth.cjs --test tests/*.test.cjs
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.6
+      - name: Strict Deno and isolated provider tests
+        run: |
+          deno task --config supabase/deno.json check
+          deno test --allow-read supabase/functions/_shared/*_test.ts supabase/functions/_diagnostics/*_test.ts tests/*.deno.ts
+      - name: Disposable PostgreSQL 16 security and operational coordination
+        env:
+          TAXIQAID_TEST_PUBLIC_GATEWAY: 'true'
+          TAXIQAID_TEST_USER_ADMIN: 'true'
+          TAXIQAID_TEST_OPERATIONAL_WRITES: 'true'
+        run: node tests/broker-postgres.cjs
+      - name: Install pinned browser test runtime
+        run: |
+          npm install --prefix /tmp/taxiqaid-browser --no-audit --no-fund playwright@1.62.1
+          /tmp/taxiqaid-browser/node_modules/.bin/playwright install --with-deps chromium
+          sudo ln -sf "$(node -e 'process.stdout.write(require("/tmp/taxiqaid-browser/node_modules/playwright").chromium.executablePath())')" /usr/bin/chromium
+      - name: Actual frontend regressions with only synthetic transport
+        env:
+          NODE_PATH: /tmp/taxiqaid-browser/node_modules
+          TAXIQAID_URL: http://127.0.0.1:8004/
+          TAXIQAID_SCREENSHOTS: /tmp/taxiqaid-screenshots
+          TAXIQAID_ROSTER_OUTPUT: /tmp/taxiqaid-roster
+          TAXIQAID_PORTAL_OUTPUT: /tmp/taxiqaid-portal
+        run: |
+          python3 -m http.server 8004 --bind 127.0.0.1 >/tmp/taxiqaid-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for suite in workflow ui people roster support portal auth-migration main-auth-gate master-pilot user-admin lazy-security ksa-time sheets driver-writes; do
+            node --require ./tests/deny-live-auth.cjs "tests/$suite.browser.cjs"
+          done

@@ -28,10 +28,8 @@ const TaxiQaidPortalPolicy = (() => {
     if((packet.profileRequests||[]).some(request=>request.driverRecordRef!==ref||request.ownerUid!==packet.ownerUid))throw new Error('Profile request ownership mismatch.');
     const documentKeys=(packet.documents||[]).map(doc=>doc.documentId+'\u0000'+doc.version);
     if(new Set(documentKeys).size!==documentKeys.length)throw new Error('An immutable document version must have one assignment entry.');
-    const schedule=packet.schedule;
-    if(schedule&&(!schedule.published||!schedule.approved||!schedule.version||schedule.driverRecordRef!==ref||schedule.ownerUid!==packet.ownerUid||schedule.driver?.iqama!==packet.iqama||schedule.driver?.assignments?.length!==7||schedule.week?.length!==7||schedule.driver.assignments.some((day,index)=>day.date!==schedule.week[index]||!/^\d{4}-\d{2}-\d{2}$/.test(day.date)||new Date(day.date+'T00:00:00Z').getTime()!==new Date(schedule.week[0]+'T00:00:00Z').getTime()+index*86400000)||new Date(schedule.week[0]+'T00:00:00Z').getUTCDay()!==0))throw new Error('Only the approved, published personal week is available.');
-    if(schedule){const roster=typeof TaxiQaidRosterModel!=='undefined'?TaxiQaidRosterModel:require('../people/roster/roster-model.js');schedule.week.forEach(date=>roster.isoDate(date));}
-    return structuredClone(packet);
+    // Schedule data is intentionally excluded while both Roster interfaces are Coming Soon.
+    return structuredClone({...packet,schedule:null});
   }
   const resource=packet=>({driverRecordRef:packet?.driverRecordRef,ownerUid:packet?.ownerUid});
   return Object.freeze({normalizePhone,changes,snapshot,resource,countries:()=>phone.getCountries().map(code=>({code,prefix:'+'+phone.getCountryCallingCode(code),country:new Intl.DisplayNames(['en'],{type:'region'}).of(code)}))});

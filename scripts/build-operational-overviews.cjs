@@ -1,0 +1,7 @@
+// Only Overview headers/empty spans are generated. Forms, details and stored fields are preserved.
+const fs=require('node:fs'),domains=require('../shared/operational-schemas.js'),check=process.argv.includes('--check');
+const tables={accidents:['modules/accidents/accidents.html','accidents-table'],breakdowns:['modules/breakdowns/breakdowns.html','breakdowns-table'],maintenance:['modules/maintenance/maintenance.html','maintenance-overview'],fuel:['modules/operations/fuel/fuel.html','fuel-table'],ncr:['modules/compliance/ncr/ncr.html','ncr-records-table'],'customer-care':['modules/customer/customer-care/customer-care.html','care-table']};
+const outputs=[];
+for(const [key,[file,id]]of Object.entries(tables)){const source=fs.readFileSync(file,'utf8'),columns=Object.entries(domains[key].fields).filter(([,v])=>v.overview).map(([k])=>k);let matched=false;const body=source.replace(new RegExp('(<table\\b[^>]*id="'+id+'"[^>]*>)([\\s\\S]*?)(</table>)'),(all,open,inside,close)=>{matched=true;return open+inside.replace(/(<thead>\s*<tr>)[\s\S]*?(<\/tr>\s*<\/thead>)/,'$1\n'+columns.map(c=>'<th scope="col">'+c+'</th>').join('\n')+'\n$2').replace(/colspan="\d+"/g,'colspan="'+columns.length+'"')+close;});if(!matched)throw new Error('Missing fixed Overview: '+key);if(check){if(source!==body)throw new Error('Overview mapping drift: '+key);}else outputs.push([file,body]);}
+for(const [file,body]of outputs)fs.writeFileSync(file,body);
+console.log('PASS: six mapped Overviews; forms and details preserved');

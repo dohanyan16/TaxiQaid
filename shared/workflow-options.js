@@ -1,5 +1,6 @@
 // Shared frontend choices; these are not operational records.
 const TAXIQAID_LOCATIONS = Object.freeze([
+  "Depot", "Jeddah", "Taif", "Madinha", "Other",
   "Ajyad - Jarham",
   "Al Abdeyah - Al Safra",
   "Al Awali",

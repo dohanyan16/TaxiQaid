@@ -1,0 +1,13 @@
+{
+  "sourceZipSha256": "2c537320be2727d47fafc7223fbfdf5b638a58d67f18564f4cc39de0a6a47712",
+  "correctedZipSha256": "a990a7cc00afeb87a4298d75e2e494580e5627578d5549f2f6ae55c89b91f11a",
+  "changedMember": "TaxiQaid_User_Directory_Template.xlsx",
+  "unchangedXlsxMembers": 13,
+  "removedColumn": "First business Updated At UTC",
+  "finalTechnicalColumns": [
+    "Record ID",
+    "Row Version",
+    "Updated At UTC"
+  ],
+  "correctedMemberSha256": "4d14785b7c4697ef0935f459610104e42b4c5878c25727d7855f56a579cff3c0"
+}

@@ -50,7 +50,7 @@ const TaxiQaidSearch = (() => {
   function create({input, btn, dd, config, fields, keys, getData=()=>[], getIdentifier, label, apply=()=>{}, onSelect, paginate=false}) {
     const inp = typeof input === 'string' ? document.getElementById(input) : input;
     if (!inp) throw new Error(`Missing search input: ${input}`);
-    if (controllers.has(inp.id)) return controllers.get(inp.id);
+    if(controllers.has(inp.id)){const previous=controllers.get(inp.id);if(previous.input===inp)return previous;previous.close();controllers.delete(inp.id);}
     const settings = typeof config==='string' ? CONFIG[config] : config;
     const searchable = fields || settings?.fields || keys;
     if (!searchable?.length) throw new Error('Search fields are required.');
@@ -120,7 +120,7 @@ const TaxiQaidSearch = (() => {
     controllers.set(inp.id,controller);close();return controller;
   }
   if(typeof document!=='undefined') {
-    document.addEventListener('click',event=>controllers.forEach(controller=>{if(!controller.input.closest('.search-wrapper').contains(event.target))controller.close();}));
+    document.addEventListener('click',event=>controllers.forEach((controller,key)=>{if(!controller.input.isConnected){controllers.delete(key);return;}if(!controller.input.closest('.search-wrapper').contains(event.target))controller.close();}));
     // Preserve keyboard interaction of Trip Check's specialized vehicle/driver selectors.
     document.addEventListener('keydown',event=>{
       const wrapper=event.target.closest?.('#add-tripcheck-modal .search-wrapper');

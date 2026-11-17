@@ -12,7 +12,7 @@ The login downloads only its shell, authentication/permission dependencies, shar
 
 `TaxiQaidModules.register(name,{init,onEnter,onLeave,onReset})` supplies lifecycle hooks. `init`/classic initialization happens once; `onEnter` refreshes after permission checks. Entry generations and AbortSignals suppress stale reads. Leaving cancels reads, while writes keep their operation receipts. User Management uses its existing authenticated service and a manual refresh remains available. Approved Drivers/Fleet are wired to the JWT-protected readonly Sheets source (see the deployment blocker in the service guide); other disconnected modules explicitly show integration pending. There is no operational polling; the existing authentication lease checks remain intact.
 
-Logout, expiry, account/permission changes hide views/modals first, revoke pending work, clear private state and reset module-specific caches. A failing reset quarantines that module until reload. Resource caching never extends an authorization lease. Local Roster imports remain in memory only and clear on session revocation; they do not become a Google source.
+Logout, expiry, account/permission changes hide views/modals first, revoke pending work, clear private state and reset module-specific caches. A failing reset quarantines that module until reload. Resource caching never extends an authorization lease. Both Roster entries are Coming Soon; no operational Roster scripts, styles, worker or PDF generator load. Historical parser tests/catalog and shared vendor libraries remain available for unrelated modules.
 
 ## Integrity and CSP
 

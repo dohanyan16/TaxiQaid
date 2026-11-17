@@ -49,30 +49,17 @@
 <table class="tracker-table" id="accidents-table">
 <thead>
 <tr>
-<th>Accident ID</th>
-<th>Date</th>
-<th>Time</th>
-<th>Reporting Date</th>
-<th>Reporting Time</th>
-<th>Reported By</th>
-<th>Car Plate</th>
-<th>Car Model</th>
-<th>Driver Iqama</th>
-<th>Driver Name</th>
-<th>Location</th>
-<th>Severity</th>
-<th>Send to Maintenance</th>
-<th>Maintenance Status</th>
-<th>Injured</th>
-<th>Najm</th>
-<th>Najm Status</th>
-<th>Mistake %</th>
-<th>Investigation</th>
-<th>Inv. Status</th>
-<th>Accident Type</th>
-<th>Description</th>
-<th>Root Causes</th>
-<th>Damage Description</th>
+<th scope="col">Accident ID</th>
+<th scope="col">Date</th>
+<th scope="col">Time</th>
+<th scope="col">Reported By</th>
+<th scope="col">Car Plate</th>
+<th scope="col">Driver Iqama</th>
+<th scope="col">Location</th>
+<th scope="col">Severity</th>
+<th scope="col">Send to Maintenance</th>
+<th scope="col">Maintenance Status</th>
+<th scope="col">Investigation Status</th>
 </tr>
 </thead>
 <tbody id="accidents-table-body"></tbody>
@@ -122,7 +109,7 @@
 <div class="form-group">
 <label for="add-acc-root-causes">Root Causes</label>
 <select id="add-acc-root-causes" required="">
-<option value="">-- Select Root Cause --</option>
+<option value="">-- Select Root Cause --</option><option value="Others">Others</option>
 <option value="Animal crossed the road">Animal crossed the road</option>
 <option value="Bad weather conditions">Bad weather conditions</option>
 <option value="Breakdown">Breakdown</option>

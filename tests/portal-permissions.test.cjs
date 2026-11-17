@@ -32,10 +32,10 @@ test('international phone metadata normalizes real calling codes and rejects inv
  assert.throws(()=>portal.normalizePhone('ZZ','501234567'));assert.throws(()=>portal.changes({name:'Fixture Name'},'Fixture Name',null,''));
  assert.deepEqual(portal.changes({name:'Fixture Name'},'New Fixture Name',null,''),{name:'New Fixture Name'});assert.deepEqual(portal.changes({},'','SA','501234567'),{phone:'+966501234567'});
 });
-test('personal source rejects another UID, ownership, draft schedules and non-consecutive dates',()=>{
- const packet={source:'authorized-backend',subjectUid:driver.uid,ownerUid:driver.uid,driverRecordRef:driver.driverRecordRef,iqama:driver.iqama};assert.deepEqual(portal.snapshot(driver,packet),packet);
+test('personal source preserves UID/document ownership and excludes schedules while Coming Soon',()=>{
+ const packet={source:'authorized-backend',subjectUid:driver.uid,ownerUid:driver.uid,driverRecordRef:driver.driverRecordRef,iqama:driver.iqama};assert.deepEqual(portal.snapshot(driver,packet),{...packet,schedule:null});
  for(const bad of [{...packet,subjectUid:'other'},{...packet,driverRecordRef:'other'},{...packet,iqama:'other'},{...packet,profileRequests:[{ownerUid:'other'}]},{...packet,documents:[{documentId:'fixture',version:'v1',sha256:'0'.repeat(64),ownerUid:'other'}]}])assert.throws(()=>portal.snapshot(driver,bad));
- assert.throws(()=>portal.snapshot(driver,{...packet,schedule:{published:false}}));
+ assert.equal(portal.snapshot(driver,{...packet,schedule:{published:false}}).schedule,null);
  const week=Array.from({length:7},(_,i)=>'2026-11-'+String(8+i).padStart(2,'0')),schedule={published:true,approved:true,version:'fixture-v1',driverRecordRef:packet.driverRecordRef,ownerUid:driver.uid,week,driver:{iqama:driver.iqama,assignments:week.map(date=>({date,duty:'Rest Day'}))}};
- assert.equal(portal.snapshot(driver,{...packet,schedule}).schedule.version,'fixture-v1');assert.throws(()=>portal.snapshot(driver,{...packet,schedule:{...schedule,week:[...week].reverse()}}));
+ assert.equal(portal.snapshot(driver,{...packet,schedule}).schedule,null);assert.equal(portal.snapshot(driver,{...packet,schedule:{...schedule,week:[...week].reverse()}}).schedule,null);
 });
