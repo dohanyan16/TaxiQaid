@@ -16,7 +16,7 @@ test('each of the 14 approved operational workbooks accepts an exact empty DATA 
 test('owner-appended Traffic Violations rows need no technical fields; business ID is still mandatory',async()=>{
  const {operationalDomainRows}=await loader();
  const cfg=schemas.penalties;
- const values=(id,record='',version='')=>cfg.tabs.DATA.map(k=>({'Penalty ID':id,'Record ID':record,'Row Version':version})[k]||'');
+ const values=(id,record='',version='')=>cfg.tabs.DATA.map(k=>({'Penalty ID':id,'Date':'2026-11-17','Record ID':record,'Row Version':version})[k]||'');
  const parsed=operationalDomainRows('penalties',[cfg.tabs.DATA,values('PEN-0001')]);
  assert.equal(parsed[0].id,null);
  assert.equal(parsed[0].version,null);
