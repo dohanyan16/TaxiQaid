@@ -8,10 +8,10 @@ export function operationalConnectionOptions(connection,ca){
  if(!url.password)throw new Error('OPDB_PASSWORD_MISSING');
  const project='mqkflwsvnzcaylxtvsje',pooler=url.hostname.endsWith('.pooler.supabase.com');
  let username;try{username=decodeURIComponent(url.username);}catch{throw new Error('OPDB_URL_INVALID');}
- if(username!=='taxiqaid_operational_login'+(pooler?'.'+project:''))
-  throw new Error('OPDB_ROLE_MISMATCH');
  if(!(pooler&&['5432','6543'].includes(url.port)||url.hostname==='db.'+project+'.supabase.co'&&(!url.port||url.port==='5432')))
   throw new Error('OPDB_HOST_OR_PORT');
+ if(username!=='taxiqaid_operational_login'+(pooler?'.'+project:''))
+  throw new Error('OPDB_ROLE_MISMATCH');
  if([...url.searchParams].some(([k,v])=>k!=='sslmode'||!['require','verify-full'].includes(v)))
   throw new Error('OPDB_QUERY_UNSUPPORTED');
  return {host:url.hostname,port:Number(url.port||5432),database:'postgres',username:decodeURIComponent(url.username),password:decodeURIComponent(url.password),max:2,prepare:false,connect_timeout:5,idle_timeout:10,max_lifetime:300,ssl:{rejectUnauthorized:true,...(ca?{ca}:{})},debug:false,onnotice:()=>{}};
