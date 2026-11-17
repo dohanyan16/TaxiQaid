@@ -30,26 +30,35 @@
 
 // Only authorized reference reads can populate cross-module dropdowns.
 // This never reactivates legacy Google / Apps Script transports or writes.
+let driverReferenceRead=0,fleetReferenceRead=0;
 async function fetchDrivers({signal}={}){
  if(typeof TaxiQaidModules!=='undefined'&&TaxiQaidModules.current?.()==='drivers')
   return typeof refreshDriverPreview==='function'?refreshDriverPreview():false;
+ const sequence=++driverReferenceRead,uid=TaxiQaidAccess.getUid(),page=TaxiQaidModules.current();
  if(!TaxiQaidAccess.can('drivers.view')){driversDatabase=[];return false;}
  try{
-  const uid=TaxiQaidAccess.getUid(),result=await TaxiQaidSources.read('drivers',{signal});
-  if(!result.connected||signal?.aborted||uid!==TaxiQaidAccess.getUid()||!TaxiQaidAccess.can('drivers.view')){driversDatabase=[];return false;}
+  const result=await TaxiQaidSources.read('drivers',{signal});
+  if(sequence!==driverReferenceRead||!result.connected||signal?.aborted||page!==TaxiQaidModules.current()||uid!==TaxiQaidAccess.getUid()||!TaxiQaidAccess.can('drivers.view'))return false;
   driversDatabase=result.records.map(row=>TaxiQaidSheetsModel.frontend('drivers',row));
   return true;
- }catch{driversDatabase=[];return false;}
+ }catch{
+  if(sequence===driverReferenceRead&&!signal?.aborted&&page===TaxiQaidModules.current()&&uid===TaxiQaidAccess.getUid())driversDatabase=[];
+  return false;
+ }
 }
 async function fetchFleet({signal}={}){
  if(typeof TaxiQaidModules!=='undefined'&&TaxiQaidModules.current?.()==='fleet')
   return typeof refreshFleetPreview==='function'?refreshFleetPreview():false;
+ const sequence=++fleetReferenceRead,uid=TaxiQaidAccess.getUid(),page=TaxiQaidModules.current();
  if(!TaxiQaidAccess.can('fleet.view')){fleetDatabase=[];return false;}
  try{
-  const uid=TaxiQaidAccess.getUid(),result=await TaxiQaidSources.read('fleet',{signal});
-  if(!result.connected||signal?.aborted||uid!==TaxiQaidAccess.getUid()||!TaxiQaidAccess.can('fleet.view')){fleetDatabase=[];return false;}
+  const result=await TaxiQaidSources.read('fleet',{signal});
+  if(sequence!==fleetReferenceRead||!result.connected||signal?.aborted||page!==TaxiQaidModules.current()||uid!==TaxiQaidAccess.getUid()||!TaxiQaidAccess.can('fleet.view'))return false;
   fleetDatabase=result.records.map(row=>TaxiQaidSheetsModel.frontend('fleet',row));
   return true;
- }catch{fleetDatabase=[];return false;}
+ }catch{
+  if(sequence===fleetReferenceRead&&!signal?.aborted&&page===TaxiQaidModules.current()&&uid===TaxiQaidAccess.getUid())fleetDatabase=[];
+  return false;
+ }
 }
 async function fetchTripChecks(){return typeof refreshTripCheckPreview==='function'?refreshTripCheckPreview():false;}
