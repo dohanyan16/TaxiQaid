@@ -77,5 +77,18 @@ const TaxiQaidReferenceBindings=(()=>{
    TaxiQaidTrainingPreview.setDriverSource(driversDatabase,{complete:false});
   }
  }
- return Object.freeze({enter,supported:page=>supported.has(page)});
+ function reset(){
+  for(const entries of Object.values(byPage))for(const [id,type,output]of entries){
+   const select=document.getElementById(id);
+   if(select)select.replaceChildren(new Option('Select '+(type==='fleet'?'Plate':'Iqama'),''));
+   const derived=document.getElementById(output);if(derived)derived.value='';
+  }
+  for(const entries of Object.values(inputs))for(const [id,,listId,outputs]of entries){
+   const input=document.getElementById(id),list=document.getElementById(listId);
+   if(input){input.value='';input.removeAttribute('list');}
+   list?.replaceChildren();setDerived(null,outputs);
+  }
+  const arrangement=document.getElementById('fuel-driver-arrangement');if(arrangement)arrangement.value='';
+ }
+ return Object.freeze({enter,reset,supported:page=>supported.has(page)});
 })();
