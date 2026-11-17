@@ -35,7 +35,7 @@ export function parseGoogleAccount(raw){
  return {email:account.client_email,der,normalization};
 }
 
-export function createGoogleReader(env,{fetcher=fetch,now=Date.now,pause=ms=>new Promise(r=>setTimeout(r,ms))}={}){
+export function createGoogleReader(env,{fetcher=fetch,now=Date.now,pause=ms=>new Promise(r=>setTimeout(r,ms)),oauthScope=scope}={}){
  let access=null,tokenTask=null,configTask=null,active=0;const snapshots=new Map(),inflight=new Map();
  const sheet=module=>{let id;try{id=env(module==='drivers'?'TAXIQAID_DRIVERS_SHEET_ID':'TAXIQAID_FLEET_SHEET_ID');}catch{fail('GOOGLE_SECRET_UNAVAILABLE');}if(!id)fail('GOOGLE_SHEET_ID_MISSING');if(!/^[A-Za-z0-9_-]{20,200}$/.test(id))fail('GOOGLE_SHEET_ID_INVALID');return id;};
  async function configuration(){
@@ -53,7 +53,7 @@ export function createGoogleReader(env,{fetcher=fetch,now=Date.now,pause=ms=>new
  }
  async function token(){
   if(access&&access.until>now()+60000)return access.value;if(tokenTask)return tokenTask;
-  tokenTask=(async()=>{const {email,key}=await configuration(),seconds=Math.floor(now()/1000),unsigned=encode({alg:'RS256',typ:'JWT'})+'.'+encode({iss:email,scope,aud:'https://oauth2.googleapis.com/token',iat:seconds,exp:seconds+300});let signature;
+  tokenTask=(async()=>{const {email,key}=await configuration(),seconds=Math.floor(now()/1000),unsigned=encode({alg:'RS256',typ:'JWT'})+'.'+encode({iss:email,scope:oauthScope,aud:'https://oauth2.googleapis.com/token',iat:seconds,exp:seconds+300});let signature;
    try{signature=base64(new Uint8Array(await crypto.subtle.sign('RSASSA-PKCS1-v1_5',key,new TextEncoder().encode(unsigned))));}catch{fail('GOOGLE_ASSERTION_SIGN_FAILED');}
    let reply;try{reply=await fetcher('https://oauth2.googleapis.com/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'urn:ietf:params:oauth:grant-type:jwt-bearer',assertion:unsigned+'.'+signature}),redirect:'error',signal:AbortSignal.timeout(10000)});}catch{fail('GOOGLE_OAUTH_NETWORK');}
    let data;try{data=await bounded(reply,16384,'oauth');}catch(error){if(!reply.ok)fail('GOOGLE_OAUTH_HTTP',reply.status);throw error;}
@@ -79,5 +79,5 @@ export function createGoogleReader(env,{fetcher=fetch,now=Date.now,pause=ms=>new
    }fail('GOOGLE_READ_DEADLINE');
   })().finally(()=>{active--;inflight.delete(module);});inflight.set(module,task);return task;
  }
- return Object.freeze({read,inspectConfiguration});
+ return Object.freeze({read,inspectConfiguration,accessToken:token});
 }
