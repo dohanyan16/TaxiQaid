@@ -1,11 +1,19 @@
 /** Restricted coordinator only. Never use a service-role key or a browser RPC. */
 export function operationalConnectionOptions(connection,ca){
- let url;try{url=new URL(connection);}catch{throw new Error('WRITE_COORDINATOR_NOT_READY');}
- const pooler=url.hostname.endsWith('.pooler.supabase.com'),project='mqkflwsvnzcaylxtvsje';
- if(!['postgres:','postgresql:'].includes(url.protocol)||url.pathname!=='/postgres'||!url.password||url.hash||
- decodeURIComponent(url.username)!=='taxiqaid_operational_login'+(pooler?'.'+project:'')||
- !(pooler&&['5432','6543'].includes(url.port)||url.hostname==='db.'+project+'.supabase.co'&&(!url.port||url.port==='5432'))||
- [...url.searchParams].some(([k,v])=>k!=='sslmode'||!['require','verify-full'].includes(v)))throw new Error('WRITE_COORDINATOR_NOT_READY');
+ // Keep connection secrets opaque. Only predeclared, non-sensitive error classes
+ // are logged by the caller; never expose the URL, hostname or username.
+ let url;try{url=new URL(String(connection).trim());}catch{throw new Error('OPDB_URL_INVALID');}
+ if(!['postgres:','postgresql:'].includes(url.protocol)||url.pathname!=='/postgres'||url.hash)
+  throw new Error('OPDB_URL_FORMAT');
+ if(!url.password)throw new Error('OPDB_PASSWORD_MISSING');
+ const project='mqkflwsvnzcaylxtvsje',pooler=url.hostname.endsWith('.pooler.supabase.com');
+ let username;try{username=decodeURIComponent(url.username);}catch{throw new Error('OPDB_URL_INVALID');}
+ if(username!=='taxiqaid_operational_login'+(pooler?'.'+project:''))
+  throw new Error('OPDB_ROLE_MISMATCH');
+ if(!(pooler&&['5432','6543'].includes(url.port)||url.hostname==='db.'+project+'.supabase.co'&&(!url.port||url.port==='5432')))
+  throw new Error('OPDB_HOST_OR_PORT');
+ if([...url.searchParams].some(([k,v])=>k!=='sslmode'||!['require','verify-full'].includes(v)))
+  throw new Error('OPDB_QUERY_UNSUPPORTED');
  return {host:url.hostname,port:Number(url.port||5432),database:'postgres',username:decodeURIComponent(url.username),password:decodeURIComponent(url.password),max:2,prepare:false,connect_timeout:5,idle_timeout:10,max_lifetime:300,ssl:{rejectUnauthorized:true,...(ca?{ca}:{})},debug:false,onnotice:()=>{}};
 }
 export function createDriverReceipts(sql){
