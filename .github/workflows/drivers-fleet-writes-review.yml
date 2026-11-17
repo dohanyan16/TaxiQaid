@@ -29,6 +29,7 @@ jobs:
           node scripts/build-asset-versions.cjs --check
       - name: Write tests with simulated providers
         run: |
+          node --test tests/packaging.test.cjs
           node --test tests/write-engine.test.cjs
           node --test tests/sheets.test.cjs
           node --test tests/google-configuration.test.cjs

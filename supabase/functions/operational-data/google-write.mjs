@@ -4,7 +4,7 @@
  * Google has no compare-and-swap. All TaxiQaid writes must hold the durable
  * workbook-wide claim; direct human editing of these fields must be prevented.
  */
-export function createGoogleWriteAdapter(env,{auth,fetcher=fetch}={}){
+export function createGoogleWriteAdapter(env,{auth,fetcher=fetch}){
  const identifiers={drivers:'TAXIQAID_DRIVERS_SHEET_ID',fleet:'TAXIQAID_FLEET_SHEET_ID'};
  const info=module=>{
    if(!Object.hasOwn(identifiers,module))throw new Error('INVALID_MODULE');
