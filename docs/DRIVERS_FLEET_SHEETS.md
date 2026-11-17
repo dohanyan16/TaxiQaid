@@ -36,7 +36,7 @@ A future Google batch must update only approved cells + Row Version/Updated At U
 
 ## Owner verification and rollback
 
-After approved readonly deployment, sign in normally as Master, open Drivers and Fleet and inspect their status badges. Connected 0 is valid; an access/header/quota error is not a PASS. For an aggregate-only check, run the reviewed `scripts/check-operational-reads.browser.js` in the console of that signed-in Pages tab: two readonly POSTs, stop at first failure, report only module/status/HTTP/count/ms. Never copy tokens, credential files, Network response bodies, names, Iqamas or email addresses into chat. Without an actual owner JWT request, real Sheet access/counts/latency remain **UNVERIFIED**; deployment success alone does not prove Google access.
+After approved readonly deployment, sign in normally as Master, open Drivers and Fleet and inspect their status badges. Connected 0 is valid; an access/header/quota error is not a PASS. For an aggregate-only check, run the reviewed `scripts/check-operational-reads.browser.js` in the console of that signed-in Pages tab: two readonly POSTs, stop on an authentication/authorization failure, report only module/status/HTTP/count/ms and sanitized error code/phase/upstream status. Never copy tokens, credential files, Network response bodies, names, Iqamas or email addresses into chat. Without an actual owner JWT request, real Sheet access/counts/latency remain **UNVERIFIED**; deployment success alone does not prove Google access.
 
 Rollback: restore the previous frontend release by a normal revert, and remove only this new readonly function if necessary. No SQL, secret, workbook, account, audit or authentication rollback is needed. No cleanup of operational records is authorized.
 
@@ -47,3 +47,27 @@ The **new readonly** `operational-data` function was deployed directly to the ex
 **Not yet verified:** a real signed-in Master request, Google workbook access, actual row counts, pagination and hosted latency. No user's session or token was accessed for verification. Do not claim 0 records or a successful Sheets read until the owner runs the aggregate-only browser check above. The frontend remains unpublished on the review branch pending that check.
 
 No SQL, operational write, CHANGE_LOG append, workbook edit, secret change, credential rotation or Driver activation was performed in this deployment. Future write activation still requires a separate reviewed schema/authorization and durable concurrency/idempotency coordinator.
+
+
+## HTTP 503 configuration investigation
+
+Baseline `426bb9253c0dea482566be75e905d75261c53561`, `google.mjs:9`, emits the same `GOOGLE_CONFIGURATION_INVALID` for a missing/malformed JSON secret and failed type/email/key-field checks. Those throws occur **before** key import, OAuth, Google API enablement or workbook access. Therefore the owner-observed error does not establish a Google sharing/API failure. The underlying secret subtype cannot be inferred from that one code. Read-only inspection found hosted version **2, ACTIVE, verify_jwt=true**, with its source byte-identical to the generated `cd44a236…` artifact. The deployment generator is not the observed mismatch source. No credential value was retrieved.
+
+The repair preserves the exact `TAXIQAID_GOOGLE_SERVICE_ACCOUNT_JSON` name and official service-account type/email/PKCS8 RSA signing. It accepts harmless outer BOM/whitespace, one JSON-string serialization envelope and escaped PEM line breaks, then independently validates fields/base64/key import. Invalid or non-service-account identities still fail closed. Google token audience, hosts, readonly scope, JWT/account/permission checks and workbook allowlist remain fixed.
+
+`OPERATIONAL_CONFIG` is a **local-only** boot check of environment, parsing and crypto, logged once per isolate with code/phase and optional fixed normalization codes. It makes no network call, displays no secret values, exposes no diagnostic route and grants no unauthenticated access. `GOOGLE_CONFIG_READY` does **not** mean OAuth/Sheets passed. Authenticated `OPERATIONAL_READ` failures include only the safe error code/phase and optional upstream HTTP status. OAuth descriptions, Google error messages, cell data, tokens, email, JSON and key contents never leave those error boundaries.
+
+| Code / phase | Exact next owner check if observed live |
+| --- | --- |
+| GOOGLE_SECRET_MISSING / secret | In TaxiQaid → Edge Functions → Secrets, verify the exact existing key name above has a nonempty value. Do not copy its value into chat. |
+| GOOGLE_SECRET_UNAVAILABLE / secret | Check the deployed function/project/environment binding; this is not evidence of malformed JSON. |
+| GOOGLE_JSON_INVALID or GOOGLE_JSON_ROOT_INVALID / json | Privately ensure this Secret is the service-account JSON object from Google Cloud, not a shell assignment, base64 document, array or OAuth client configuration. Do not share it. |
+| GOOGLE_TYPE_INVALID / fields | The original Google key document must contain type equal to service_account. Other credential types are not accepted. |
+| GOOGLE_CLIENT_EMAIL_INVALID / fields | The original document must contain the service account's client_email ending in .gserviceaccount.com. No username, API key or workbook URL can replace it. |
+| GOOGLE_PRIVATE_KEY_MISSING / fields or GOOGLE_PRIVATE_KEY_* / pem/crypto | Use the intact private_key from that same Google key document, with BEGIN PRIVATE KEY/END PRIVATE KEY. Do not manually reconstruct or publish the key. Import failure is separate from OAuth rejection. |
+| GOOGLE_OAUTH_INVALID_GRANT / oauth | Inspect Google key/account validity and server clock in the owner's Google project; JSON/key import has already passed. Do not rotate credentials automatically. |
+| GOOGLE_SHEETS_API_DISABLED / sheets | In the existing service account's Google project, verify Google Sheets API is enabled. No new project/service is required. |
+| GOOGLE_SHEETS_PERMISSION_DENIED or GOOGLE_SHEET_NOT_FOUND_OR_NOT_SHARED / sheets | Privately verify the matching existing Sheet ID and sharing. A 404 cannot distinguish missing from undisclosed private workbooks. The readonly scope cannot prove the exact Editor role; the owner can confirm it in each workbook's Share dialog. |
+| SHEET_HEADERS_MISMATCH / headers | Compare the DATA row-one headers with the exact arrays in shared/sheets-model.js. No automatic Sheet edits occur. A truly blank tab is not a valid header-only empty source. |
+
+Verification requires the new deployment's configuration code, actual owner-session reads for **both** books, exact-header validation and actual counts. Preserve the feature branch/PR and do not publish main/Pages while any read fails or remains unverified. Roll back only operational-data to the previously downloaded reviewed artifact if necessary; retain verify_jwt=true and leave all secrets, SQL, accounts and existing functions unchanged.
