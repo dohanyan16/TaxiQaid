@@ -19,6 +19,30 @@ const TAXIQAID_DEPOT_FUEL_PRICE_SAR_PER_LITER = 2.18;
     'fuel-fueled-in', 'fuel-outside-location', 'fuel-received', 'fuel-price']
     .map(id => document.getElementById(id));
   let detailsOnly = false;
+  let refreshSerial=0;
+  const refStatus=document.createElement('p'),refReload=document.createElement('button');
+  refStatus.id='fuel-references-status';refStatus.className='preview-note';refStatus.setAttribute('role','status');
+  refReload.type='button';refReload.className='btn-secondary';refReload.textContent='Reload drivers and vehicles';
+  modal.querySelector('#fuel-preview-note').after(refStatus,refReload);
+  async function loadFuelReferences(){
+    const current=++refreshSerial;
+    const plate=document.getElementById('fuel-plate'),iqama=document.getElementById('fuel-iqama');
+    refStatus.textContent='Loading Fleet vehicles and Drivers from authorized Google Sheets…';
+    refReload.disabled=true;
+    try{
+      if(typeof TaxiQaidReferenceBindings==='undefined')throw new Error('Reference module unavailable.');
+      await TaxiQaidReferenceBindings.enter('fuel');
+      if(current!==refreshSerial||TaxiQaidModules.current()!=='fuel')return;
+      const vehicles=[...plate.options].filter(o=>o.value).length,drivers=[...iqama.options].filter(o=>o.value).length;
+      refStatus.textContent=vehicles&&drivers
+        ? vehicles+' Fleet vehicles and '+drivers+' Drivers available. Search or select an option.'
+        : 'References unavailable for '+(!vehicles&&!drivers?'Fleet and Drivers':!vehicles?'Fleet':'Drivers')+'. Use Reload drivers and vehicles.';
+      if(typeof TaxiQaidSelectUI!=='undefined')TaxiQaidSelectUI.sync(modal);
+    }catch{
+      if(current===refreshSerial)refStatus.textContent='Unable to load authorized Fleet/Drivers references. Retry using Reload drivers and vehicles.';
+    }finally{if(current===refreshSerial)refReload.disabled=false;}
+  }
+  refReload.addEventListener('click',()=>{void loadFuelReferences();});
 
   function updateFuelTotal() {
     const outside = fueledIn.value === 'Outside Depot';
@@ -67,6 +91,7 @@ const TAXIQAID_DEPOT_FUEL_PRICE_SAR_PER_LITER = 2.18;
     validation.hidden = true;
     setPreviewMode(mode);
     openPreviewModal(modal);
+    void loadFuelReferences();
   }
 
   function previewSave() {
@@ -77,7 +102,7 @@ const TAXIQAID_DEPOT_FUEL_PRICE_SAR_PER_LITER = 2.18;
 
   document.getElementById('open-fuel-modal').addEventListener('click', () => openFuelPreview('add'));
   document.getElementById('preview-fuel-details').addEventListener('click', () => openFuelPreview('details'));
-  edit.addEventListener('click', () => { setPreviewMode('edit'); document.getElementById('fuel-date').focus(); });
+  edit.addEventListener('click', () => { setPreviewMode('edit'); if(typeof TaxiQaidSelectUI!=='undefined')TaxiQaidSelectUI.sync(modal); document.getElementById('fuel-date').focus(); });
   document.getElementById('close-fuel-modal').addEventListener('click', () => closePreviewModal(modal));
   fueledIn.addEventListener('change', () => {
     // Clear the previous mode's price before applying the approved Depot tariff or manual entry.

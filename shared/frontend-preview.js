@@ -29,10 +29,12 @@ function openPreviewModal(modal) {
   if (parent) { previewParentModal.set(modal, parent); parent.style.display = 'none'; parent.setAttribute('aria-hidden', 'true'); }
   modal.style.display = 'flex';
   modal.setAttribute('aria-hidden', 'false');
+  if(typeof TaxiQaidSelectUI!=='undefined')TaxiQaidSelectUI.sync(modal);
   modal.querySelector('.modal-content').scrollTop = 0;
   [...modal.querySelectorAll('input, select, textarea, button, [tabindex="0"]')].find(control => !control.disabled && control.getClientRects().length)?.focus();
 }
 function closePreviewModal(modal) {
+  if(typeof TaxiQaidSelectUI!=='undefined')TaxiQaidSelectUI.close();
   modal.style.display = 'none';
   modal.setAttribute('aria-hidden', 'true');
   const parent = previewParentModal.get(modal);
@@ -68,6 +70,7 @@ function initializeFrontendPreview() {
   });
   if(window.TAXIQAID_DEDICATED_AUTH?.enabled===true){const label=document.querySelector('label[for=um-create-login]');if(label)label.textContent='Username / Login Identifier';document.querySelectorAll('select option[value="Quality"]').forEach(option=>option.textContent='QHSE');}
   initializeSelectDescriptions();
+  if(typeof TaxiQaidSelectUI!=='undefined')TaxiQaidSelectUI.enhance();
 
 }
 
@@ -85,6 +88,7 @@ function initializeSelectDescriptions() {
       hint=document.createElement('p');hint.className='selected-option-text';hint.id=`${select.id}-selected-text`;hint.hidden=true;select.after(hint);
       select.setAttribute('aria-describedby',[select.getAttribute('aria-describedby'),hint.id].filter(Boolean).join(' '));
     }
+    if(select.classList.contains('tq-native-select')){hint.hidden=true;return;}
     const style=getComputedStyle(select);
     context.font=style.font;
     const availableWidth=select.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight);
